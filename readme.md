@@ -1,50 +1,287 @@
-# ardaos
-**ardaos** is a blockchain built using Cosmos SDK and Tendermint and created with [Ignite CLI](https://ignite.com/cli).
+# ArdaOS - Private Markets Operating System
 
-## Get started
+A sovereign blockchain built with Cosmos SDK and [Ignite CLI](https://ignite.com), designed to standardize and modernize private market asset workflows. ArdaOS enables compliant, automated small business finance applications while maintaining regional sovereignty.
 
+## 🎯 Mission
+
+Transform private markets from offline, fragmented, and manual processes into on-chain, compliant, and automated workflows while maintaining regional sovereignty and regulatory compliance.
+
+## 🏗️ Architecture Overview
+
+ArdaOS implements Arda's region-first architecture:
+
+- **Regional Sovereignty**: Each chain enforces local regulations, validator sets, and compliance rules
+- **Asset-Centric Design**: Protocol-native modules for loan origination, syndication, escrow, and transfers
+- **Compliance by Design**: KYC, AML, and regulatory requirements embedded at the state machine level
+- **Global Interoperability**: Native IBC support and bridging to external networks via Arda Bridge
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Go**: 1.21+
+- **Ignite CLI**: v28.0.0+ ([installation guide](https://docs.ignite.com/welcome/install))
+- **Docker**: Latest (optional, for containerized development)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/arda-global/ardaos.git
+cd ardaos
+
+# Install dependencies
+go mod tidy
 ```
+
+### Development Server
+
+```bash
+# Start the development server with hot reload
 ignite chain serve
+
+# This will:
+# - Build and start your blockchain in development
+# - Rebuild and restart on file changes
+# - Initialize with test accounts and configuration
+# - Start API server at localhost:1317
+# - Start RPC server at localhost:26657
+# - Start gRPC server at localhost:9090
 ```
 
-`serve` command installs dependencies, builds, initializes, and starts your blockchain in development.
+### Manual Build & Run
 
-### Configure
+```bash
+# Build the binary
+ignite chain build
 
-Your blockchain in development can be configured with `config.yml`. To learn more, see the [Ignite CLI docs](https://docs.ignite.com).
+# Or build manually
+go build -o build/ ./cmd/ardaosd
 
-### Web Frontend
+# Initialize the chain
+./build/ardaosd init mynode --chain-id ardaos-testnet-1
 
-Additionally, Ignite CLI offers a frontend scaffolding feature (based on Vue) to help you quickly build a web frontend for your blockchain:
+# Add test account (pre-configured with ignite chain serve)
+./build/ardaosd keys add alice
 
-Use: `ignite scaffold vue`
-This command can be run within your scaffolded blockchain project.
-
-
-For more information see the [monorepo for Ignite front-end development](https://github.com/ignite/web).
-
-## Release
-To release a new version of your blockchain, create and push a new tag with `v` prefix. A new draft release with the configured targets will be created.
-
-```
-git tag v0.1
-git push origin v0.1
+# Start the blockchain
+./build/ardaosd start
 ```
 
-After a draft release is created, make your final changes from the release page and publish it.
+### Interact with your chain
 
-### Install
-To install the latest version of your blockchain node's binary, execute the following command on your machine:
+```bash
+# Query chain status
+ardaosd status
+
+# Send tokens
+ardaosd tx bank send alice $(ardaosd keys show bob -a) 1000stake --from alice --chain-id ardaos-testnet-1
+
+# Query account balance
+ardaosd q bank balances $(ardaosd keys show alice -a)
+```
+
+## 🏦 Small Business Finance Applications
+
+ArdaOS supports five core small business finance verticals:
+
+### 1. Credit Card Receivables
+- **Product**: Revolving credit lines for business expenses
+- **Receivable**: Outstanding card balances with accrued interest
+- **Capital Flow**: Forward flow agreements, warehouse lines, ABS securitization
+
+### 2. Installment Loans
+- **Product**: Fixed principal with scheduled repayments
+- **Receivable**: Predictable cashflow streams from borrowers
+- **Capital Flow**: Post-origination purchases, warehouse facilities, loan pooling
+
+### 3. Merchant Cash Advances (MCA)
+- **Product**: Upfront cash against future revenue streams
+- **Receivable**: Percentage of daily card sales until repayment
+- **Capital Flow**: Daily collection mechanisms, participation interests
+
+### 4. Small Ticket Equipment Leasing
+- **Product**: Equipment financing with fixed payment schedules
+- **Receivable**: Lease contracts backed by physical assets
+- **Capital Flow**: Equipment purchases, sale-leaseback arrangements
+
+### 5. Working Capital Loans
+- **Product**: Short-term financing for cash flow management
+- **Receivable**: AR/inventory-backed loan obligations
+- **Capital Flow**: Invoice factoring, inventory finance, borrowing base facilities
+
+## 🔧 Core Modules
+
+### Token Factory Module
+Issues and manages programmable loan tokens with embedded:
+- Transfer restrictions and jurisdiction compliance
+- Amortization schedules and payment automation
+- Dynamic rights evolution (PIK toggles, conversions)
+- Multi-tranche waterfall distributions
+
+### Syndication Module
+Automates loan syndication workflows:
+- Book-building and allocation logic
+- Multi-lender compliance verification
+- Automated settlement and distribution
+
+### Escrow Module
+Trust-minimized escrow with:
+- Programmable milestone releases
+- Multi-signature governance
+- Dispute resolution mechanisms
+- Automated covenant monitoring
+
+### Compliance Module
+Protocol-embedded regulatory enforcement:
+- Real-time KYC/AML verification
+- Jurisdiction-specific rule engines
+- Sanctions screening integration
+- Continuous covenant monitoring
+
+## 📁 Project Structure (Ignite-Generated)
 
 ```
-curl https://get.ignite.com/username/arda-os@latest! | sudo bash
+├── app/                    # Blockchain application setup
+├── cmd/                    # CLI commands and daemon
+├── docs/                   # Documentation
+├── proto/                  # Protocol buffer definitions
+├── testutil/               # Test utilities and helpers
+├── x/                      # Custom Cosmos SDK modules
+│   ├── tokenfactory/       # Loan token issuance and management
+│   ├── syndication/        # Multi-lender workflows
+│   ├── escrow/            # Trust-minimized escrow
+│   └── compliance/        # Regulatory enforcement
+├── config.yml             # Ignite chain configuration
+└── genesis.json           # Genesis state configuration
 ```
-`username/arda-os` should match the `username` and `repo_name` of the Github repository to which the source code was pushed. Learn more about [the install process](https://github.com/allinbits/starport-installer).
 
-## Learn more
+## 🔗 Interoperability
 
-- [Ignite CLI](https://ignite.com/cli)
-- [Tutorials](https://docs.ignite.com/guide)
-- [Ignite CLI docs](https://docs.ignite.com)
-- [Cosmos SDK docs](https://docs.cosmos.network)
-- [Developer Chat](https://discord.gg/ignite)
+ArdaOS connects to the broader blockchain ecosystem through:
+
+- **IBC Protocol**: Native Cosmos ecosystem connectivity
+- **Arda Bridge**: Cross-chain asset transfers via Hyperlane
+- **Zero-Knowledge Proofs**: Privacy-preserving bridging options
+- **Global Coordination**: Settlement through Arda Core layer
+
+## 📊 Data Standards
+
+All assets follow the Arda Taxonomy with:
+- ISO 20022 financial messaging alignment
+- ISDA derivatives definitions
+- LMA syndicated lending standards
+- Regional compliance extensions
+
+## 🛡️ Security & Compliance
+
+### Consensus Model
+- **Proof of Authority (PoA)**: Permissioned validator sets
+- **Identity Verification**: KYC-verified institutional validators
+- **Regional Governance**: Local regulatory authority control
+
+### Privacy Features
+- **Arda Vault**: Encrypted off-chain document storage
+- **Selective Disclosure**: ZK proofs for compliance verification
+- **Data Residency**: Regional data sovereignty guarantees
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+ignite chain test
+
+# Run unit tests only
+go test ./...
+
+# Run with coverage
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
+
+# Run integration tests
+ignite chain simulate
+```
+
+## 🚧 Development Roadmap
+
+### Phase 1: Core Infrastructure ✅
+- [x] Ignite CLI project scaffolding
+- [x] Token Factory module (in development)
+- [x] Basic escrow functionality
+- [x] Compliance rule framework
+
+### Phase 2: Advanced Features 🚧
+- [ ] Syndication module with book-building
+- [ ] AI agent integration framework
+- [ ] IBC cross-chain connectivity
+- [ ] Advanced privacy features (FHE, MPC)
+
+### Phase 3: Market Integration 📋
+- [ ] KYC provider integrations
+- [ ] Credit bureau data feeds
+- [ ] Regulatory reporting automation
+- [ ] Secondary market trading
+
+## 🔧 Development Commands
+
+```bash
+# Generate new module
+ignite scaffold module [module-name]
+
+# Generate message types
+ignite scaffold message [message-name] [field1] [field2] --module [module-name]
+
+# Generate queries
+ignite scaffold query [query-name] [field1] [field2] --module [module-name]
+
+# Generate types
+ignite scaffold type [type-name] [field1] [field2] --module [module-name]
+
+# Add new chain dependency
+ignite chain init
+ignite chain serve --reset-once  # Reset chain data
+```
+
+## 📖 Documentation
+
+- [Ignite CLI Documentation](https://docs.ignite.com)
+- [Cosmos SDK Documentation](https://docs.cosmos.network)
+- [Technical Architecture](./docs/architecture.md)
+- [Module Development Guide](./docs/modules.md)
+- [Compliance Integration](./docs/compliance.md)
+
+## 🤝 Contributing
+
+We welcome contributions from the private markets and blockchain communities:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+- Follow Go best practices and Cosmos SDK conventions
+- Use Ignite CLI for scaffolding new modules and types
+- Write comprehensive tests for new functionality
+- Update protobuf definitions for API changes
+- Ensure compliance with regional regulatory requirements
+
+## 📜 License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+## 🔗 Links
+
+- **Website**: [arda.xyz](https://arda.xyz)
+- **Documentation**: [docs.arda.xyz](https://docs.arda.xyz)
+- **Discord**: [discord.gg/arda](https://discord.gg/arda)
+- **Twitter**: [@ArdaGlobal](https://twitter.com/ArdaGlobal)
+
+## ⚠️ Disclaimer
+
+This is experimental software for private markets infrastructure. Use in production environments requires thorough security audits and regulatory approval in your jurisdiction.
+
+---
+
+**Built with ❤️ by the Arda team using [Ignite CLI](https://ignite.com) to reprogram private markets globally, delivered locally.**
