@@ -34,8 +34,8 @@ jobs:
 
       - name: Verify build
         run: |
-          if [ ! -f "$HOME/go/bin/ardaosd" ]; then
-            echo "Build failed: ardaosd binary not found"
+          if [ ! -f "$HOME/go/bin/arda-osd" ]; then
+            echo "Build failed: arda-osd binary not found"
             exit 1
           fi
-          echo "Build successful: ardaosd binary created"
+          echo "Build successful: arda-osd binary created"
