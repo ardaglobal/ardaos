@@ -1,0 +1,58 @@
+repos:
+  - repo: local
+    hooks:
+      - id: go-fmt-check
+        name: go fmt check
+        entry: make fmt-check
+        language: system
+        files: \.go$
+        pass_filenames: false
+
+      - id: go-imports
+        name: go imports
+        entry: make fmt-imports
+        language: system
+        files: \.go$
+        pass_filenames: false
+
+      - id: go-vet
+        name: go vet
+        entry: make govet
+        language: system
+        files: \.go$
+        pass_filenames: false
+
+      - id: golangci-lint
+        name: golangci-lint
+        entry: make lint
+        language: system
+        files: \.go$
+        exclude: \.(pb|pulsar)\.go$|^api/
+        pass_filenames: false
+
+      - id: go-mod-verify
+        name: go mod verify
+        entry: go mod verify
+        language: system
+        files: go\.(mod|sum)$
+        pass_filenames: false
+
+      - id: go-mod-tidy
+        name: go mod tidy
+        entry: go mod tidy
+        language: system
+        files: go\.(mod|sum)$
+        pass_filenames: false
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+        files: \.(yaml|yml)$
+      - id: end-of-file-fixer
+        exclude: \.pb\.go$
+      - id: trailing-whitespace
+        exclude: \.pb\.go$
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]

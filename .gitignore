@@ -1,10 +1,57 @@
+# Vue.js frontend
 vue/node_modules
 vue/dist
+
+# Build artifacts
 release/
+build/
+dist/
+
+# IDE files
 .idea/
-.vscode/
+.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# OS files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs and misc
 *.dot
 *.log
 *.ign
+
+# Environment
 .env
+.env.local
+
+# Go binaries and test files
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Coverage reports
+*.cover
+coverage.html
+
+# Blockchain data
+~/.ardaos
+.ardaos/
+
+# Dependency directories
+vendor/
+
+# Temporary files
+*.tmp

@@ -36,7 +36,17 @@ ArdaOS supports five core verticals:
 4. **Small Ticket Equipment Leasing**: Equipment financing with physical asset backing
 5. **Working Capital Loans**: Short-term financing for cash flow management
 
-## Development Commands
+## Development Setup
+
+### Initial Setup
+```bash
+make setup-dev      # Install pre-commit hooks and development tools
+```
+
+This will:
+- Install pre-commit hooks that run automatically on git commits
+- Install required Go tools (goimports, golangci-lint, govulncheck)
+- Configure the development environment
 
 ### Build & Install
 ```bash
@@ -54,20 +64,26 @@ ignite chain serve    # Start development blockchain with automatic rebuild
 ```bash
 make test            # Run full test suite (includes govet, govulncheck, unit tests)
 make test-unit       # Unit tests only
-make test-race       # Unit tests with race condition detection  
+make test-race       # Unit tests with race condition detection
 make test-cover      # Unit tests with coverage report
 make bench           # Benchmark tests
 ignite chain test    # Run all tests via Ignite CLI
 go test ./...        # Direct Go test execution
 ```
 
-### Code Quality
+### Code Quality & Formatting
 ```bash
-make lint           # Run golangci-lint v1.61.0
+make fmt            # Format Go code with gofmt
+make fmt-imports    # Fix imports with goimports
+make fmt-check      # Check if code is properly formatted
+make lint           # Run golangci-lint v1.61.0 on all files
 make lint-fix       # Run linter with automatic fixes
+make lint-source    # Run linter on source code only (excludes generated files)
 make govet          # Run go vet
 make govulncheck    # Check for security vulnerabilities
 ```
+
+**Note:** The project includes auto-generated protobuf files that may have linting issues. Use `make lint-source` to lint only the source code, or the pre-commit hooks will automatically run this for you.
 
 ### Protocol Buffers
 ```bash

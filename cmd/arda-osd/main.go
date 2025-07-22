@@ -18,3 +18,5 @@ func main() {
 		os.Exit(1)
 	}
 }
+
+// Test comment

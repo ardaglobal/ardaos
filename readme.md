@@ -23,12 +23,40 @@ ArdaOS implements Arda's region-first architecture:
 - **Ignite CLI**: v28.0.0+ ([installation guide](https://docs.ignite.com/welcome/install))
 - **Docker**: Latest (optional, for containerized development)
 
+### Development Tools
+
+The following tools are required for development and will be automatically installed when you run `make setup-dev`:
+
+- **goimports**: Automatic import organization and formatting
+- **golangci-lint v1.61.0**: Comprehensive Go linter with strict quality checks
+- **govulncheck**: Security vulnerability scanner for Go dependencies
+- **pre-commit**: Git hooks for automated code quality checks
+
+#### Manual Installation (if needed)
+
+```bash
+# Install golangci-lint
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.61.0
+
+# Install govulncheck
+go install golang.org/x/vuln/cmd/govulncheck@latest
+
+# Install goimports
+go install golang.org/x/tools/cmd/goimports@latest
+
+# Install pre-commit (requires Python/pip)
+pip install pre-commit
+```
+
 ### Installation
 
 ```bash
 # Clone the repository
 git clone https://github.com/arda-global/ardaos.git
 cd ardaos
+
+# Setup development environment (installs tools and pre-commit hooks)
+make setup-dev
 
 # Install dependencies
 go mod tidy
@@ -185,21 +213,34 @@ All assets follow the Arda Taxonomy with:
 - **Selective Disclosure**: ZK proofs for compliance verification
 - **Data Residency**: Regional data sovereignty guarantees
 
-## 🧪 Testing
+## 🧪 Testing & Code Quality
 
 ```bash
-# Run all tests
-ignite chain test
+# Run all tests with quality checks
+make test
 
 # Run unit tests only
-go test ./...
+make test-unit
 
 # Run with coverage
-go test -coverprofile=coverage.out ./...
-go tool cover -html=coverage.out
+make test-cover
 
 # Run integration tests
 ignite chain simulate
+
+# Code quality and formatting
+make fmt              # Format Go code
+make fmt-imports      # Fix imports with goimports
+make lint             # Run golangci-lint on all files
+make lint-source      # Run linter on source code only (excludes generated files)
+make govet            # Run go vet
+make govulncheck      # Check for security vulnerabilities
+
+# Check if code is properly formatted
+make fmt-check
+
+# Run linter with automatic fixes
+make lint-fix
 ```
 
 ## 🚧 Development Roadmap

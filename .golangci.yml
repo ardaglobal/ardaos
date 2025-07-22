@@ -1,0 +1,217 @@
+run:
+  timeout: 10m
+  issues-exit-code: 1
+  tests: true
+  modules-download-mode: readonly
+
+linters-settings:
+  govet:
+    enable:
+      - atomic
+      - bools
+      - copylocks
+      - errorsas
+      - httpresponse
+      - loopclosure
+      - lostcancel
+      - nilfunc
+      - printf
+      - shift
+      - stdmethods
+      - structtag
+      - tests
+      - unmarshal
+      - unreachable
+      - unsafeptr
+      - unusedresult
+
+  gofmt:
+    simplify: true
+
+  goimports:
+    local-prefixes: arda-os
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - wrapperFunc
+      - importShadow
+      - unnamedResult
+      - hugeParam
+
+  gosec:
+    excludes:
+      - G204 # subprocess launched with variable
+      - G304 # file path provided as tainted input
+
+  dupl:
+    threshold: 100
+
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+
+  misspell:
+    locale: US
+
+  lll:
+    line-length: 140
+
+  unparam:
+    check-exported: false
+
+  nakedret:
+    max-func-lines: 30
+
+  prealloc:
+    simple: true
+    range-loops: true
+    for-loops: false
+
+linters:
+  enable:
+    - bodyclose
+    - dupl
+    - errcheck
+    - copyloopvar
+    - goconst
+    - gocritic
+    - gofmt
+    - goimports
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - prealloc
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+
+  disable:
+    - cyclop
+    - funlen
+    - gocognit
+    - gocyclo
+    - godot
+    - godox
+    - nestif
+    - nolintlint
+    - revive
+    - varnamelen
+    - wsl
+
+issues:
+  exclude-dirs:
+    - app
+    - api
+    - proto
+    - docs
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.pulsar\\.go$"
+  exclude-dirs-use-default: false
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - dupl
+        - gosec
+        - goconst
+
+    - path: cmd/
+      linters:
+        - lll
+
+    - path: \.pb\.go$
+      linters:
+        - typecheck
+        - govet
+        - staticcheck
+        - unused
+        - gosimple
+        - ineffassign
+        - dupl
+        - lll
+        - gofmt
+        - goimports
+
+    - path: \.pulsar\.go$
+      linters:
+        - typecheck
+        - govet
+        - staticcheck
+        - unused
+        - gosimple
+        - ineffassign
+        - dupl
+        - lll
+        - gofmt
+        - goimports
+
+    - path: api/
+      linters:
+        - typecheck
+        - govet
+        - staticcheck
+        - unused
+        - gosimple
+        - ineffassign
+        - dupl
+        - lll
+
+    - path: app/
+      linters:
+        - typecheck
+        - govet
+        - staticcheck
+        - unused
+        - gosimple
+        - ineffassign
+        - dupl
+        - lll
+
+    - text: "Use of weak random number generator"
+      linters:
+        - gosec
+
+    - text: "ST1003:"
+      linters:
+        - stylecheck
+
+    - text: "should not use dot imports"
+      linters:
+        - revive
+
+    - source: "//nolint"
+      linters:
+        - gocritic
+
+    - source: "(noinspection|TODO)"
+      linters:
+        - godot
+
+    - source: "//go:generate"
+      linters:
+        - lll
+
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  new: false
+
+severity:
+  default-severity: error
