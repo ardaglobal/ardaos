@@ -1,0 +1,17 @@
+syntax = "proto3";
+package ardaos.ardaos;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "ardaos/ardaos/params.proto";
+
+option go_package = "arda-os/x/ardaos/types";
+
+// GenesisState defines the ardaos module's genesis state.
+message GenesisState {
+  // params defines all the parameters of the module.
+  Params params = 1 [
+    (gogoproto.nullable) = false,
+    (amino.dont_omitempty) = true
+  ];
+}
