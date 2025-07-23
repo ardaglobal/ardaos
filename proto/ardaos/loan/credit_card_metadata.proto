@@ -1,0 +1,17 @@
+syntax = "proto3";
+package ardaos.loan;
+
+option go_package = "arda-os/x/loan/types";
+
+message CreditCardMetadata {
+  string index = 1;
+  string loanId = 2;
+  uint64 creditLimit = 3;
+  uint64 availableCredit = 4;
+  uint64 minimumPayment = 5;
+  string dailyRate = 6;
+  uint32 gracePeriodDays = 7;
+  uint64 overlimitFee = 8;
+  uint64 lateFee = 9;
+  string creator = 10;
+}

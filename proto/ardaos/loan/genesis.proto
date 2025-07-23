@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package ardaos.loan;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "ardaos/loan/params.proto";
+import "ardaos/loan/loan_state.proto";
+import "ardaos/loan/credit_card_metadata.proto";
+import "ardaos/loan/mca_metadata.proto";
+import "ardaos/loan/installment_metadata.proto";
+
+option go_package = "arda-os/x/loan/types";
+
+// GenesisState defines the loan module's genesis state.
+message GenesisState {
+
+  // params defines all the parameters of the module.
+           Params              params                  = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+  repeated LoanState           loanStateList           = 2 [(gogoproto.nullable) = false] ;
+  repeated CreditCardMetadata  creditCardMetadataList  = 3 [(gogoproto.nullable) = false] ;
+  repeated McaMetadata         mcaMetadataList         = 4 [(gogoproto.nullable) = false] ;
+  repeated InstallmentMetadata installmentMetadataList = 5 [(gogoproto.nullable) = false] ;
+}

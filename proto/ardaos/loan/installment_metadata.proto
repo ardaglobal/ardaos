@@ -1,0 +1,15 @@
+syntax = "proto3";
+package ardaos.loan;
+
+option go_package = "arda-os/x/loan/types";
+
+message InstallmentMetadata {
+  string index = 1;
+  string loanId = 2;
+  uint64 paymentAmount = 3;
+  string paymentFrequency = 4;
+  uint32 remainingPayments = 5;
+  string amortizationType = 6;
+  bool prepaymentAllowed = 7;
+  string creator = 8;
+}

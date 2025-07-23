@@ -1,0 +1,16 @@
+syntax = "proto3";
+package ardaos.loan;
+
+option go_package = "arda-os/x/loan/types";
+
+message McaMetadata {
+  string index = 1;
+  string loanId = 2;
+  string dailyCollectionPercentage = 3;
+  string merchantId = 4;
+  string processorName = 5;
+  uint32 estimatedTermDays = 6;
+  uint64 totalPaybackAmount = 7;
+  uint64 dailySalesAverage = 8;
+  string creator = 9;
+}

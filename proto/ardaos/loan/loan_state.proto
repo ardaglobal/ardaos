@@ -1,0 +1,16 @@
+syntax = "proto3";
+package ardaos.loan;
+
+option go_package = "arda-os/x/loan/types";
+
+message LoanState {
+  string index = 1;
+  string loanId = 2;
+  string status = 3;
+  uint64 currentBalance = 4;
+  uint32 paymentsMade = 5;
+  string lastPaymentDate = 6;
+  string nextPaymentDate = 7;
+  uint32 delinquencyDays = 8;
+  string creator = 9;
+}

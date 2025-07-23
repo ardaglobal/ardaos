@@ -20,6 +20,7 @@ ArdaOS implements Arda's region-first architecture:
 ### Core Structure
 - **app/**: Main application setup with dependency injection using depinject
 - **x/**: Custom Cosmos SDK modules for private markets:
+  - `loan/`: Core 1-to-1 loan primitive supporting all loan types (credit receivables, installment loans, MCA, equipment leasing, working capital)
   - `tokenfactory/`: Loan token issuance and management
   - `syndication/`: Multi-lender workflows
   - `escrow/`: Trust-minimized escrow
@@ -105,7 +106,7 @@ ignite generate proto-go --yes  # Direct proto generation
 - The blockchain runs with 4 validators (alice, validator1, validator2, validator3) in development
 - Test accounts: alice (20000token, 200000000stake), bob (10000token, 100000000stake)
 - Private markets modules should be implemented in `x/` directory following Cosmos SDK patterns
-- Core modules: tokenfactory, syndication, escrow, compliance
+- Core modules: loan, tokenfactory, syndication, escrow, compliance
 - Always run `make test` before committing to ensure code quality standards
 - Focus on regulatory compliance and asset-centric design patterns
 - Maintain regional sovereignty while enabling global interoperability

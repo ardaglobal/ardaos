@@ -1,0 +1,142 @@
+syntax = "proto3";
+
+package ardaos.loan;
+
+import "amino/amino.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "ardaos/loan/params.proto";
+import "ardaos/loan/loan_state.proto";
+import "ardaos/loan/credit_card_metadata.proto";
+import "ardaos/loan/mca_metadata.proto";
+import "ardaos/loan/installment_metadata.proto";
+
+option go_package = "arda-os/x/loan/types";
+
+// Query defines the gRPC querier service.
+service Query {
+
+  // Parameters queries the parameters of the module.
+  rpc Params (QueryParamsRequest) returns (QueryParamsResponse) {
+    option (google.api.http).get = "/arda-os/loan/params";
+
+  }
+
+  // Queries a list of LoanState items.
+  rpc LoanState    (QueryGetLoanStateRequest) returns (QueryGetLoanStateResponse) {
+    option (google.api.http).get = "/arda-os/loan/loan_state/{index}";
+
+  }
+  rpc LoanStateAll (QueryAllLoanStateRequest) returns (QueryAllLoanStateResponse) {
+    option (google.api.http).get = "/arda-os/loan/loan_state";
+
+  }
+
+  // Queries a list of CreditCardMetadata items.
+  rpc CreditCardMetadata    (QueryGetCreditCardMetadataRequest) returns (QueryGetCreditCardMetadataResponse) {
+    option (google.api.http).get = "/arda-os/loan/credit_card_metadata/{index}";
+
+  }
+  rpc CreditCardMetadataAll (QueryAllCreditCardMetadataRequest) returns (QueryAllCreditCardMetadataResponse) {
+    option (google.api.http).get = "/arda-os/loan/credit_card_metadata";
+
+  }
+
+  // Queries a list of McaMetadata items.
+  rpc McaMetadata    (QueryGetMcaMetadataRequest) returns (QueryGetMcaMetadataResponse) {
+    option (google.api.http).get = "/arda-os/loan/mca_metadata/{index}";
+
+  }
+  rpc McaMetadataAll (QueryAllMcaMetadataRequest) returns (QueryAllMcaMetadataResponse) {
+    option (google.api.http).get = "/arda-os/loan/mca_metadata";
+
+  }
+
+  // Queries a list of InstallmentMetadata items.
+  rpc InstallmentMetadata    (QueryGetInstallmentMetadataRequest) returns (QueryGetInstallmentMetadataResponse) {
+    option (google.api.http).get = "/arda-os/loan/installment_metadata/{index}";
+
+  }
+  rpc InstallmentMetadataAll (QueryAllInstallmentMetadataRequest) returns (QueryAllInstallmentMetadataResponse) {
+    option (google.api.http).get = "/arda-os/loan/installment_metadata";
+
+  }
+}
+// QueryParamsRequest is request type for the Query/Params RPC method.
+message QueryParamsRequest {}
+
+// QueryParamsResponse is response type for the Query/Params RPC method.
+message QueryParamsResponse {
+
+  // params holds all the parameters of this module.
+  Params params = 1 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
+message QueryGetLoanStateRequest {
+  string index = 1;
+}
+
+message QueryGetLoanStateResponse {
+  LoanState loanState = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllLoanStateRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllLoanStateResponse {
+  repeated LoanState                              loanState  = 1 [(gogoproto.nullable) = false];
+           cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message QueryGetCreditCardMetadataRequest {
+  string index = 1;
+}
+
+message QueryGetCreditCardMetadataResponse {
+  CreditCardMetadata creditCardMetadata = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllCreditCardMetadataRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllCreditCardMetadataResponse {
+  repeated CreditCardMetadata                     creditCardMetadata = 1 [(gogoproto.nullable) = false];
+           cosmos.base.query.v1beta1.PageResponse pagination         = 2;
+}
+
+message QueryGetMcaMetadataRequest {
+  string index = 1;
+}
+
+message QueryGetMcaMetadataResponse {
+  McaMetadata mcaMetadata = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllMcaMetadataRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllMcaMetadataResponse {
+  repeated McaMetadata                            mcaMetadata = 1 [(gogoproto.nullable) = false];
+           cosmos.base.query.v1beta1.PageResponse pagination  = 2;
+}
+
+message QueryGetInstallmentMetadataRequest {
+  string index = 1;
+}
+
+message QueryGetInstallmentMetadataResponse {
+  InstallmentMetadata installmentMetadata = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryAllInstallmentMetadataRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+}
+
+message QueryAllInstallmentMetadataResponse {
+  repeated InstallmentMetadata                    installmentMetadata = 1 [(gogoproto.nullable) = false];
+           cosmos.base.query.v1beta1.PageResponse pagination          = 2;
+}

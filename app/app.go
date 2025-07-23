@@ -76,6 +76,8 @@ import (
 	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
 
 	ardaosmodulekeeper "arda-os/x/ardaos/keeper"
+	loanmodulekeeper "arda-os/x/loan/keeper"
+
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	"arda-os/docs"
@@ -146,6 +148,7 @@ type App struct {
 	ScopedKeepers             map[string]capabilitykeeper.ScopedKeeper
 
 	ArdaosKeeper ardaosmodulekeeper.Keeper
+	LoanKeeper   loanmodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// simulation manager
@@ -250,6 +253,7 @@ func New(
 		&app.GroupKeeper,
 		&app.CircuitBreakerKeeper,
 		&app.ArdaosKeeper,
+		&app.LoanKeeper,
 		// this line is used by starport scaffolding # stargate/app/keeperDefinition
 	); err != nil {
 		panic(err)

@@ -1,0 +1,222 @@
+syntax = "proto3";
+
+package ardaos.loan;
+
+import "amino/amino.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "ardaos/loan/params.proto";
+import "ardaos/loan/loan_state.proto";
+import "ardaos/loan/credit_card_metadata.proto";
+import "ardaos/loan/mca_metadata.proto";
+import "ardaos/loan/installment_metadata.proto";
+
+option go_package = "arda-os/x/loan/types";
+
+// Msg defines the Msg service.
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  // UpdateParams defines a (governance) operation for updating the module
+  // parameters. The authority defaults to the x/gov module account.
+  rpc UpdateParams              (MsgUpdateParams             ) returns (MsgUpdateParamsResponse             );
+  rpc CreateLoan                (MsgCreateLoan               ) returns (MsgCreateLoanResponse               );
+  rpc CreateLoanState           (MsgCreateLoanState          ) returns (MsgCreateLoanStateResponse          );
+  rpc UpdateLoanState           (MsgUpdateLoanState          ) returns (MsgUpdateLoanStateResponse          );
+  rpc DeleteLoanState           (MsgDeleteLoanState          ) returns (MsgDeleteLoanStateResponse          );
+  rpc CreateCreditCardMetadata  (MsgCreateCreditCardMetadata ) returns (MsgCreateCreditCardMetadataResponse );
+  rpc UpdateCreditCardMetadata  (MsgUpdateCreditCardMetadata ) returns (MsgUpdateCreditCardMetadataResponse );
+  rpc DeleteCreditCardMetadata  (MsgDeleteCreditCardMetadata ) returns (MsgDeleteCreditCardMetadataResponse );
+  rpc CreateMcaMetadata         (MsgCreateMcaMetadata        ) returns (MsgCreateMcaMetadataResponse        );
+  rpc UpdateMcaMetadata         (MsgUpdateMcaMetadata        ) returns (MsgUpdateMcaMetadataResponse        );
+  rpc DeleteMcaMetadata         (MsgDeleteMcaMetadata        ) returns (MsgDeleteMcaMetadataResponse        );
+  rpc CreateInstallmentMetadata (MsgCreateInstallmentMetadata) returns (MsgCreateInstallmentMetadataResponse);
+  rpc UpdateInstallmentMetadata (MsgUpdateInstallmentMetadata) returns (MsgUpdateInstallmentMetadataResponse);
+  rpc DeleteInstallmentMetadata (MsgDeleteInstallmentMetadata) returns (MsgDeleteInstallmentMetadataResponse);
+}
+// MsgUpdateParams is the Msg/UpdateParams request type.
+message MsgUpdateParams {
+  option (cosmos.msg.v1.signer) =                     "authority";
+  option           (amino.name) = "ardaos/x/loan/MsgUpdateParams";
+
+  // authority is the address that controls the module (defaults to x/gov unless overwritten).
+  string authority = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+
+  // params defines the module parameters to update.
+
+  // NOTE: All parameters must be supplied.
+  Params params = 2 [(gogoproto.nullable) = false, (amino.dont_omitempty) = true];
+}
+
+// MsgUpdateParamsResponse defines the response structure for executing a
+// MsgUpdateParams message.
+message MsgUpdateParamsResponse {}
+
+message MsgCreateLoan {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator               =  1;
+  string borrower              =  2;
+  string lender                =  3;
+  uint64 principalAmount       =  4;
+  string currency              =  5;
+  string interestRate          =  6;
+  uint32 termMonths            =  7;
+  string loanType              =  8;
+  string collateralDescription =  9;
+  string jurisdiction          = 10;
+}
+
+message MsgCreateLoanResponse {}
+
+message MsgCreateLoanState {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator         = 1;
+  string index           = 2;
+  string loanId          = 3;
+  string status          = 4;
+  uint64 currentBalance  = 5;
+  uint32 paymentsMade    = 6;
+  string lastPaymentDate = 7;
+  string nextPaymentDate = 8;
+  uint32 delinquencyDays = 9;
+}
+
+message MsgCreateLoanStateResponse {}
+
+message MsgUpdateLoanState {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator         = 1;
+  string index           = 2;
+  string loanId          = 3;
+  string status          = 4;
+  uint64 currentBalance  = 5;
+  uint32 paymentsMade    = 6;
+  string lastPaymentDate = 7;
+  string nextPaymentDate = 8;
+  uint32 delinquencyDays = 9;
+}
+
+message MsgUpdateLoanStateResponse {}
+
+message MsgDeleteLoanState {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator = 1;
+  string index   = 2;
+}
+
+message MsgDeleteLoanStateResponse {}
+
+message MsgCreateCreditCardMetadata {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator         =  1;
+  string index           =  2;
+  string loanId          =  3;
+  uint64 creditLimit     =  4;
+  uint64 availableCredit =  5;
+  uint64 minimumPayment  =  6;
+  string dailyRate       =  7;
+  uint32 gracePeriodDays =  8;
+  uint64 overlimitFee    =  9;
+  uint64 lateFee         = 10;
+}
+
+message MsgCreateCreditCardMetadataResponse {}
+
+message MsgUpdateCreditCardMetadata {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator         =  1;
+  string index           =  2;
+  string loanId          =  3;
+  uint64 creditLimit     =  4;
+  uint64 availableCredit =  5;
+  uint64 minimumPayment  =  6;
+  string dailyRate       =  7;
+  uint32 gracePeriodDays =  8;
+  uint64 overlimitFee    =  9;
+  uint64 lateFee         = 10;
+}
+
+message MsgUpdateCreditCardMetadataResponse {}
+
+message MsgDeleteCreditCardMetadata {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator = 1;
+  string index   = 2;
+}
+
+message MsgDeleteCreditCardMetadataResponse {}
+
+message MsgCreateMcaMetadata {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator                   = 1;
+  string index                     = 2;
+  string loanId                    = 3;
+  string dailyCollectionPercentage = 4;
+  string merchantId                = 5;
+  string processorName             = 6;
+  uint32 estimatedTermDays         = 7;
+  uint64 totalPaybackAmount        = 8;
+  uint64 dailySalesAverage         = 9;
+}
+
+message MsgCreateMcaMetadataResponse {}
+
+message MsgUpdateMcaMetadata {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator                   = 1;
+  string index                     = 2;
+  string loanId                    = 3;
+  string dailyCollectionPercentage = 4;
+  string merchantId                = 5;
+  string processorName             = 6;
+  uint32 estimatedTermDays         = 7;
+  uint64 totalPaybackAmount        = 8;
+  uint64 dailySalesAverage         = 9;
+}
+
+message MsgUpdateMcaMetadataResponse {}
+
+message MsgDeleteMcaMetadata {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator = 1;
+  string index   = 2;
+}
+
+message MsgDeleteMcaMetadataResponse {}
+
+message MsgCreateInstallmentMetadata {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator           = 1;
+  string index             = 2;
+  string loanId            = 3;
+  uint64 paymentAmount     = 4;
+  string paymentFrequency  = 5;
+  uint32 remainingPayments = 6;
+  string amortizationType  = 7;
+  bool prepaymentAllowed   = 8;
+}
+
+message MsgCreateInstallmentMetadataResponse {}
+
+message MsgUpdateInstallmentMetadata {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator           = 1;
+  string index             = 2;
+  string loanId            = 3;
+  uint64 paymentAmount     = 4;
+  string paymentFrequency  = 5;
+  uint32 remainingPayments = 6;
+  string amortizationType  = 7;
+  bool prepaymentAllowed   = 8;
+}
+
+message MsgUpdateInstallmentMetadataResponse {}
+
+message MsgDeleteInstallmentMetadata {
+  option (cosmos.msg.v1.signer) = "creator";
+  string creator = 1;
+  string index   = 2;
+}
+
+message MsgDeleteInstallmentMetadataResponse {}
