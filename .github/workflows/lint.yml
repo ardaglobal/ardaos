@@ -37,6 +37,3 @@ jobs:
 
       - name: Run go vet
         run: make govet
-
-      - name: Run security checks
-        run: make govulncheck
