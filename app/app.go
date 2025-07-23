@@ -34,6 +34,7 @@ import (
 	_ "github.com/cosmos/cosmos-sdk/x/staking" // import for side-effects
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 
+	compliancemodulekeeper "github.com/ardaglobal/ardaos/x/compliance/keeper"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	"github.com/ardaglobal/ardaos/docs"
@@ -75,6 +76,7 @@ type App struct {
 	DistrKeeper           distrkeeper.Keeper
 	ConsensusParamsKeeper consensuskeeper.Keeper
 
+	ComplianceKeeper compliancemodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// simulation manager
@@ -146,6 +148,7 @@ func New(
 		&app.StakingKeeper,
 		&app.DistrKeeper,
 		&app.ConsensusParamsKeeper,
+		&app.ComplianceKeeper,
 		// this line is used by starport scaffolding # stargate/app/keeperDefinition
 	); err != nil {
 		panic(err)

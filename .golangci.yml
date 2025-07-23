@@ -64,7 +64,7 @@ linters-settings:
     locale: US
 
   lll:
-    line-length: 140
+    line-length: 1400 # TODO: disable this linter, just use code editor wrapping
 
   unparam:
     check-exported: false

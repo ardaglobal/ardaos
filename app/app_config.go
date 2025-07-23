@@ -12,6 +12,9 @@ import (
 	txconfigv1 "cosmossdk.io/api/cosmos/tx/config/v1"
 	"cosmossdk.io/core/appconfig"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
+	compliancemodulev1 "github.com/ardaglobal/ardaos/api/ardaos/compliance/module"
+	_ "github.com/ardaglobal/ardaos/x/compliance/module" // import for side-effects
+	compliancemoduletypes "github.com/ardaglobal/ardaos/x/compliance/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -39,6 +42,7 @@ var (
 		stakingtypes.ModuleName,
 		genutiltypes.ModuleName,
 		// chain modules
+		compliancemoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 
@@ -51,6 +55,7 @@ var (
 		distrtypes.ModuleName,
 		stakingtypes.ModuleName,
 		// chain modules
+		compliancemoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	}
 
@@ -58,6 +63,7 @@ var (
 		// cosmos sdk modules
 		stakingtypes.ModuleName,
 		// chain modules
+		compliancemoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	}
 
@@ -148,6 +154,10 @@ var (
 			{
 				Name:   genutiltypes.ModuleName,
 				Config: appconfig.WrapAny(&genutilmodulev1.Module{}),
+			},
+			{
+				Name:   compliancemoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&compliancemodulev1.Module{}),
 			},
 			// this line is used by starport scaffolding # stargate/app/moduleConfig
 		},
