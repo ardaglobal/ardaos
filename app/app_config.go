@@ -13,9 +13,12 @@ import (
 	"cosmossdk.io/core/appconfig"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
 	compliancemodulev1 "github.com/ardaglobal/ardaos/api/ardaos/compliance/module"
+	spvmodulev1 "github.com/ardaglobal/ardaos/api/ardaos/spv/module"
 	vaultmodulev1 "github.com/ardaglobal/ardaos/api/ardaos/vault/module"
 	_ "github.com/ardaglobal/ardaos/x/compliance/module" // import for side-effects
 	compliancemoduletypes "github.com/ardaglobal/ardaos/x/compliance/types"
+	_ "github.com/ardaglobal/ardaos/x/spv/module" // import for side-effects
+	spvmoduletypes "github.com/ardaglobal/ardaos/x/spv/types"
 	_ "github.com/ardaglobal/ardaos/x/vault/module" // import for side-effects
 	vaultmoduletypes "github.com/ardaglobal/ardaos/x/vault/types"
 	"github.com/cosmos/cosmos-sdk/runtime"
@@ -47,6 +50,7 @@ var (
 		// chain modules
 		compliancemoduletypes.ModuleName,
 		vaultmoduletypes.ModuleName,
+		spvmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	}
 
@@ -61,6 +65,7 @@ var (
 		// chain modules
 		compliancemoduletypes.ModuleName,
 		vaultmoduletypes.ModuleName,
+		spvmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/beginBlockers
 	}
 
@@ -70,6 +75,7 @@ var (
 		// chain modules
 		compliancemoduletypes.ModuleName,
 		vaultmoduletypes.ModuleName,
+		spvmoduletypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/endBlockers
 	}
 
@@ -168,6 +174,10 @@ var (
 			{
 				Name:   vaultmoduletypes.ModuleName,
 				Config: appconfig.WrapAny(&vaultmodulev1.Module{}),
+			},
+			{
+				Name:   spvmoduletypes.ModuleName,
+				Config: appconfig.WrapAny(&spvmodulev1.Module{}),
 			},
 			// this line is used by starport scaffolding # stargate/app/moduleConfig
 		},

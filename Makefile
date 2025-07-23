@@ -130,6 +130,12 @@ fmt-check:
 
 .PHONY: fmt fmt-imports fmt-check lint lint-fix lint-source
 
+fmt-fix-all: fmt fmt-imports fmt-check lint-fix
+.PHONY: fmt-fix-all
+
+lint-all: govet lint
+.PHONY: lint-all
+
 ###################
 ### Development ###
 ###################
