@@ -29,9 +29,9 @@ FILES_TO_LINT := $(shell find . -name '*.go' -type f -not -path "*/vendor/*" -no
 COVER_FILE := coverage.txt
 COVER_HTML_FILE := coverage.html
 
-##############
-###  Test  ###
-##############
+#-------------
+#    Test
+#-------------
 
 ## test-unit: Run unit tests.
 test-unit:
@@ -60,9 +60,9 @@ test: govet test-unit
 
 .PHONY: test test-unit test-race test-cover bench
 
-#################
-###  Install  ###
-#################
+#-------------
+#   Install
+#-------------
 
 ## all: Install the application.
 all: install
@@ -76,9 +76,9 @@ install:
 
 .PHONY: all install
 
-##################
-###  Protobuf  ###
-##################
+#-------------
+#  Protobuf
+#-------------
 
 # Use this target if you do not want to use Ignite for generating proto files
 GOLANG_PROTOBUF_VERSION=1.28.1
@@ -103,9 +103,9 @@ proto-gen:
 
 .PHONY: proto-deps proto-gen
 
-#################
-###  Linting  ###
-#################
+#-------------
+#  Linting
+#-------------
 
 golangci_lint_cmd=golangci-lint
 golangci_version=v1.62.2
@@ -151,15 +151,17 @@ fmt-check:
 
 .PHONY: fmt fmt-imports fmt-check lint lint-fix lint-source
 
+## fmt-fix-all: Run gofmt, goimports, and lint-fix.
 fmt-fix-all: fmt fmt-imports fmt-check lint-fix
 .PHONY: fmt-fix-all
 
+## lint-all: Run govet and lint.
 lint-all: govet lint
 .PHONY: lint-all
 
-###################
-### Development ###
-###################
+#-------------
+# Development
+#-------------
 
 ## setup-dev: Setup development environment.
 setup-dev:
