@@ -137,7 +137,7 @@ fmt:
 fmt-imports:
 	@echo "--> Running goimports"
 	@go install golang.org/x/tools/cmd/goimports@latest
-	@goimports -local arda-os -w $(FILES_TO_LINT)
+	@goimports -local github.com/ardaglobal/ardaos -w $(FILES_TO_LINT)
 
 ## fmt-check: Check gofmt.
 fmt-check:
