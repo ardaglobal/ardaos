@@ -18,11 +18,11 @@ import (
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/ardaglobal/ardaos/x/compliance/keeper"
-	"github.com/ardaglobal/ardaos/x/compliance/types"
+	"github.com/ardaglobal/ardaos/x/vault/keeper"
+	"github.com/ardaglobal/ardaos/x/vault/types"
 )
 
-func ComplianceKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
+func VaultKeeper(t testing.TB) (keeper.Keeper, sdk.Context) {
 	storeKey := storetypes.NewKVStoreKey(types.StoreKey)
 
 	db := dbm.NewMemDB()
