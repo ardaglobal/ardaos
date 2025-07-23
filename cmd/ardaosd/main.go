@@ -7,8 +7,8 @@ import (
 	clienthelpers "cosmossdk.io/client/v2/helpers"
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 
-	"arda-os/app"
-	"arda-os/cmd/arda-osd/cmd"
+	"github.com/ardaglobal/ardaos/app"
+	"github.com/ardaglobal/ardaos/cmd/ardaosd/cmd"
 )
 
 func main() {
@@ -18,5 +18,3 @@ func main() {
 		os.Exit(1)
 	}
 }
-
-// Test comment
