@@ -38,6 +38,8 @@ import (
 	vaultmodulekeeper "github.com/ardaglobal/ardaos/x/vault/keeper"
 
 	spvmodulekeeper "github.com/ardaglobal/ardaos/x/spv/keeper"
+	tokenfactorymodulekeeper "github.com/ardaglobal/ardaos/x/tokenfactory/keeper"
+
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 
 	"github.com/ardaglobal/ardaos/docs"
@@ -79,9 +81,10 @@ type App struct {
 	DistrKeeper           distrkeeper.Keeper
 	ConsensusParamsKeeper consensuskeeper.Keeper
 
-	ComplianceKeeper compliancemodulekeeper.Keeper
-	VaultKeeper      vaultmodulekeeper.Keeper
-	SpvKeeper        spvmodulekeeper.Keeper
+	ComplianceKeeper   compliancemodulekeeper.Keeper
+	VaultKeeper        vaultmodulekeeper.Keeper
+	SpvKeeper          spvmodulekeeper.Keeper
+	TokenfactoryKeeper tokenfactorymodulekeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	// simulation manager
@@ -156,6 +159,7 @@ func New(
 		&app.ComplianceKeeper,
 		&app.VaultKeeper,
 		&app.SpvKeeper,
+		&app.TokenfactoryKeeper,
 		// this line is used by starport scaffolding # stargate/app/keeperDefinition
 	); err != nil {
 		panic(err)
