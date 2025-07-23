@@ -1,4 +1,6 @@
 version: 1
+build:
+  main: ./cmd/arda-osd
 validation: sovereign
 accounts:
 - name: alice
