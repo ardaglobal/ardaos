@@ -1,6 +1,6 @@
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 COMMIT := $(shell git log -1 --format='%H')
-APPNAME := arda-os
+APPNAME := ardaos
 
 # don't override user values
 ifeq (,$(VERSION))
@@ -18,6 +18,10 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=$(APPNAME) \
 	-X github.com/cosmos/cosmos-sdk/version.Commit=$(COMMIT)
 
 BUILD_FLAGS := -ldflags '$(ldflags)'
+
+FILES_TO_LINT := $(shell find . -name '*.go' -type f -not -path "*/vendor/*" -not -path "*/.*")
+COVER_FILE := coverage.txt
+COVER_HTML_FILE := coverage.html
 
 ##############
 ###  Test  ###
@@ -92,9 +96,9 @@ golangci_lint_cmd=golangci-lint
 golangci_version=v1.62.2
 
 lint:
-	@echo "--> Running linter (excluding app directory)"
+	@echo "--> Running linter"
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golangci_version)
-	@$(golangci_lint_cmd) run ./cmd/tx-sidecar --timeout 15m
+	@$(golangci_lint_cmd) run ./... --timeout 15m
 
 lint-fix:
 	@echo "--> Running linter and fixing issues"
@@ -104,20 +108,20 @@ lint-fix:
 lint-source:
 	@echo "--> Running linter on source code only"
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golangci_version)
-	@$(golangci_lint_cmd) run ./cmd/... ./x/... --timeout 15m --skip-files '.*\.pb\.go$$,.*\.pulsar\.go$$'
+	@$(golangci_lint_cmd) run ./... --timeout 15m --skip-files '.*\.pb\.go$$,.*\.pulsar\.go$$'
 
 fmt:
 	@echo "--> Running gofmt"
-	@find . -name '*.go' -type f -not -path "*/vendor/*" -not -path "*/.*" | xargs gofmt -s -w
+	@gofmt -s -w $(FILES_TO_LINT)
 
 fmt-imports:
 	@echo "--> Running goimports"
 	@go install golang.org/x/tools/cmd/goimports@latest
-	@find . -name '*.go' -type f -not -path "*/vendor/*" -not -path "*/.*" | xargs goimports -local arda-os -w
+	@goimports -local arda-os -w $(FILES_TO_LINT)
 
 fmt-check:
 	@echo "--> Checking gofmt"
-	@files=$$(find . -name '*.go' -type f -not -path "*/vendor/*" -not -path "*/.*" | xargs gofmt -s -l); \
+	@gofmt -s -l $(FILES_TO_LINT) | read -r files; \
 	if [ -n "$$files" ]; then \
 		echo "The following files are not properly formatted:"; \
 		echo "$$files"; \
@@ -136,7 +140,7 @@ setup-dev:
 
 govet:
 	@echo Running go vet...
-	@go vet ./app/... ./cmd/... ./x/...
+	@go vet ./...
 
 govulncheck:
 	@echo Running govulncheck...

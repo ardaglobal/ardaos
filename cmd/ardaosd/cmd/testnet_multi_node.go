@@ -111,7 +111,6 @@ Example:
 					args.validatorsStakesAmount[top] = sdk.NewCoin(sdk.DefaultBondDenom, a)
 					top += 1
 				}
-
 			}
 			top = 0
 			if s, err := cmd.Flags().GetString(flagPorts); err == nil {
@@ -326,7 +325,10 @@ func initTestnetFiles(
 			if err != nil || yes {
 				continue
 			}
-			copyFile(file, gentxsDir)
+			_, err = copyFile(file, gentxsDir)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	err := collectGenFiles(
@@ -344,11 +346,11 @@ func initTestnetFiles(
 }
 
 func writeFile(file, dir string, contents []byte) error {
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil { //nolint:gosec
 		return fmt.Errorf("could not create directory %q: %w", dir, err)
 	}
 
-	if err := os.WriteFile(file, contents, 0o644); err != nil {
+	if err := os.WriteFile(file, contents, 0o644); err != nil { //nolint:gosec
 		return err
 	}
 
@@ -477,14 +479,14 @@ func copyFile(src, dstDir string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer sourceFile.Close()
+	defer sourceFile.Close() //nolint:errcheck
 
 	// Create the destination file
 	destinationFile, err := os.Create(dst)
 	if err != nil {
 		return 0, err
 	}
-	defer destinationFile.Close()
+	defer destinationFile.Close() //nolint:errcheck
 
 	// Copy content from the source file to the destination file
 	bytesCopied, err := io.Copy(destinationFile, sourceFile)

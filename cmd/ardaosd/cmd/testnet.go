@@ -79,6 +79,7 @@ func newTestnetApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts s
 	return initAppForTestnet(testApp, args)
 }
 
+//nolint:errcheck,gosec
 func initAppForTestnet(app *app.App, args valArgs) *app.App {
 	// Required Changes:
 	//
