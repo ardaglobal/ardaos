@@ -1,0 +1,147 @@
+{
+  "metadata": {
+    "original_name": "basic_compliance",
+    "compiler_version": "1.0.0",
+    "compiled_at": "2025-07-23T17:31:17Z",
+    "hash": "d0ea8569f2c00004",
+    "optimizations": [
+      "dead_code_elimination",
+      "constant_folding"
+    ],
+    "metadata": {
+      "asset_type": "loan",
+      "region": "US"
+    }
+  },
+  "compiled_rules": [
+    {
+      "id": "amount_validation",
+      "type": "validation",
+      "priority": 100,
+      "condition": {
+        "expression": "amount \u003e 0 \u0026\u0026 amount \u003c= 50000",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 2,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "allow",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "parameters": {
+        "max_amount": 50000,
+        "min_amount": 0.01
+      },
+      "optimized": true
+    },
+    {
+      "id": "identity_verification",
+      "type": "requirement",
+      "priority": 50,
+      "condition": {
+        "expression": "sender_verified == true \u0026\u0026 recipient_verified == true",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 5,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "require",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "optimized": true
+    },
+    {
+      "id": "suspicious_activity",
+      "type": "notification",
+      "priority": 200,
+      "condition": {
+        "expression": "amount \u003e 10000 || velocity_score \u003e 0.8",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 3,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "notify",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "parameters": {
+        "high_amount_threshold": 10000,
+        "velocity_threshold": 0.8
+      },
+      "optimized": true
+    }
+  ],
+  "runtime_settings": {
+    "continue_on_error": "false",
+    "default_action": "deny",
+    "log_level": "info",
+    "strict_mode": "true",
+    "timeout_processing": "2m",
+    "timeout_validation": "30s"
+  },
+  "version": "1.0.0",
+  "compiler_version": "1.0.0"
+}

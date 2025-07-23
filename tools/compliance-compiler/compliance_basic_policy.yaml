@@ -1,0 +1,70 @@
+# compliance - Compliance policy
+# Generated at: 2025-07-23T17:31:28Z
+
+metadata:
+  name: "compliance"
+  version: "1.0.0"
+  description: "Compliance policy"
+  region: ""
+  asset_type: ""
+  labels:
+    generated: "true"
+    template: "basic"
+
+spec:
+  rules:
+    - id: "amount_validation"
+      name: "Transaction Amount Validation"
+      description: "Validate transaction amounts are within acceptable limits"
+      type: "validation"
+      condition: "amount > 0 && amount <= 1000000"
+      action: "allow"
+      priority: 100
+      enabled: true
+      parameters:
+        - name: "max_amount"
+          type: "float"
+          value: 1000000
+          required: true
+          description: "Maximum allowed transaction amount"
+
+    - id: "sender_validation"
+      name: "Sender Validation"
+      description: "Validate sender identity and status"
+      type: "requirement"
+      condition: "sender != null && sender != ''"
+      action: "require"
+      priority: 200
+      enabled: true
+
+    - id: "recipient_validation"
+      name: "Recipient Validation"
+      description: "Validate recipient identity and status"
+      type: "requirement"
+      condition: "recipient != null && recipient != ''"
+      action: "require"
+      priority: 200
+      enabled: true
+
+
+
+  limits:
+    daily_amount:
+      type: "amount"
+      value: 100000
+      period: "1d"
+      currency: "USD"
+
+    daily_count:
+      type: "count"
+      value: 50
+      period: "1d"
+
+  settings:
+    default_action: "deny"
+    strict_mode: true
+    continue_on_error: false
+    log_level: "info"
+    timeouts:
+      validation: "30s"
+      processing: "2m"

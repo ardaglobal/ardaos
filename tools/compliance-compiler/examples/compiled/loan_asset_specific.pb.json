@@ -1,0 +1,423 @@
+{
+  "metadata": {
+    "original_name": "loan_asset_compliance",
+    "compiler_version": "1.0.0",
+    "compiled_at": "2025-07-23T17:31:55Z",
+    "hash": "9bf3199b4fd92014",
+    "optimizations": [
+      "dead_code_elimination",
+      "constant_folding"
+    ],
+    "metadata": {
+      "asset_type": "loan",
+      "region": "US"
+    }
+  },
+  "compiled_rules": [
+    {
+      "id": "ltv_ratio_check",
+      "type": "limit",
+      "priority": 100,
+      "condition": {
+        "expression": "ltv_ratio \u003c= max_ltv_ratio",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 2,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "allow",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "parameters": {
+        "max_ltv_ratio": 0.85
+      },
+      "optimized": true
+    },
+    {
+      "id": "credit_score_validation",
+      "type": "requirement",
+      "priority": 90,
+      "condition": {
+        "expression": "credit_score \u003e= min_credit_score",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 3,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "require",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "parameters": {
+        "credit_bureau": "FICO",
+        "min_credit_score": 650
+      },
+      "optimized": true
+    },
+    {
+      "id": "debt_to_income_ratio",
+      "type": "limit",
+      "priority": 95,
+      "condition": {
+        "expression": "debt_to_income_ratio \u003c= max_dti_ratio",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 3,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "allow",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "parameters": {
+        "max_dti_ratio": 0.43
+      },
+      "optimized": true
+    },
+    {
+      "id": "income_verification",
+      "type": "requirement",
+      "priority": 85,
+      "condition": {
+        "expression": "income_verified == true \u0026\u0026 income_documentation_complete == true",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 6,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "require",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "optimized": true
+    },
+    {
+      "id": "collateral_valuation",
+      "type": "requirement",
+      "priority": 80,
+      "condition": {
+        "expression": "collateral_appraised == true \u0026\u0026 appraisal_date_valid == true",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 6,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "require",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "parameters": {
+        "appraisal_validity_days": 90
+      },
+      "optimized": true
+    },
+    {
+      "id": "tila_disclosure",
+      "type": "requirement",
+      "priority": 50,
+      "condition": {
+        "expression": "tila_disclosures_provided == true \u0026\u0026 apr_calculated == true",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 5,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "require",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "optimized": true
+    },
+    {
+      "id": "fair_lending_check",
+      "type": "validation",
+      "priority": 30,
+      "condition": {
+        "expression": "protected_class_bias_score \u003c 0.1",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 3,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "allow",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "parameters": {
+        "bias_threshold": 0.1
+      },
+      "optimized": true
+    },
+    {
+      "id": "loan_amount_limits",
+      "type": "limit",
+      "priority": 110,
+      "condition": {
+        "expression": "loan_amount \u003e= min_loan_amount \u0026\u0026 loan_amount \u003c= max_loan_amount",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 6,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "allow",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "parameters": {
+        "max_loan_amount": 500000,
+        "min_loan_amount": 1000
+      },
+      "optimized": true
+    },
+    {
+      "id": "loan_term_validation",
+      "type": "validation",
+      "priority": 105,
+      "condition": {
+        "expression": "loan_term_months \u003e= 12 \u0026\u0026 loan_term_months \u003c= 360",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 4,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "allow",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "optimized": true
+    },
+    {
+      "id": "interest_rate_compliance",
+      "type": "limit",
+      "priority": 75,
+      "condition": {
+        "expression": "interest_rate \u003c= max_interest_rate",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 3,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "allow",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "parameters": {
+        "max_interest_rate": 0.36
+      },
+      "optimized": true
+    }
+  ],
+  "runtime_settings": {
+    "continue_on_error": "false",
+    "default_action": "deny",
+    "log_level": "info",
+    "strict_mode": "true",
+    "timeout_collateral_valuation": "30s",
+    "timeout_compliance_review": "5m",
+    "timeout_credit_check": "15s",
+    "timeout_income_verification": "60s"
+  },
+  "version": "1.5.0",
+  "compiler_version": "1.0.0"
+}

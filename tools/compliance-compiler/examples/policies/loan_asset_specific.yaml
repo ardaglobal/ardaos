@@ -1,0 +1,280 @@
+# Loan Asset-Specific Compliance Policy
+# Compliance policy specifically for loan assets including origination, servicing, and collection
+
+metadata:
+  name: "loan_asset_compliance"
+  version: "1.5.0"
+  description: "Asset-specific compliance policy for loan products"
+  region: "US"
+  asset_type: "loan"
+  created_at: "2024-02-01T12:00:00Z"
+  labels:
+    asset_class: "loan"
+    loan_types: "personal,business,equipment"
+    regulations: "TILA,RESPA,FCRA,UDAAP"
+
+spec:
+  rules:
+    - id: "ltv_ratio_check"
+      name: "Loan-to-Value Ratio Validation"
+      description: "Ensure LTV ratio meets policy requirements"
+      type: "limit"
+      condition: "ltv_ratio <= max_ltv_ratio"
+      action: "allow"
+      priority: 100
+      enabled: true
+      parameters:
+        - name: "max_ltv_ratio"
+          type: "float"
+          value: 0.85
+          required: true
+          description: "Maximum allowed loan-to-value ratio"
+
+    - id: "credit_score_validation"
+      name: "Minimum Credit Score Check"
+      description: "Validate borrower meets minimum credit score requirements"
+      type: "requirement"
+      condition: "credit_score >= min_credit_score"
+      action: "require"
+      priority: 90
+      enabled: true
+      parameters:
+        - name: "min_credit_score"
+          type: "int"
+          value: 650
+          required: true
+        - name: "credit_bureau"
+          type: "string"
+          value: "FICO"
+          required: true
+
+    - id: "debt_to_income_ratio"
+      name: "Debt-to-Income Ratio Check"
+      description: "Validate DTI ratio meets lending standards"
+      type: "limit"
+      condition: "debt_to_income_ratio <= max_dti_ratio"
+      action: "allow"
+      priority: 95
+      enabled: true
+      parameters:
+        - name: "max_dti_ratio"
+          type: "float"
+          value: 0.43
+          required: true
+
+    - id: "income_verification"
+      name: "Income Verification Requirement"
+      description: "Require adequate income verification documentation"
+      type: "requirement"
+      condition: "income_verified == true && income_documentation_complete == true"
+      action: "require"
+      priority: 85
+      enabled: true
+
+    - id: "collateral_valuation"
+      name: "Collateral Valuation Check"
+      description: "Ensure collateral is properly valued and verified"
+      type: "requirement"
+      condition: "collateral_appraised == true && appraisal_date_valid == true"
+      action: "require"
+      priority: 80
+      enabled: true
+      parameters:
+        - name: "appraisal_validity_days"
+          type: "int"
+          value: 90
+          required: true
+
+    - id: "tila_disclosure"
+      name: "TILA Disclosure Compliance"
+      description: "Truth in Lending Act disclosure requirements"
+      type: "requirement"
+      condition: "tila_disclosures_provided == true && apr_calculated == true"
+      action: "require"
+      priority: 50
+      enabled: true
+
+    - id: "fair_lending_check"
+      name: "Fair Lending Compliance"
+      description: "Ensure fair lending practices and no discrimination"
+      type: "validation"
+      condition: "protected_class_bias_score < 0.1"
+      action: "allow"
+      priority: 30
+      enabled: true
+      parameters:
+        - name: "bias_threshold"
+          type: "float"
+          value: 0.1
+          required: true
+
+    - id: "loan_amount_limits"
+      name: "Loan Amount Limits"
+      description: "Validate loan amount within policy limits"
+      type: "limit"
+      condition: "loan_amount >= min_loan_amount && loan_amount <= max_loan_amount"
+      action: "allow"
+      priority: 110
+      enabled: true
+      parameters:
+        - name: "min_loan_amount"
+          type: "float"
+          value: 1000.00
+          required: true
+        - name: "max_loan_amount"
+          type: "float"
+          value: 500000.00
+          required: true
+
+    - id: "loan_term_validation"
+      name: "Loan Term Validation"
+      description: "Ensure loan term is within acceptable range"
+      type: "validation"
+      condition: "loan_term_months >= 12 && loan_term_months <= 360"
+      action: "allow"
+      priority: 105
+      enabled: true
+
+    - id: "interest_rate_compliance"
+      name: "Interest Rate Compliance"
+      description: "Validate interest rates comply with usury laws"
+      type: "limit"
+      condition: "interest_rate <= max_interest_rate"
+      action: "allow"
+      priority: 75
+      enabled: true
+      parameters:
+        - name: "max_interest_rate"
+          type: "float"
+          value: 0.36
+          required: true
+          description: "Maximum allowed interest rate (36% APR)"
+
+  conditions:
+    - id: "qualified_mortgage"
+      name: "Qualified Mortgage Standards"
+      expression: "debt_to_income_ratio <= 0.43 && loan_term_months <= 360 && points_and_fees < 0.03"
+
+    - id: "jumbo_loan"
+      name: "Jumbo Loan Classification"
+      expression: "loan_amount > 766550"  # 2024 conforming loan limit
+      parameters:
+        year: "2024"
+
+    - id: "high_cost_mortgage"
+      name: "High-Cost Mortgage Test"
+      expression: "apr > prime_rate + 6.5 || points_and_fees > 0.05"
+
+  actions:
+    - id: "manual_underwriting"
+      name: "Manual Underwriting Required"
+      type: "escalate"
+      handler: "underwriting_queue"
+      parameters:
+        queue: "manual_review"
+        priority: "high"
+
+    - id: "additional_documentation"
+      name: "Request Additional Documentation"
+      type: "require"
+      handler: "document_request"
+      parameters:
+        documents: "bank_statements,tax_returns,employment_verification"
+
+    - id: "legal_review"
+      name: "Legal Department Review"
+      type: "escalate"
+      handler: "legal_queue"
+      parameters:
+        reason: "regulatory_compliance"
+
+  limits:
+    # Portfolio concentration limits
+    single_borrower_exposure:
+      type: "percentage"
+      value: 0.05
+      description: "Maximum exposure to single borrower (5% of portfolio)"
+
+    # Geographic concentration
+    single_state_concentration:
+      type: "percentage"
+      value: 0.25
+      description: "Maximum concentration in single state"
+
+    # Loan type limits
+    subprime_loan_percentage:
+      type: "percentage"
+      value: 0.15
+      description: "Maximum subprime loans as percentage of portfolio"
+
+    # Origination limits
+    monthly_origination_volume:
+      type: "amount"
+      value: 50000000
+      period: "1m"
+      currency: "USD"
+
+    # Individual loan limits by type
+    personal_loan_max:
+      type: "amount"
+      value: 100000
+      currency: "USD"
+
+    business_loan_max:
+      type: "amount"
+      value: 1000000
+      currency: "USD"
+
+    equipment_loan_max:
+      type: "amount"
+      value: 500000
+      currency: "USD"
+
+  constraints:
+    # Borrower eligibility
+    min_borrower_age: "18"
+    max_borrower_age: "80"
+
+    # Credit requirements
+    min_credit_history_months: "24"
+    max_recent_inquiries: "6"
+
+    # Income requirements
+    min_annual_income: "25000"
+    employment_stability_months: "12"
+
+    # Property requirements (for secured loans)
+    property_types_allowed: "SFR,condo,townhouse"
+    occupancy_types_allowed: "primary,secondary"
+
+    # Loan characteristics
+    amortization_types: "fixed,adjustable"
+    prepayment_penalty_max_years: "3"
+
+    # Documentation standards
+    full_documentation_required: "true"
+    alternative_documentation_allowed: "false"
+
+  settings:
+    default_action: "deny"
+    strict_mode: true
+    continue_on_error: false
+    log_level: "info"
+
+    notification_urls:
+      - "https://lending.bank.example.com/compliance/notifications"
+      - "https://underwriting.bank.example.com/alerts"
+
+    timeouts:
+      credit_check: "15s"
+      income_verification: "60s"
+      collateral_valuation: "30s"
+      compliance_review: "5m"
+
+    # Loan-specific settings
+    loan_settings:
+      auto_approval_enabled: false
+      manual_review_required: true
+      exception_approval_required: true
+      periodic_review_enabled: true
+      portfolio_monitoring_enabled: true

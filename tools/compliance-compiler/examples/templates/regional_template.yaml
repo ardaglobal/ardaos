@@ -1,0 +1,260 @@
+# Regional Compliance Policy Template
+# Template for region-specific compliance requirements
+
+metadata:
+  name: "{{REGION}}_regional_compliance"
+  version: "1.0.0"
+  description: "Regional compliance policy for {{REGION}} jurisdiction"
+  region: "{{REGION}}"  # Replace with: US, EU, APAC, CA, UK, AU, JP
+  asset_type: "{{ASSET_TYPE}}"  # Replace with your asset type
+  labels:
+    jurisdiction: "{{REGION}}"
+    template: "regional"
+    regulations: "{{REGULATIONS}}"  # List applicable regulations
+
+spec:
+  rules:
+    # KYC/Identity Verification (Common to all regions)
+    - id: "kyc_verification"
+      name: "Know Your Customer Verification"
+      description: "Customer identity verification requirements"
+      type: "requirement"
+      condition: "kyc_status == 'verified' && kyc_date_valid == true"
+      action: "require"
+      priority: 10
+      enabled: true
+
+    # AML Screening (Common to all regions)
+    - id: "aml_screening"
+      name: "Anti-Money Laundering Screening"
+      description: "AML risk assessment and screening"
+      type: "validation"
+      condition: "aml_risk_score <= {{AML_THRESHOLD}}"
+      action: "allow"
+      priority: 20
+      enabled: true
+      parameters:
+        - name: "aml_threshold"
+          type: "float"
+          value: 5.0  # Customize based on region
+          required: true
+
+    # === US-SPECIFIC RULES ===
+    # Uncomment and customize for US jurisdiction
+    # - id: "bsa_reporting"
+    #   name: "Bank Secrecy Act Reporting"
+    #   description: "CTR filing for transactions over $10,000"
+    #   type: "requirement"
+    #   condition: "amount >= 10000"
+    #   action: "require"
+    #   priority: 5
+    #   enabled: true
+
+    # - id: "ofac_screening"
+    #   name: "OFAC Sanctions Screening"
+    #   description: "Screen against OFAC sanctions lists"
+    #   type: "restriction"
+    #   condition: "ofac_status == 'clear'"
+    #   action: "allow"
+    #   priority: 3
+    #   enabled: true
+
+    # - id: "patriot_act_cip"
+    #   name: "USA PATRIOT Act CIP"
+    #   description: "Customer Identification Program"
+    #   type: "requirement"
+    #   condition: "cip_verified == true"
+    #   action: "require"
+    #   priority: 8
+    #   enabled: true
+
+    # === EU-SPECIFIC RULES ===
+    # Uncomment and customize for EU jurisdiction
+    # - id: "gdpr_compliance"
+    #   name: "GDPR Data Protection"
+    #   description: "General Data Protection Regulation compliance"
+    #   type: "requirement"
+    #   condition: "gdpr_consent == true && data_retention_compliant == true"
+    #   action: "require"
+    #   priority: 5
+    #   enabled: true
+
+    # - id: "mifid_suitability"
+    #   name: "MiFID II Suitability Assessment"
+    #   description: "Investment suitability under MiFID II"
+    #   type: "requirement"
+    #   condition: "mifid_assessment_complete == true"
+    #   action: "require"
+    #   priority: 15
+    #   enabled: true
+
+    # - id: "aml4_directive"
+    #   name: "4th AML Directive Compliance"
+    #   description: "EU 4th Anti-Money Laundering Directive"
+    #   type: "validation"
+    #   condition: "eu_aml_score <= 3"
+    #   action: "allow"
+    #   priority: 12
+    #   enabled: true
+
+    # === APAC-SPECIFIC RULES ===
+    # Uncomment and customize for APAC jurisdictions
+    # - id: "fatf_compliance"
+    #   name: "FATF Recommendations Compliance"
+    #   description: "Financial Action Task Force recommendations"
+    #   type: "validation"
+    #   condition: "fatf_risk_rating <= 2"
+    #   action: "allow"
+    #   priority: 10
+    #   enabled: true
+
+    # === UK-SPECIFIC RULES ===
+    # Uncomment and customize for UK jurisdiction
+    # - id: "fca_conduct_rules"
+    #   name: "FCA Conduct of Business Rules"
+    #   description: "Financial Conduct Authority rules"
+    #   type: "requirement"
+    #   condition: "fca_compliant == true"
+    #   action: "require"
+    #   priority: 8
+    #   enabled: true
+
+    # - id: "uk_sanctions"
+    #   name: "UK Financial Sanctions"
+    #   description: "HM Treasury financial sanctions"
+    #   type: "restriction"
+    #   condition: "uk_sanctions_clear == true"
+    #   action: "allow"
+    #   priority: 3
+    #   enabled: true
+
+    # High-Risk Geography Check (Universal)
+    - id: "high_risk_geography"
+      name: "High-Risk Geography Check"
+      description: "Enhanced due diligence for high-risk countries"
+      type: "requirement"
+      condition: "country_risk_score <= {{MAX_COUNTRY_RISK}}"
+      action: "require"
+      priority: 25
+      enabled: true
+      parameters:
+        - name: "max_country_risk"
+          type: "int"
+          value: 3  # Customize based on your risk appetite
+          required: true
+
+  conditions:
+    # Regional business hours
+    - id: "regional_business_hours"
+      name: "Regional Business Hours"
+      expression: "hour >= {{BUSINESS_START}} && hour <= {{BUSINESS_END}} && is_business_day == true"
+      parameters:
+        timezone: "{{TIMEZONE}}"  # Set appropriate timezone
+        business_start: 9
+        business_end: 17
+
+  actions:
+    # Regulatory reporting action
+    - id: "regulatory_reporting"
+      name: "Regulatory Reporting"
+      type: "notify"
+      handler: "regulatory_api"
+      parameters:
+        endpoint: "{{REGULATORY_ENDPOINT}}"  # Set your regulatory reporting endpoint
+        format: "xml"
+
+    # Compliance alert
+    - id: "regional_compliance_alert"
+      name: "Regional Compliance Alert"
+      type: "notify"
+      handler: "email"
+      parameters:
+        recipients: "compliance-{{REGION}}@yourcompany.com"
+        priority: "high"
+
+  limits:
+    # Region-specific transaction limits
+    # Customize these based on local regulations
+
+    # US: BSA reporting threshold
+    # reporting_threshold:
+    #   type: "amount"
+    #   value: 10000
+    #   currency: "USD"
+
+    # EU: Payment Services Directive limits
+    # psd2_limit:
+    #   type: "amount"
+    #   value: 15000
+    #   currency: "EUR"
+
+    # UK: Large exposure limits
+    # large_exposure_limit:
+    #   type: "amount"
+    #   value: 25000
+    #   currency: "GBP"
+
+    # General daily limits
+    daily_transaction_limit:
+      type: "amount"
+      value: 100000  # Customize based on region
+      period: "1d"
+      currency: "{{BASE_CURRENCY}}"  # USD, EUR, GBP, etc.
+
+  constraints:
+    # Regional constraints
+    prohibited_countries: "{{PROHIBITED_COUNTRIES}}"  # Comma-separated list
+    high_risk_jurisdictions: "{{HIGH_RISK_JURISDICTIONS}}"
+    required_licenses: "{{REQUIRED_LICENSES}}"
+
+    # Currency restrictions by region
+    allowed_currencies: "{{ALLOWED_CURRENCIES}}"
+
+    # Documentation requirements
+    required_kyc_documents: "{{KYC_DOCUMENTS}}"
+    retention_period_years: "{{RETENTION_YEARS}}"
+
+  settings:
+    default_action: "deny"
+    strict_mode: true
+    continue_on_error: false
+    log_level: "info"
+
+    notification_urls:
+      - "https://compliance.yourcompany.com/{{REGION}}/webhooks"
+
+    timeouts:
+      kyc_verification: "60s"
+      aml_screening: "30s"
+      regulatory_check: "45s"
+      sanctions_screening: "15s"
+
+    # Regional-specific settings
+    regulatory_settings:
+      auto_reporting: true  # Enable automatic regulatory reporting
+      manual_review_threshold: 50000  # Amount requiring manual review
+      enhanced_dd_threshold: 25000   # Enhanced due diligence threshold
+
+# CUSTOMIZATION INSTRUCTIONS:
+#
+# 1. Replace all {{PLACEHOLDER}} values with actual values for your region
+# 2. Uncomment and customize region-specific rule sections
+# 3. Update limits based on local regulatory requirements
+# 4. Set appropriate prohibited/high-risk countries for your region
+# 5. Configure regulatory reporting endpoints
+# 6. Adjust risk thresholds based on your risk appetite
+#
+# Example replacements for US region:
+# {{REGION}} -> US
+# {{REGULATIONS}} -> BSA,AML,OFAC,PATRIOT_ACT
+# {{AML_THRESHOLD}} -> 5
+# {{MAX_COUNTRY_RISK}} -> 3
+# {{BUSINESS_START}} -> 9
+# {{BUSINESS_END}} -> 17
+# {{TIMEZONE}} -> America/New_York
+# {{BASE_CURRENCY}} -> USD
+# {{PROHIBITED_COUNTRIES}} -> CU,IR,KP,SY
+# {{HIGH_RISK_JURISDICTIONS}} -> AF,BY,MM,NI,PK
+# {{ALLOWED_CURRENCIES}} -> USD,EUR,GBP
+# {{KYC_DOCUMENTS}} -> government_id,proof_of_address,tax_id
+# {{RETENTION_YEARS}} -> 7
