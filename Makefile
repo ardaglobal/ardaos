@@ -29,24 +29,29 @@ BUILD_FLAGS := -ldflags '$(ldflags)'
 ###  Test  ###
 ##############
 
+## test-unit: Run unit tests.
 test-unit:
 	@echo Running unit tests...
 	@go test -mod=readonly -v -timeout 30m ./...
 
+## test-race: Run unit tests with race condition reporting.
 test-race:
 	@echo Running unit tests with race condition reporting...
 	@go test -mod=readonly -v -race -timeout 30m ./...
 
+## test-cover: Run unit tests and create coverage report.
 test-cover:
 	@echo Running unit tests and creating coverage report...
 	@go test -mod=readonly -v -timeout 30m -coverprofile=$(COVER_FILE) -covermode=atomic ./...
 	@go tool cover -html=$(COVER_FILE) -o $(COVER_HTML_FILE)
 	@rm $(COVER_FILE)
 
+## bench: Run unit tests with benchmarking.
 bench:
 	@echo Running unit tests with benchmarking...
 	@go test -mod=readonly -v -timeout 30m -bench=. ./...
 
+## test: Run tests.
 test: govet test-unit
 
 .PHONY: test test-unit test-race test-cover bench
@@ -55,8 +60,10 @@ test: govet test-unit
 ###  Install  ###
 #################
 
+## all: Install the application.
 all: install
 
+## install: Install the application.
 install:
 	@echo "--> ensure dependencies have not been modified"
 	@go mod verify
@@ -74,6 +81,7 @@ GOLANG_PROTOBUF_VERSION=1.28.1
 GRPC_GATEWAY_VERSION=1.16.0
 GRPC_GATEWAY_PROTOC_GEN_OPENAPIV2_VERSION=2.20.0
 
+## proto-deps: Install protobuf dependencies.
 proto-deps:
 	@echo "Installing proto deps"
 	@go install github.com/bufbuild/buf/cmd/buf@v1.50.0
@@ -84,6 +92,7 @@ proto-deps:
 	@go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@v$(GRPC_GATEWAY_PROTOC_GEN_OPENAPIV2_VERSION)
 	@go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
+## proto-gen: Generate protobuf files.
 proto-gen:
 	@echo "Generating protobuf files..."
 	@ignite generate proto-go --yes
@@ -97,30 +106,36 @@ proto-gen:
 golangci_lint_cmd=golangci-lint
 golangci_version=v1.62.2
 
+## lint: Run linter.
 lint:
 	@echo "--> Running linter (excluding app directory)"
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golangci_version)
 	@$(golangci_lint_cmd) run ./cmd/tx-sidecar --timeout 15m
 
+## lint-fix: Run linter and fix issues.
 lint-fix:
 	@echo "--> Running linter and fixing issues"
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golangci_version)
 	@$(golangci_lint_cmd) run ./... --fix --timeout 15m
 
+## lint-source: Run linter on source code only.
 lint-source:
 	@echo "--> Running linter on source code only"
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golangci_version)
 	@$(golangci_lint_cmd) run ./cmd/... ./x/... --timeout 15m --skip-files '.*\.pb\.go$$,.*\.pulsar\.go$$'
 
+## fmt: Run gofmt.
 fmt:
 	@echo "--> Running gofmt"
 	@find . -name '*.go' -type f -not -path "*/vendor/*" -not -path "*/.*" | xargs gofmt -s -w
 
+## fmt-imports: Run goimports.
 fmt-imports:
 	@echo "--> Running goimports"
 	@go install golang.org/x/tools/cmd/goimports@latest
 	@find . -name '*.go' -type f -not -path "*/vendor/*" -not -path "*/.*" | xargs goimports -local arda-os -w
 
+## fmt-check: Check gofmt.
 fmt-check:
 	@echo "--> Checking gofmt"
 	@files=$$(find . -name '*.go' -type f -not -path "*/vendor/*" -not -path "*/.*" | xargs gofmt -s -l); \
@@ -136,14 +151,17 @@ fmt-check:
 ### Development ###
 ###################
 
+## setup-dev: Setup development environment.
 setup-dev:
 	@echo "--> Setting up development environment"
 	@./scripts/setup-dev.sh
 
+## govet: Run go vet.
 govet:
 	@echo Running go vet...
 	@go vet ./app/... ./cmd/... ./x/...
 
+## govulncheck: Run govulncheck.
 govulncheck:
 	@echo Running govulncheck...
 	@go install golang.org/x/vuln/cmd/govulncheck@latest
