@@ -11,6 +11,12 @@ ifeq (,$(VERSION))
   endif
 endif
 
+## help: Get more info on make commands.
+help: Makefile
+	@echo " Choose a command run in "$(APPNAME)":"
+	@sed -n 's/^##//p' $< | column -t -s ':' |  sed -e 's/^/ /'
+.PHONY: help
+
 # Update the ldflags with the app, client & server names
 ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=$(APPNAME) \
 	-X github.com/cosmos/cosmos-sdk/version.AppName=$(APPNAME)d \
