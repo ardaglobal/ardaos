@@ -94,7 +94,7 @@ golangci_version=v1.62.2
 lint:
 	@echo "--> Running linter (excluding app directory)"
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golangci_version)
-	@$(golangci_lint_cmd) run ./cmd/tx-sidecar --timeout 15m
+	@$(golangci_lint_cmd) run ./cmd/tx-sidecar/... ./tools/... --timeout 15m
 
 lint-fix:
 	@echo "--> Running linter and fixing issues"
