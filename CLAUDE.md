@@ -401,38 +401,193 @@ The compliance compiler includes a comprehensive library of ready-to-use policy 
 - **Regulatory Accuracy**: Templates validated by compliance experts
 - **Version Control**: Semantic versioning with backward compatibility
 
-### Template Structure
-Each policy template follows a standardized YAML structure:
+### Current Policy Structure
+Each compliance policy follows the JSON Schema validated YAML structure:
 
 ```yaml
-# Template metadata
-template:
-  name: "Template Name"
-  version: "1.0.0"
-  jurisdiction: "Applicable Jurisdiction"
-  asset_class: "Asset Class"
-  description: "Template description"
-  regulatory_framework: ["List of regulations"]
+# Required top-level fields
+policy_id: "unique_policy_identifier"
+version: "1.0.0"  # Semantic version (major.minor.patch)
+jurisdiction: "US"  # US, EU, CA, UK, AU, JP, SG, US-CA, US-NY, US-TX, US-FL, GLOBAL
+asset_class: "credit-card"  # credit-card, installment-loan, mca, equipment-lease, working-capital
 
-# Configurable parameters
-parameters:
-  parameter_name:
-    type: "data_type"
-    default: default_value
-    description: "Parameter description"
+# Required rules array
+rules:
+  - rule_id: "rule_identifier"
+    name: "Human Readable Rule Name"
+    description: "Detailed description of the rule purpose"
+    predicate:
+      # Comparison predicate example
+      field: "amount"
+      op: "gt"  # eq, ne, gt, gte, lt, lte, contains, starts_with, ends_with
+      value: 1000
+    required: true  # true for required rules, false for advisory
+    priority: 1     # 1=highest priority, 100=lowest
 
-# Policy implementation
-policy:
-  rules:
-    - id: "rule_id"
-      name: "Rule Name"
-      conditions: ["condition1", "condition2"]
-      actions: ["action1", "action2"]
+  - rule_id: "complex_rule"
+    name: "Complex Logic Rule"
+    predicate:
+      # Logical predicate with AND/OR operators
+      and:
+        - field: "borrower.credit_score"
+          op: "gte"
+          value: 650
+        - or:
+            - field: "loan.amount"
+              op: "lte"
+              value: 50000
+            - field: "borrower.income"
+              op: "gte"
+              value: 75000
+    required: true
+    priority: 2
 
-  attestations:
-    - id: "attestation_id"
-      required: true
-      fields: ["field1", "field2"]
+# Optional metadata section (when supported)
+metadata:
+  title: "Policy Title"
+  description: "Detailed policy description"
+  author: "Policy Author"
+  organization: "Organization Name"
+  tags: ["tag1", "tag2"]
+
+# Optional attestations (when needed)
+attestations:
+  - attestation_id: "identity_check"
+    name: "Identity Verification"
+    type: "identity_verification"  # identity_verification, credit_check, bank_verification, etc.
+    required: true
+    provider:
+      provider_id: "provider_name"
+      name: "Provider Display Name"
+      endpoint: "https://api.provider.com/verify"
+
+# Optional enforcement configuration
+enforcement:
+  level: "blocking"  # advisory, warning, blocking, quarantine, reject
+  actions: ["log", "alert", "block_transaction"]
+  grace_period_seconds: 300
+```
+
+#### Predicate Types
+
+The policy engine supports several predicate types:
+
+1. **Comparison Predicates**: Direct field comparisons
+```yaml
+predicate:
+  field: "borrower.debt_to_income_ratio"
+  op: "lte"
+  value: 0.43
+```
+
+2. **Logical Predicates**: Combine multiple conditions with AND/OR/NOT
+```yaml
+predicate:
+  and:
+    - field: "loan.amount"
+      op: "gte"
+      value: 1000
+    - field: "loan.amount"
+      op: "lte"
+      value: 50000
+```
+
+3. **Range Predicates**: Check if values fall within ranges
+```yaml
+predicate:
+  range:
+    field: "borrower.credit_score"
+    min: 650
+    max: 850
+    min_inclusive: true
+    max_inclusive: true
+```
+
+4. **Set Predicates**: Check membership in value sets
+```yaml
+predicate:
+  field: "loan.purpose"
+  in: ["business_expansion", "equipment_purchase", "working_capital"]
+```
+
+5. **Existence Predicates**: Check if fields exist
+```yaml
+predicate:
+  exists: "borrower.tax_id"
+  should_exist: true
+```
+
+6. **Time Predicates**: Time-based comparisons
+```yaml
+predicate:
+  time:
+    field: "application.submitted_at"
+    op: "within"
+    duration: "P30D"  # ISO 8601 duration format
+```
+
+7. **Expression Predicates**: Custom expressions using CEL
+```yaml
+predicate:
+  expression: "borrower.monthly_income * 12 >= loan.amount * 0.25"
+  language: "cel"  # cel, jsonpath, jmespath
+```
+
+8. **Regex Predicates**: Pattern matching
+```yaml
+predicate:
+  field: "borrower.ssn"
+  regex: "^\\d{3}-\\d{2}-\\d{4}$"
+  flags: ["i"]  # case insensitive
+```
+
+#### Common Compilation Issues and Solutions
+
+When compiling policies, you may encounter these validation errors:
+
+1. **Missing Required Fields**
+```
+❌ Error: (root): policy_id is required
+❌ Error: (root): version is required
+❌ Error: (root): jurisdiction is required
+❌ Error: (root): asset_class is required
+❌ Error: (root): rules is required
+```
+**Solution**: Ensure all required top-level fields are present in the YAML file.
+
+2. **Invalid Field Names in Old Format**
+```
+❌ Error: (root): Additional property spec is not allowed
+❌ Error: metadata: Additional property labels is not allowed
+```
+**Solution**: Remove the old `spec:` wrapper and use the flat structure with direct top-level fields.
+
+3. **Metadata Conversion Not Implemented**
+```
+❌ Error: metadata conversion not yet implemented
+```
+**Solution**: Remove or comment out the `metadata:` section until it's fully implemented.
+
+4. **Invalid Jurisdiction or Asset Class**
+```
+❌ Error: jurisdiction must be one of: US, EU, CA, UK, AU, JP, SG, US-CA, US-NY, US-TX, US-FL, GLOBAL
+```
+**Solution**: Use only the supported jurisdiction and asset class values from the schema.
+
+#### Compilation Commands
+
+```bash
+# Basic compilation to binary protobuf
+./bin/compliance-compiler compile policy.yaml --format binary -o policy.pb
+
+# Compile to JSON for inspection
+./bin/compliance-compiler compile policy.yaml --format json -o policy.json
+
+# Validation only (no compilation)
+./bin/compliance-compiler validate policy.yaml
+
+# Compile with jurisdiction and asset class validation
+./bin/compliance-compiler compile policy.yaml --jurisdiction US --asset-class credit-card
 ```
 
 ### Test Data Library

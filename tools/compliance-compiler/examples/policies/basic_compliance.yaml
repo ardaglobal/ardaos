@@ -1,111 +1,50 @@
 # Basic Compliance Policy Example
 # This example demonstrates a simple compliance policy for transaction validation
 
-metadata:
-  name: "basic_compliance"
-  version: "1.0.0"
-  description: "Basic compliance policy for transaction validation"
-  region: "US"
-  asset_type: "loan"
-  labels:
-    environment: "example"
-    category: "basic"
+policy_id: "basic_compliance"
+version: "1.0.0"
+jurisdiction: "US"
+asset_class: "credit-card"
 
-spec:
-  rules:
-    - id: "amount_validation"
-      name: "Transaction Amount Validation"
-      description: "Ensure transaction amounts are within acceptable limits"
-      type: "validation"
-      condition: "amount > 0 && amount <= 50000"
-      action: "allow"
-      priority: 100
-      enabled: true
-      parameters:
-        - name: "min_amount"
-          type: "float"
-          value: 0.01
-          required: true
-          description: "Minimum allowed transaction amount"
-        - name: "max_amount"
-          type: "float"
-          value: 50000.00
-          required: true
-          description: "Maximum allowed transaction amount"
+rules:
+  - rule_id: "amount_validation"
+    name: "Transaction Amount Validation"
+    description: "Ensure transaction amounts are within acceptable limits"
+    predicate:
+      and:
+        - field: "amount"
+          op: "gt"
+          value: 0
+        - field: "amount"
+          op: "lte"
+          value: 50000
+    required: true
+    priority: 1
 
-    - id: "identity_verification"
-      name: "Identity Verification"
-      description: "Verify sender and recipient identities"
-      type: "requirement"
-      condition: "sender_verified == true && recipient_verified == true"
-      action: "require"
-      priority: 50
-      enabled: true
+  - rule_id: "identity_verification"
+    name: "Identity Verification"
+    description: "Verify sender and recipient identities"
+    predicate:
+      and:
+        - field: "sender_verified"
+          op: "eq"
+          value: true
+        - field: "recipient_verified"
+          op: "eq"
+          value: true
+    required: true
+    priority: 2
 
-    - id: "suspicious_activity"
-      name: "Suspicious Activity Detection"
-      description: "Flag potentially suspicious transactions"
-      type: "notification"
-      condition: "amount > 10000 || velocity_score > 0.8"
-      action: "notify"
-      priority: 200
-      enabled: true
-      parameters:
-        - name: "high_amount_threshold"
-          type: "float"
-          value: 10000.00
-          required: true
-        - name: "velocity_threshold"
-          type: "float"
+  - rule_id: "suspicious_activity"
+    name: "Suspicious Activity Detection"
+    description: "Flag potentially suspicious transactions"
+    predicate:
+      or:
+        - field: "amount"
+          op: "gt"
+          value: 10000
+        - field: "velocity_score"
+          op: "gt"
           value: 0.8
-          required: true
-
-  conditions:
-    - id: "business_hours"
-      name: "Business Hours Check"
-      expression: "hour >= 9 && hour <= 17 && day_of_week >= 1 && day_of_week <= 5"
-      parameters:
-        timezone: "America/New_York"
-
-  actions:
-    - id: "compliance_notification"
-      name: "Compliance Team Notification"
-      type: "notify"
-      handler: "email"
-      parameters:
-        recipients: "compliance@example.com"
-        subject: "Compliance Alert"
-
-  limits:
-    daily_amount:
-      type: "amount"
-      value: 100000
-      period: "1d"
-      currency: "USD"
-
-    daily_count:
-      type: "count"
-      value: 20
-      period: "1d"
-
-    monthly_amount:
-      type: "amount"
-      value: 500000
-      period: "30d"
-      currency: "USD"
-
-  constraints:
-    min_transaction_amount: "1.00"
-    max_transaction_amount: "50000.00"
-    allowed_currencies: "USD,EUR,GBP"
-
-  settings:
-    default_action: "deny"
-    strict_mode: true
-    continue_on_error: false
-    log_level: "info"
-    notification_urls:
-      - "https://compliance.example.com/webhooks/notifications"
-    timeouts:
-      validation: "30s"
-      processing: "2m"
+    required: false
+    priority: 3
