@@ -32,11 +32,11 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
 
-	"arda-os/app"
+	"github.com/ardaglobal/ardaos/app"
 )
 
 const (
-	SimAppChainID = "arda-os-simapp"
+	SimAppChainID = "ardaos-simapp"
 )
 
 var FlagEnableStreamingValue bool
