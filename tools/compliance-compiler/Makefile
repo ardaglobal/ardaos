@@ -38,30 +38,25 @@ DOCKER_TAG := $(VERSION)
 # Platform targets for cross-compilation
 PLATFORMS := linux/amd64 darwin/amd64 darwin/arm64 windows/amd64
 
-help: ## Display this help message
-	@echo "ArdaOS Compliance Compiler Build System"
-	@echo "======================================="
-	@echo ""
-	@echo "Available targets:"
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""
-	@echo "Build flags:"
-	@echo "  VERSION=$(VERSION)"
-	@echo "  BUILD_TIME=$(BUILD_TIME)"
-	@echo "  GIT_COMMIT=$(GIT_COMMIT)"
-	@echo "  GIT_BRANCH=$(GIT_BRANCH)"
+## help: Get more info on make commands.
+help: Makefile
+	@echo " Choose a command run in "$(APPNAME)":"
+	@sed -n 's/^##//p' $< | column -t -s ':' |  sed -e 's/^/ /'
+.PHONY: help
 
 # =============================================================================
 # Build Targets
 # =============================================================================
 
+## build: Build the compliance compiler binary.
 build: deps ## Build the compliance compiler binary
 	@echo "Building compliance compiler..."
 	@mkdir -p $(BUILD_DIR)
 	$(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PACKAGE)
 	@echo "Build complete: $(BUILD_DIR)/$(BINARY_NAME)"
 
-build-all: deps ## Build cross-platform binaries for all supported platforms
+## build-all: Build cross-platform binaries for all supported platforms.
+build-all: deps
 	@echo "Building cross-platform binaries..."
 	@mkdir -p $(BUILD_DIR)
 	@for platform in $(PLATFORMS); do \
@@ -75,7 +70,8 @@ build-all: deps ## Build cross-platform binaries for all supported platforms
 	@echo "Cross-platform build complete"
 	@ls -la $(BUILD_DIR)/
 
-build-release: clean deps ## Build optimized release binaries
+## build-release: Build optimized release binaries.
+build-release: clean deps
 	@echo "Building optimized release binaries..."
 	@mkdir -p $(BUILD_DIR)
 	@for platform in $(PLATFORMS); do \
@@ -91,7 +87,8 @@ build-release: clean deps ## Build optimized release binaries
 	done
 	@echo "Release build complete"
 
-install: build ## Install the binary to $GOPATH/bin
+## install: Install the binary to $GOPATH/bin.
+install: build
 	@echo "Installing compliance compiler to $(GOPATH)/bin..."
 	$(GO) install $(LDFLAGS) $(MAIN_PACKAGE)
 	@echo "Installation complete"
@@ -100,7 +97,8 @@ install: build ## Install the binary to $GOPATH/bin
 # Testing Targets
 # =============================================================================
 
-test: deps ## Run unit tests with coverage
+## test: Run unit tests with coverage.
+test: deps
 	@echo "Running unit tests..."
 	$(GOTEST) -v -race -coverprofile=$(COVERAGE_FILE) ./...
 	@if [ -f $(COVERAGE_FILE) ]; then \
@@ -109,28 +107,33 @@ test: deps ## Run unit tests with coverage
 		$(GO) tool cover -func=$(COVERAGE_FILE) | tail -1; \
 	fi
 
-test-unit: deps ## Run unit tests only (no coverage)
+## test-unit: Run unit tests only (no coverage).
+test-unit: deps
 	@echo "Running unit tests..."
 	$(GOTEST) -v ./...
 
-test-race: deps ## Run tests with race condition detection
+## test-race: Run tests with race condition detection.
+test-race: deps
 	@echo "Running tests with race detection..."
 	$(GOTEST) -race ./...
 
-test-coverage: deps ## Generate detailed coverage report
+## test-coverage: Generate detailed coverage report.
+test-coverage: deps
 	@echo "Generating detailed coverage report..."
 	$(GOTEST) -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./...
 	$(GO) tool cover -html=$(COVERAGE_FILE) -o $(COVERAGE_HTML)
 	$(GO) tool cover -func=$(COVERAGE_FILE)
 	@echo "Coverage report: $(COVERAGE_HTML)"
 
-bench: deps ## Run performance benchmarks
+## bench: Run performance benchmarks.
+bench: deps
 	@echo "Running performance benchmarks..."
 	$(GOTEST) -bench=. -benchmem -run=^$$ ./internal/compiler
 	$(GOTEST) -bench=. -benchmem -run=^$$ ./internal/parser
 	@echo "Benchmark complete"
 
-integration-test: build ## Run integration tests
+## integration-test: Run integration tests.
+integration-test: build
 	@echo "Running integration tests..."
 	@if [ -f ./scripts/run-integration-tests.sh ]; then \
 		chmod +x ./scripts/run-integration-tests.sh; \
@@ -147,7 +150,8 @@ integration-test: build ## Run integration tests
 		./scripts/run-integration-tests.sh; \
 	fi
 
-validate-examples: build ## Validate all example policies
+## validate-examples: Validate all example policies.
+validate-examples: build
 	@echo "Validating example policies..."
 	@if [ -d ./examples ]; then \
 		./$(BUILD_DIR)/$(BINARY_NAME) validate ./examples/ --recursive --format=detailed; \
@@ -159,12 +163,14 @@ validate-examples: build ## Validate all example policies
 # Code Quality Targets
 # =============================================================================
 
-fmt: ## Format Go source code
+## fmt: Format Go source code.
+fmt:
 	@echo "Formatting Go code..."
 	$(GOFMT) -s -w .
 	@echo "Code formatting complete"
 
-fmt-check: ## Check if code is properly formatted
+## fmt-check: Check if code is properly formatted.
+fmt-check:
 	@echo "Checking code formatting..."
 	@if [ -n "$$($(GOFMT) -l .)" ]; then \
 		echo "Code is not properly formatted:"; \
@@ -173,12 +179,14 @@ fmt-check: ## Check if code is properly formatted
 	fi
 	@echo "Code formatting is correct"
 
-vet: ## Run go vet
+## vet: Run go vet.
+vet:
 	@echo "Running go vet..."
 	$(GOVET) ./...
 	@echo "Vet analysis complete"
 
-lint: deps ## Run golangci-lint
+## lint: Run golangci-lint.
+lint: deps
 	@echo "Running linter..."
 	@if command -v $(GOLINT) >/dev/null 2>&1; then \
 		$(GOLINT) run ./...; \
@@ -189,7 +197,8 @@ lint: deps ## Run golangci-lint
 	fi
 	@echo "Linting complete"
 
-lint-fix: deps ## Run golangci-lint with auto-fix
+## lint-fix: Run golangci-lint with auto-fix.
+lint-fix: deps
 	@echo "Running linter with auto-fix..."
 	@if command -v $(GOLINT) >/dev/null 2>&1; then \
 		$(GOLINT) run --fix ./...; \
@@ -200,13 +209,15 @@ lint-fix: deps ## Run golangci-lint with auto-fix
 	fi
 	@echo "Linting with fixes complete"
 
-check: fmt-check vet lint test ## Run all code quality checks
+## check: Run all code quality checks.
+check: fmt-check vet lint test
 
 # =============================================================================
 # Protocol Buffer Targets
 # =============================================================================
 
-proto: proto-deps ## Generate Go code from protocol buffer definitions
+## proto: Generate Go code from protocol buffer definitions.
+proto: proto-deps
 	@echo "Generating protobuf code..."
 	@if [ -d ../../proto ]; then \
 		cd ../../proto && $(BUF) generate; \
@@ -215,7 +226,8 @@ proto: proto-deps ## Generate Go code from protocol buffer definitions
 	fi
 	@echo "Protobuf generation complete"
 
-proto-deps: ## Install protobuf dependencies
+## proto-deps: Install protobuf dependencies.
+proto-deps:
 	@echo "Installing protobuf dependencies..."
 	@if ! command -v $(BUF) >/dev/null 2>&1; then \
 		echo "Installing buf..."; \
@@ -227,7 +239,8 @@ proto-deps: ## Install protobuf dependencies
 	fi
 	@echo "Protobuf dependencies installed"
 
-proto-lint: proto-deps ## Lint protocol buffer files
+## proto-lint: Lint protocol buffer files.
+proto-lint: proto-deps
 	@echo "Linting protobuf files..."
 	@if [ -d ../../proto ]; then \
 		cd ../../proto && $(BUF) lint; \
@@ -239,19 +252,22 @@ proto-lint: proto-deps ## Lint protocol buffer files
 # Dependency Management
 # =============================================================================
 
-deps: ## Download and verify dependencies
+## deps: Download and verify dependencies.
+deps:
 	@echo "Downloading dependencies..."
 	$(GO) mod download
 	$(GO) mod verify
 	@echo "Dependencies ready"
 
-deps-update: ## Update all dependencies
+## deps-update: Update all dependencies.
+deps-update:
 	@echo "Updating dependencies..."
 	$(GO) get -u ./...
 	$(GO) mod tidy
 	@echo "Dependencies updated"
 
-deps-clean: ## Clean module cache
+## deps-clean: Clean module cache.
+deps-clean:
 	@echo "Cleaning module cache..."
 	$(GO) clean -modcache
 	@echo "Module cache cleaned"
@@ -260,19 +276,22 @@ deps-clean: ## Clean module cache
 # Docker Targets
 # =============================================================================
 
-docker: ## Build Docker image
+## docker: Build Docker image.
+docker:
 	@echo "Building Docker image..."
 	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
 	docker tag $(DOCKER_IMAGE):$(DOCKER_TAG) $(DOCKER_IMAGE):latest
 	@echo "Docker image built: $(DOCKER_IMAGE):$(DOCKER_TAG)"
 
-docker-push: docker ## Build and push Docker image
+## docker-push: Build and push Docker image.
+docker-push: docker
 	@echo "Pushing Docker image..."
 	docker push $(DOCKER_IMAGE):$(DOCKER_TAG)
 	docker push $(DOCKER_IMAGE):latest
 	@echo "Docker image pushed"
 
-docker-run: docker ## Run Docker container
+## docker-run: Run Docker container.
+docker-run: docker
 	@echo "Running Docker container..."
 	docker run --rm -v $(PWD)/examples:/examples $(DOCKER_IMAGE):$(DOCKER_TAG) validate /examples
 
@@ -280,7 +299,8 @@ docker-run: docker ## Run Docker container
 # Release Targets
 # =============================================================================
 
-release: clean build-release ## Create release artifacts
+## release: Create release artifacts.
+release: clean build-release
 	@echo "Creating release artifacts..."
 	@mkdir -p dist
 	@for file in $(BUILD_DIR)/$(BINARY_NAME)-*; do \
@@ -297,7 +317,8 @@ release: clean build-release ## Create release artifacts
 	@echo "Release artifacts created in dist/"
 	@ls -la dist/
 
-checksums: release ## Generate checksums for release artifacts
+## checksums: Generate checksums for release artifacts.
+checksums: release
 	@echo "Generating checksums..."
 	@cd dist && sha256sum * > SHA256SUMS
 	@echo "Checksums generated: dist/SHA256SUMS"
@@ -306,20 +327,23 @@ checksums: release ## Generate checksums for release artifacts
 # Utility Targets
 # =============================================================================
 
-clean: ## Clean build artifacts
+## clean: Clean build artifacts.
+clean:
 	@echo "Cleaning build artifacts..."
 	@rm -rf $(BUILD_DIR)
 	@rm -rf dist
 	@rm -f $(COVERAGE_FILE) $(COVERAGE_HTML)
 	@echo "Clean complete"
 
-version: ## Display version information
+## version: Display version information.
+version:
 	@echo "Version: $(VERSION)"
 	@echo "Build Time: $(BUILD_TIME)"
 	@echo "Git Commit: $(GIT_COMMIT)"
 	@echo "Git Branch: $(GIT_BRANCH)"
 
-env: ## Display build environment
+## env: Display build environment.
+env:
 	@echo "Build Environment:"
 	@echo "=================="
 	@echo "GO: $(shell $(GO) version)"
@@ -329,7 +353,8 @@ env: ## Display build environment
 	@echo "BUILD_DIR: $(BUILD_DIR)"
 	@echo "BINARY_NAME: $(BINARY_NAME)"
 
-update-schemas: ## Update policy schemas from regulatory sources
+## update-schemas: Update policy schemas from regulatory sources.
+update-schemas:
 	@echo "Updating policy schemas..."
 	@if [ -f ./scripts/update-schemas.sh ]; then \
 		chmod +x ./scripts/update-schemas.sh; \
@@ -347,7 +372,8 @@ update-schemas: ## Update policy schemas from regulatory sources
 # Development Targets
 # =============================================================================
 
-dev-setup: deps proto-deps ## Set up development environment
+## dev-setup: Set up development environment.
+dev-setup: deps proto-deps
 	@echo "Setting up development environment..."
 	@if ! command -v $(GOLINT) >/dev/null 2>&1; then \
 		echo "Installing golangci-lint..."; \
@@ -355,7 +381,8 @@ dev-setup: deps proto-deps ## Set up development environment
 	fi
 	@echo "Development environment ready"
 
-dev-watch: ## Watch for changes and rebuild (requires fswatch)
+## dev-watch: Watch for changes and rebuild (requires fswatch).
+dev-watch:
 	@echo "Watching for changes..."
 	@if command -v fswatch >/dev/null 2>&1; then \
 		fswatch -o . | while read f; do make build; done; \
@@ -367,19 +394,22 @@ dev-watch: ## Watch for changes and rebuild (requires fswatch)
 # CI/CD Integration
 # =============================================================================
 
-ci-test: deps ## Run tests suitable for CI environment
+## ci-test: Run tests suitable for CI environment.
+ci-test: deps
 	@echo "Running CI tests..."
 	$(GOTEST) -v -race -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./...
 	@if [ -f $(COVERAGE_FILE) ]; then \
 		$(GO) tool cover -func=$(COVERAGE_FILE); \
 	fi
 
-ci-build: clean deps ## Build for CI environment
+## ci-build: Build for CI environment.
+ci-build: clean deps
 	@echo "Running CI build..."
 	@make build-release
 	@make checksums
 
-ci-security: deps ## Run security checks for CI
+## ci-security: Run security checks for CI.
+ci-security: deps
 	@echo "Running security checks..."
 	@if command -v govulncheck >/dev/null 2>&1; then \
 		govulncheck ./...; \
@@ -393,19 +423,22 @@ ci-security: deps ## Run security checks for CI
 # Performance and Monitoring
 # =============================================================================
 
-profile-cpu: build ## Run CPU profiling
+## profile-cpu: Run CPU profiling.
+profile-cpu: build
 	@echo "Running CPU profile..."
 	@mkdir -p profiles
 	./$(BUILD_DIR)/$(BINARY_NAME) compile ./examples/ --cpuprofile=profiles/cpu.prof
 	$(GO) tool pprof profiles/cpu.prof
 
-profile-mem: build ## Run memory profiling
+## profile-mem: Run memory profiling.
+profile-mem: build
 	@echo "Running memory profile..."
 	@mkdir -p profiles
 	./$(BUILD_DIR)/$(BINARY_NAME) compile ./examples/ --memprofile=profiles/mem.prof
 	$(GO) tool pprof profiles/mem.prof
 
-benchmark-regression: ## Run benchmark regression tests
+## benchmark-regression: Run benchmark regression tests.
+benchmark-regression:
 	@echo "Running benchmark regression tests..."
 	@if [ -f ./scripts/benchmark.sh ]; then \
 		chmod +x ./scripts/benchmark.sh; \
