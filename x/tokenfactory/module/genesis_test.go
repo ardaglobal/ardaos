@@ -3,11 +3,12 @@ package tokenfactory_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	keepertest "github.com/ardaglobal/ardaos/testutil/keeper"
 	"github.com/ardaglobal/ardaos/testutil/nullify"
 	tokenfactory "github.com/ardaglobal/ardaos/x/tokenfactory/module"
 	"github.com/ardaglobal/ardaos/x/tokenfactory/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGenesis(t *testing.T) {

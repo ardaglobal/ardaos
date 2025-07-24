@@ -223,5 +223,4 @@ func (app *App) prepForZeroHeightGenesis(ctx sdk.Context, jailAllowedAddrs []str
 	if err != nil {
 		log.Fatal(err)
 	}
-
 }

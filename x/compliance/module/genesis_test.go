@@ -3,11 +3,12 @@ package compliance_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	keepertest "github.com/ardaglobal/ardaos/testutil/keeper"
 	"github.com/ardaglobal/ardaos/testutil/nullify"
 	compliance "github.com/ardaglobal/ardaos/x/compliance/module"
 	"github.com/ardaglobal/ardaos/x/compliance/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGenesis(t *testing.T) {

@@ -3,8 +3,9 @@ package types_test
 import (
 	"testing"
 
-	"github.com/ardaglobal/ardaos/x/tokenfactory/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ardaglobal/ardaos/x/tokenfactory/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {

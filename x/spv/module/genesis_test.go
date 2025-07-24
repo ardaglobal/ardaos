@@ -3,11 +3,12 @@ package spv_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	keepertest "github.com/ardaglobal/ardaos/testutil/keeper"
 	"github.com/ardaglobal/ardaos/testutil/nullify"
 	spv "github.com/ardaglobal/ardaos/x/spv/module"
 	"github.com/ardaglobal/ardaos/x/spv/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGenesis(t *testing.T) {

@@ -3,9 +3,10 @@ package types
 import (
 	"context"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	compliancetypes "github.com/ardaglobal/ardaos/x/compliance/types"
 	vaulttypes "github.com/ardaglobal/ardaos/x/vault/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type VaultKeeper interface {

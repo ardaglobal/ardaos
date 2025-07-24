@@ -3,8 +3,9 @@ package types_test
 import (
 	"testing"
 
-	"github.com/ardaglobal/ardaos/x/spv/types"
 	"github.com/stretchr/testify/require"
+
+	"github.com/ardaglobal/ardaos/x/spv/types"
 )
 
 func TestGenesisState_Validate(t *testing.T) {

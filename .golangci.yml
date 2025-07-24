@@ -63,9 +63,6 @@ linters-settings:
   misspell:
     locale: US
 
-  lll:
-    line-length: 1400 # TODO: disable this linter, just use code editor wrapping
-
   unparam:
     check-exported: false
 
@@ -92,7 +89,6 @@ linters:
     - gosimple
     - govet
     - ineffassign
-    - lll
     - misspell
     - nakedret
     - prealloc
@@ -109,6 +105,7 @@ linters:
     - gocyclo
     - godot
     - godox
+    - lll
     - nestif
     - nolintlint
     - revive
@@ -117,7 +114,6 @@ linters:
 
 issues:
   exclude-dirs:
-    - app
     - api
     - proto
     - docs

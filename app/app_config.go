@@ -12,6 +12,15 @@ import (
 	txconfigv1 "cosmossdk.io/api/cosmos/tx/config/v1"
 	"cosmossdk.io/core/appconfig"
 	upgradetypes "cosmossdk.io/x/upgrade/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	consensustypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+
 	compliancemodulev1 "github.com/ardaglobal/ardaos/api/ardaos/compliance/module"
 	spvmodulev1 "github.com/ardaglobal/ardaos/api/ardaos/spv/module"
 	tokenfactorymodulev1 "github.com/ardaglobal/ardaos/api/ardaos/tokenfactory/module"
@@ -24,14 +33,6 @@ import (
 	tokenfactorymoduletypes "github.com/ardaglobal/ardaos/x/tokenfactory/types"
 	_ "github.com/ardaglobal/ardaos/x/vault/module" // import for side-effects
 	vaultmoduletypes "github.com/ardaglobal/ardaos/x/vault/types"
-	"github.com/cosmos/cosmos-sdk/runtime"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-	consensustypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
-	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
-	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 )
 
