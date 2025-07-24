@@ -1,14 +1,10 @@
-// Interactive policy debugging tool for the compliance compiler.
-// This tool provides step-by-step debugging capabilities for policy evaluation
-// and rule execution with detailed introspection.
-package main
+package cmd
 
 import (
 	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"sort"
 	"strconv"
@@ -18,6 +14,61 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
+
+func NewDebugCmd() *cobra.Command {
+	var (
+		policyFile    string
+		testDataFile  string
+		interactive   bool
+		stepMode      bool
+		breakPoints   []string
+		watchVars     []string
+		outputFile    string
+		transactionID string
+	)
+
+	cmd := &cobra.Command{
+		Use:   "debug [policy-file] [options]",
+		Short: "Interactive policy debugging tool",
+		Long: `Interactive debugging tool for compliance policies.
+
+The debugger provides:
+- Step-by-step policy execution
+- Breakpoint support
+- Variable inspection
+- Execution tracing
+- Interactive debugging session
+- Detailed error analysis
+
+Examples:
+  # Debug a policy with test data
+  compliance-compiler debug policy.yaml --test-data data.json
+
+  # Start interactive debugging session
+  compliance-compiler debug policy.yaml --test-data data.json --interactive
+
+  # Debug with breakpoints
+  compliance-compiler debug policy.yaml --test-data data.json --break rule_id_1,rule_id_2
+
+  # Save debug session
+  compliance-compiler debug policy.yaml --test-data data.json --output debug-session.json`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			policyFile = args[0]
+			return runDebugger(policyFile, testDataFile, interactive, stepMode, breakPoints, watchVars, outputFile, transactionID)
+		},
+	}
+
+	cmd.Flags().StringVarP(&testDataFile, "test-data", "t", "", "Test data file (JSON)")
+	cmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Start interactive debugging session")
+	cmd.Flags().BoolVarP(&stepMode, "step", "s", false, "Enable step-by-step execution")
+	cmd.Flags().StringSliceVar(&breakPoints, "break", []string{}, "Set breakpoints on rule IDs")
+	cmd.Flags().StringSliceVar(&watchVars, "watch", []string{}, "Variables to watch")
+	cmd.Flags().StringVarP(&outputFile, "output", "o", "", "Save debug session to file")
+	cmd.Flags().StringVar(&transactionID, "transaction", "", "Specific transaction ID to debug")
+
+	return cmd
+}
 
 // PolicyDebugger provides interactive debugging capabilities
 type PolicyDebugger struct {
@@ -190,63 +241,7 @@ type DebugSession struct {
 	ExecutionTrace []ExecutionStep        `json:"execution_trace"`
 }
 
-var (
-	debuggerCmd = &cobra.Command{
-		Use:   "policy-debugger",
-		Short: "Interactive policy debugging tool",
-		Long: `Interactive debugging tool for compliance policies.
-
-The debugger provides:
-- Step-by-step policy execution
-- Breakpoint support
-- Variable inspection
-- Execution tracing
-- Interactive debugging session
-- Detailed error analysis`,
-		Example: `  # Debug a policy with test data
-  go run tools/policy-debugger.go --policy policy.yaml --test-data data.json
-
-  # Start interactive debugging session
-  go run tools/policy-debugger.go --policy policy.yaml --test-data data.json --interactive
-
-  # Debug with breakpoints
-  go run tools/policy-debugger.go --policy policy.yaml --test-data data.json --break rule_id_1,rule_id_2
-
-  # Save debug session
-  go run tools/policy-debugger.go --policy policy.yaml --test-data data.json --output debug-session.json`,
-		RunE: runDebugger,
-	}
-
-	policyFile    string
-	testDataFile  string
-	interactive   bool
-	stepMode      bool
-	breakPoints   []string
-	watchVars     []string
-	outputFile    string
-	transactionID string
-)
-
-func init() {
-	debuggerCmd.Flags().StringVarP(&policyFile, "policy", "p", "", "Policy file to debug (required)")
-	debuggerCmd.Flags().StringVarP(&testDataFile, "test-data", "t", "", "Test data file (JSON)")
-	debuggerCmd.Flags().BoolVarP(&interactive, "interactive", "i", false, "Start interactive debugging session")
-	debuggerCmd.Flags().BoolVarP(&stepMode, "step", "s", false, "Enable step-by-step execution")
-	debuggerCmd.Flags().StringSliceVar(&breakPoints, "break", []string{}, "Set breakpoints on rule IDs")
-	debuggerCmd.Flags().StringSliceVar(&watchVars, "watch", []string{}, "Variables to watch")
-	debuggerCmd.Flags().StringVarP(&outputFile, "output", "o", "", "Save debug session to file")
-	debuggerCmd.Flags().StringVar(&transactionID, "transaction", "", "Specific transaction ID to debug")
-
-	debuggerCmd.MarkFlagRequired("policy")
-}
-
-func main() {
-	if err := debuggerCmd.Execute(); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func runDebugger(cmd *cobra.Command, args []string) error {
+func runDebugger(policyFile, testDataFile string, interactive, stepMode bool, breakPoints, watchVars []string, outputFile, transactionID string) error {
 	debugger := &PolicyDebugger{
 		PolicyFile:     policyFile,
 		TestDataFile:   testDataFile,
@@ -270,7 +265,7 @@ func runDebugger(cmd *cobra.Command, args []string) error {
 
 	// Load test data if provided
 	if testDataFile != "" {
-		if err := debugger.loadTestData(); err != nil {
+		if err := debugger.loadTestData(transactionID); err != nil {
 			return fmt.Errorf("failed to load test data: %w", err)
 		}
 	}
@@ -305,7 +300,7 @@ func (d *PolicyDebugger) loadPolicy() error {
 }
 
 // loadTestData loads test transaction data
-func (d *PolicyDebugger) loadTestData() error {
+func (d *PolicyDebugger) loadTestData(transactionID string) error {
 	data, err := ioutil.ReadFile(d.TestDataFile)
 	if err != nil {
 		return fmt.Errorf("failed to read test data file: %w", err)

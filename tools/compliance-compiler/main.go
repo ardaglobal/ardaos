@@ -52,6 +52,7 @@ func init() {
 	rootCmd.AddCommand(cmd.NewValidateCmd())
 	rootCmd.AddCommand(cmd.NewTestCmd())
 	rootCmd.AddCommand(cmd.NewGenerateCmd())
+	rootCmd.AddCommand(cmd.NewDebugCmd())
 }
 
 func initConfig() {

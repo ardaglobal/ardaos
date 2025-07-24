@@ -198,15 +198,6 @@ make bench
 
 ```bash
 make help                 # Show all available targets
-make build               # Build the compliance compiler binary
-make build-all           # Build cross-platform binaries
-make test                # Run unit tests with coverage
-make lint                # Run golangci-lint
-make fmt                 # Format Go source code
-make integration-test    # Run integration tests
-make validate-examples   # Validate all example policies
-make docker              # Build Docker image
-make release             # Create release artifacts
 ```
 
 ### Adding New Templates
