@@ -1,6 +1,6 @@
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 COMMIT := $(shell git log -1 --format='%H')
-APPNAME := arda-os
+APPNAME := ardaos
 
 # don't override user values
 ifeq (,$(VERSION))
@@ -25,9 +25,13 @@ ldflags = -X github.com/cosmos/cosmos-sdk/version.Name=$(APPNAME) \
 
 BUILD_FLAGS := -ldflags '$(ldflags)'
 
-##############
-###  Test  ###
-##############
+FILES_TO_LINT := $(shell find . -name '*.go' -type f -not -path "*/vendor/*" -not -path "*/.*")
+COVER_FILE := coverage.txt
+COVER_HTML_FILE := coverage.html
+
+#-------------
+#    Test
+#-------------
 
 ## test-unit: Run unit tests.
 test-unit:
@@ -56,9 +60,9 @@ test: govet test-unit
 
 .PHONY: test test-unit test-race test-cover bench
 
-#################
-###  Install  ###
-#################
+#-------------
+#   Install
+#-------------
 
 ## all: Install the application.
 all: install
@@ -72,9 +76,9 @@ install:
 
 .PHONY: all install
 
-##################
-###  Protobuf  ###
-##################
+#-------------
+#  Protobuf
+#-------------
 
 # Use this target if you do not want to use Ignite for generating proto files
 GOLANG_PROTOBUF_VERSION=1.28.1
@@ -99,18 +103,18 @@ proto-gen:
 
 .PHONY: proto-deps proto-gen
 
-#################
-###  Linting  ###
-#################
+#-------------
+#  Linting
+#-------------
 
 golangci_lint_cmd=golangci-lint
 golangci_version=v1.62.2
 
 ## lint: Run linter.
 lint:
-	@echo "--> Running linter (excluding app directory)"
+	@echo "--> Running linter"
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golangci_version)
-	@$(golangci_lint_cmd) run ./cmd/tx-sidecar --timeout 15m
+	@$(golangci_lint_cmd) run ./... --timeout 15m
 
 ## lint-fix: Run linter and fix issues.
 lint-fix:
@@ -122,23 +126,23 @@ lint-fix:
 lint-source:
 	@echo "--> Running linter on source code only"
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(golangci_version)
-	@$(golangci_lint_cmd) run ./cmd/... ./x/... --timeout 15m --skip-files '.*\.pb\.go$$,.*\.pulsar\.go$$'
+	@$(golangci_lint_cmd) run ./... --timeout 15m --skip-files '.*\.pb\.go$$,.*\.pulsar\.go$$'
 
 ## fmt: Run gofmt.
 fmt:
 	@echo "--> Running gofmt"
-	@find . -name '*.go' -type f -not -path "*/vendor/*" -not -path "*/.*" | xargs gofmt -s -w
+	@gofmt -s -w $(FILES_TO_LINT)
 
 ## fmt-imports: Run goimports.
 fmt-imports:
 	@echo "--> Running goimports"
 	@go install golang.org/x/tools/cmd/goimports@latest
-	@find . -name '*.go' -type f -not -path "*/vendor/*" -not -path "*/.*" | xargs goimports -local arda-os -w
+	@goimports -local github.com/ardaglobal/ardaos -w $(FILES_TO_LINT)
 
 ## fmt-check: Check gofmt.
 fmt-check:
 	@echo "--> Checking gofmt"
-	@files=$$(find . -name '*.go' -type f -not -path "*/vendor/*" -not -path "*/.*" | xargs gofmt -s -l); \
+	@gofmt -s -l $(FILES_TO_LINT) | read -r files; \
 	if [ -n "$$files" ]; then \
 		echo "The following files are not properly formatted:"; \
 		echo "$$files"; \
@@ -147,9 +151,17 @@ fmt-check:
 
 .PHONY: fmt fmt-imports fmt-check lint lint-fix lint-source
 
-###################
-### Development ###
-###################
+## fmt-fix-all: Run gofmt, goimports, and lint-fix.
+fmt-fix-all: fmt fmt-imports fmt-check lint-fix
+.PHONY: fmt-fix-all
+
+## lint-all: Run govet and lint.
+lint-all: govet lint
+.PHONY: lint-all
+
+#-------------
+# Development
+#-------------
 
 ## setup-dev: Setup development environment.
 setup-dev:
@@ -159,7 +171,7 @@ setup-dev:
 ## govet: Run go vet.
 govet:
 	@echo Running go vet...
-	@go vet ./app/... ./cmd/... ./x/...
+	@go vet $$(go list ./... | grep -v '/api/')
 
 ## govulncheck: Run govulncheck.
 govulncheck:
