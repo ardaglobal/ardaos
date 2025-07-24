@@ -8,14 +8,18 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 10
-    reviewers:
-      - "horizon"
     labels:
       - "dependencies"
       - "go"
     commit-message:
       prefix: "deps"
       include: "scope"
+    groups:
+      patch-and-minor-updates:
+        applies-to: version-updates
+        update-types:
+          - "patch"
+          - "minor"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
@@ -25,11 +29,15 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 5
-    reviewers:
-      - "horizon"
     labels:
       - "dependencies"
       - "github-actions"
     commit-message:
       prefix: "ci"
       include: "scope"
+    groups:
+      patch-and-minor-updates:
+        applies-to: version-updates
+        update-types:
+          - "patch"
+          - "minor"
