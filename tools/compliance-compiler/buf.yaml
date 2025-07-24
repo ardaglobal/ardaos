@@ -1,0 +1,21 @@
+version: v2
+# Buf configuration for compliance-compiler protobuf management
+# Uses Buf CLI for protobuf generation, linting, and dependency management
+
+modules:
+  - path: proto
+    lint:
+      use:
+        - BASIC
+        - COMMENTS
+        - FILE_LAYOUT
+      except:
+        - PACKAGE_VERSION_SUFFIX  # Allow packages without version suffix for internal tools
+    breaking:
+      use:
+        - FILE
+
+# Dependencies for external protobuf definitions
+deps:
+  - buf.build/googleapis/googleapis
+  - buf.build/protocolbuffers/wellknowntypes

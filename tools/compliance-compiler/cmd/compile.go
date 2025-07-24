@@ -6,12 +6,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/arda-org/arda-os/tools/compliance-compiler/internal/compiler"
+	compliancev1 "github.com/arda-org/arda-os/tools/compliance-compiler/gen/compliance/v1"
 	"github.com/arda-org/arda-os/tools/compliance-compiler/internal/parser"
-	"github.com/arda-org/arda-os/tools/compliance-compiler/internal/validator"
 	"github.com/fatih/color"
 	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 func NewCompileCmd() *cobra.Command {
@@ -131,17 +132,70 @@ func runCompile(inputFile, outputFile, outputDir, format string, validate, optim
 		)
 	}
 
-	// Step 1: Parse YAML (20%)
+	// Step 1: Parse and Validate YAML with JSON Schema (60%)
 	if !quiet {
 		bar.Set(10)
-		fmt.Printf("\n📖 Parsing YAML policy file...\n")
+		fmt.Printf("\n📖 Parsing and validating YAML policy file...\n")
 	}
 
-	yamlParser := parser.NewYAMLParser()
-	policy, err := yamlParser.ParseFile(inputFile)
+	// Create parser with options
+	parsingOptions := parser.ParsingOptions{
+		StrictMode:     false, // Don't fail on warnings by default
+		EnableWarnings: true,  // Show warnings
+	}
+
+	// Override strict mode if specified
+	if jurisdiction != "" || assetClass != "" {
+		if !quiet {
+			if jurisdiction != "" {
+				fmt.Printf("  ⚖️  Jurisdiction: %s\n", jurisdiction)
+			}
+			if assetClass != "" {
+				fmt.Printf("  🏷️  Asset Class: %s\n", assetClass)
+			}
+		}
+	}
+
+	policyParser, err := parser.NewPolicyParser(parsingOptions)
 	if err != nil {
 		return &CompileError{
-			Type:    "yaml_parse_error",
+			Type:    "parser_init_error",
+			Message: fmt.Sprintf("Failed to initialize policy parser: %v", err),
+			Suggestions: []string{
+				"Check that JSON schema files are present",
+				"Verify compliance-compiler installation",
+			},
+		}
+	}
+
+	parseResult, err := policyParser.ParseYAMLFile(inputFile)
+	if err != nil {
+		// Handle validation errors
+		if parseResult != nil && parseResult.ValidationResult != nil && !parseResult.ValidationResult.Valid {
+			if !quiet {
+				red.Printf("\n❌ Policy validation failed:\n")
+				for _, validationError := range parseResult.ValidationResult.Errors {
+					fmt.Printf("  • %s: %s\n", validationError.Field, validationError.Message)
+					if validationError.Suggestion != "" {
+						yellow.Printf("    💡 Suggestion: %s\n", validationError.Suggestion)
+					}
+				}
+			}
+			return &CompileError{
+				Type:    "validation_error",
+				Message: "Policy validation failed",
+				Details: parseResult.Errors,
+				Suggestions: []string{
+					"Review the validation errors above",
+					"Check the JSON Schema documentation",
+					"Ensure all required fields are present",
+					"Consider using a template from 'compliance-compiler generate'",
+				},
+			}
+		}
+
+		return &CompileError{
+			Type:    "parse_error",
 			Message: fmt.Sprintf("Failed to parse YAML file: %v", err),
 			Suggestions: []string{
 				"Check YAML syntax for errors (indentation, colons, etc.)",
@@ -152,126 +206,22 @@ func runCompile(inputFile, outputFile, outputDir, format string, validate, optim
 		}
 	}
 
-	if !quiet {
-		bar.Set(20)
-	}
-
-	// Step 2: Validation (40%)
-	if validate {
-		if !quiet {
-			fmt.Printf("🔍 Validating policy...\n")
-		}
-
-		policyValidator := validator.NewPolicyValidator()
-
-		// Configure validator with jurisdiction and asset class if provided
-		if jurisdiction != "" {
-			if !quiet {
-				fmt.Printf("  ⚖️  Jurisdiction: %s\n", jurisdiction)
-			}
-			// TODO: Configure jurisdiction-specific validation
-		}
-
-		if assetClass != "" {
-			if !quiet {
-				fmt.Printf("  🏷️  Asset Class: %s\n", assetClass)
-			}
-			// TODO: Configure asset class-specific validation
-		}
-
-		// Perform comprehensive validation
-		validationReport := policyValidator.ValidatePolicy(policy)
-		if !validationReport.IsValid {
-			// Print validation errors with colors
-			if !quiet {
-				red.Printf("\n❌ Policy validation failed:\n")
-				for _, err := range validationReport.Errors {
-					fmt.Printf("  • %s: %s\n", err.Code, err.Message)
-					if err.SuggestedFix != "" {
-						yellow.Printf("    💡 Suggestion: %s\n", err.SuggestedFix)
-					}
-				}
-			}
-
-			return &CompileError{
-				Type:    "validation_error",
-				Message: "Policy validation failed",
-				Details: formatValidationErrors(validationReport.Errors),
-				Suggestions: []string{
-					"Review the validation errors above",
-					"Use 'compliance-compiler validate' for detailed validation report",
-					"Check the policy documentation for required fields",
-					"Consider using 'compliance-compiler generate' to create a template",
-				},
-			}
-		}
-
-		if !quiet {
-			if len(validationReport.Warnings) > 0 {
-				yellow.Printf("  ⚠️  %d warnings found\n", len(validationReport.Warnings))
-			}
-			green.Printf("  ✅ Validation passed\n")
-			bar.Set(40)
-		}
-	} else {
-		if !quiet {
-			yellow.Printf("⚠️  Skipping validation (--no-validate specified)\n")
-			bar.Set(40)
-		}
-	}
-
-	// Step 3: Optimization (60%)
-	if optimize {
-		if !quiet {
-			fmt.Printf("⚡ Applying optimization passes...\n")
-		}
-
-		optimizer := compiler.NewOptimizer()
-		optimizedPolicy, err := optimizer.OptimizePolicy(policy)
-		if err != nil {
-			if !quiet {
-				yellow.Printf("  ⚠️  Optimization failed, continuing with unoptimized policy: %v\n", err)
-			}
-		} else {
-			policy = optimizedPolicy
-			if !quiet {
-				green.Printf("  ✅ Optimization completed\n")
-			}
-		}
-
-		if !quiet {
-			bar.Set(60)
-		}
-	} else {
-		if !quiet {
-			bar.Set(60)
-		}
-	}
-
-	// Step 4: Compilation (80%)
-	if !quiet {
-		fmt.Printf("🔧 Compiling to protobuf...\n")
-	}
-
-	policyCompiler := compiler.NewCompiler()
-	protoPolicy, err := policyCompiler.CompilePolicy(policy)
-	if err != nil {
-		return &CompileError{
-			Type:    "compilation_error",
-			Message: fmt.Sprintf("Failed to compile policy: %v", err),
-			Suggestions: []string{
-				"Check for unsupported policy features",
-				"Ensure all references are valid",
-				"Try running with --validate to catch issues early",
-			},
+	// Show warnings if any
+	if !quiet && len(parseResult.Warnings) > 0 {
+		yellow.Printf("  ⚠️  %d warnings found:\n", len(parseResult.Warnings))
+		for _, warning := range parseResult.Warnings {
+			fmt.Printf("    • %s\n", warning)
 		}
 	}
 
 	if !quiet {
-		bar.Set(80)
+		green.Printf("  ✅ Policy parsed and validated successfully\n")
+		bar.Set(60)
 	}
 
-	// Step 5: Output (100%)
+	// Step 2: Output (100%)
+	policy := parseResult.Policy
+
 	if outputFile == "" && format != "binary" {
 		// Output to stdout for non-binary formats
 		if !quiet {
@@ -281,8 +231,7 @@ func runCompile(inputFile, outputFile, outputDir, format string, validate, optim
 			fmt.Println()
 		}
 
-		writer := compiler.NewWriter(format)
-		return writer.WriteToStdout(protoPolicy)
+		return writeProtobufOutput(policy, "", format)
 	}
 
 	// Determine output path
@@ -333,8 +282,7 @@ func runCompile(inputFile, outputFile, outputDir, format string, validate, optim
 	}
 
 	// Write output file
-	writer := compiler.NewWriter(format)
-	if err := writer.WriteToFile(protoPolicy, outputPath); err != nil {
+	if err := writeProtobufOutput(policy, outputPath, format); err != nil {
 		return &CompileError{
 			Type:    "write_error",
 			Message: fmt.Sprintf("Failed to write output file: %v", err),
@@ -419,13 +367,46 @@ func (e *CompileError) Error() string {
 	return builder.String()
 }
 
-// formatValidationErrors formats validation errors for display
-func formatValidationErrors(errors []*validator.ValidationError) []string {
-	details := make([]string, len(errors))
-	for i, err := range errors {
-		details[i] = fmt.Sprintf("%s: %s", err.Code, err.Message)
+// writeProtobufOutput writes the policy in the specified format
+func writeProtobufOutput(policy *compliancev1.CompliancePolicy, outputPath, format string) error {
+	switch format {
+	case "json":
+		jsonData, err := protojson.MarshalOptions{
+			Multiline: true,
+			Indent:    "  ",
+		}.Marshal(policy)
+		if err != nil {
+			return fmt.Errorf("failed to marshal to JSON: %w", err)
+		}
+
+		if outputPath == "" {
+			fmt.Print(string(jsonData))
+			return nil
+		}
+		return os.WriteFile(outputPath, jsonData, 0644)
+
+	case "text":
+		textData := fmt.Sprintf("%+v", policy)
+		if outputPath == "" {
+			fmt.Print(textData)
+			return nil
+		}
+		return os.WriteFile(outputPath, []byte(textData), 0644)
+
+	case "binary":
+		binaryData, err := proto.Marshal(policy)
+		if err != nil {
+			return fmt.Errorf("failed to marshal to binary: %w", err)
+		}
+
+		if outputPath == "" {
+			return fmt.Errorf("binary format requires output file")
+		}
+		return os.WriteFile(outputPath, binaryData, 0644)
+
+	default:
+		return fmt.Errorf("unsupported format: %s", format)
 	}
-	return details
 }
 
 // formatFileSize formats file size in human-readable format

@@ -49,10 +49,11 @@ func init() {
 	viper.BindPFlag("verbose", rootCmd.PersistentFlags().Lookup("verbose"))
 
 	rootCmd.AddCommand(cmd.NewCompileCmd())
-	rootCmd.AddCommand(cmd.NewValidateCmd())
-	rootCmd.AddCommand(cmd.NewTestCmd())
-	rootCmd.AddCommand(cmd.NewGenerateCmd())
-	rootCmd.AddCommand(cmd.NewDebugCmd())
+	// TODO: Re-enable other commands after updating them for new architecture
+	// rootCmd.AddCommand(cmd.NewValidateCmd())
+	// rootCmd.AddCommand(cmd.NewTestCmd())
+	// rootCmd.AddCommand(cmd.NewGenerateCmd())
+	// rootCmd.AddCommand(cmd.NewDebugCmd())
 }
 
 func initConfig() {

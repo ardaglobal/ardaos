@@ -6,7 +6,7 @@
 
 # Build configuration
 BINARY_NAME := compliance-compiler
-MAIN_PACKAGE := ./cmd/compliance-compiler
+MAIN_PACKAGE := .
 BUILD_DIR := bin
 COVERAGE_FILE := coverage.out
 COVERAGE_HTML := coverage.html
@@ -219,10 +219,11 @@ check: fmt-check vet lint test
 ## proto: Generate Go code from protocol buffer definitions.
 proto: proto-deps
 	@echo "Generating protobuf code..."
-	@if [ -d ../../proto ]; then \
-		cd ../../proto && $(BUF) generate; \
+	@if [ -f buf.yaml ]; then \
+		$(BUF) generate; \
 	else \
-		echo "Proto directory not found at ../../proto"; \
+		echo "buf.yaml not found - ensure you're in the compliance-compiler directory"; \
+		exit 1; \
 	fi
 	@echo "Protobuf generation complete"
 
@@ -242,10 +243,11 @@ proto-deps:
 ## proto-lint: Lint protocol buffer files.
 proto-lint: proto-deps
 	@echo "Linting protobuf files..."
-	@if [ -d ../../proto ]; then \
-		cd ../../proto && $(BUF) lint; \
+	@if [ -f buf.yaml ]; then \
+		$(BUF) lint; \
 	else \
-		echo "Proto directory not found at ../../proto"; \
+		echo "buf.yaml not found - ensure you're in the compliance-compiler directory"; \
+		exit 1; \
 	fi
 
 # =============================================================================

@@ -1,0 +1,49 @@
+policy_id: "test_credit_card_policy"
+version: "1.0.0"
+jurisdiction: "US"
+asset_class: "credit-card"
+
+rules:
+  - name: "Credit Score Check"
+    description: "Borrower must have minimum credit score"
+    predicate:
+      field: "borrower.credit_score"
+      op: "gte"
+      value: 620
+    required: true
+    priority: 10
+
+  - name: "Debt to Income Ratio"
+    description: "Debt to income ratio must not exceed 43%"
+    predicate:
+      field: "borrower.debt_to_income_ratio"
+      op: "lte"
+      value: 0.43
+    required: true
+    priority: 20
+
+  - name: "Income Verification"
+    description: "Borrower income must be verified"
+    predicate:
+      exists: "borrower.verified_income"
+      should_exist: true
+    required: true
+
+attestations:
+  - name: "Credit Bureau Check"
+    type: "credit_check"
+    required: true
+  - name: "Income Verification"
+    type: "income_verification"
+    required: true
+
+enforcement:
+  level: "blocking"
+  actions:
+    - "log"
+    - "block_transaction"
+
+metadata:
+  title: "Test Credit Card Policy"
+  description: "A simple test policy for credit card receivables"
+  author: "Test User"

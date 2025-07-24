@@ -128,52 +128,83 @@ ignite generate proto-go --yes  # Direct proto generation
 ## Compliance Compiler Tool
 
 ### Overview
-The compliance compiler (`tools/compliance-compiler/`) is a standalone CLI tool for compiling YAML compliance policies into protobuf format for use with ArdaOS blockchain compliance modules. It provides comprehensive policy management, validation, testing, and template generation capabilities.
+The compliance compiler (`tools/compliance-compiler/`) is a standalone CLI tool for compiling YAML compliance policies into protobuf format for use with ArdaOS blockchain compliance modules. The tool leverages modern tooling including **Buf CLI** for protobuf management, **JSON Schema** for validation, and a multi-stage parsing pipeline for robust policy compilation.
 
-### CLI Commands
+### Architecture
+
+The compliance compiler uses a modern, multi-layered architecture:
+
+1. **JSON Schema Validation**: YAML policies are first validated against comprehensive JSON Schema definitions
+2. **Buf CLI Integration**: Protobuf definitions are managed with Buf CLI for generation, linting, and dependency management
+3. **Multi-Stage Parser**: Custom YAML parser with JSON Schema as intermediate representation
+4. **Template System**: Comprehensive policy templates for all finance verticals
+
+#### Key Components
+
+- **Buf Configuration** (`buf.yaml`): Manages protobuf linting, breaking changes, and dependencies
+- **JSON Schema** (`schemas/compliance-policy.json`): Comprehensive validation schema for compliance policies
+- **Protobuf Definitions** (`proto/compliance/v1/`): Protocol buffer definitions for compliance policy structures
+- **Schema Validator** (`internal/schema/validator.go`): JSON Schema validation with intelligent suggestions
+- **Policy Parser** (`internal/parser/yaml_parser_refactored.go`): YAML to protobuf conversion pipeline
+
+#### Architecture Benefits
+
+The refactored compliance compiler provides several advantages:
+
+- **Robust Validation**: JSON Schema provides comprehensive validation with detailed error messages and suggestions
+- **Modern Protobuf Management**: Buf CLI ensures consistent protobuf generation, linting, and dependency management
+- **Separation of Concerns**: Clean separation between validation (JSON Schema), parsing (YAML), and serialization (Protobuf)
+- **Developer Experience**: Better error messages, intelligent suggestions, and comprehensive validation reporting
+- **Maintainability**: Clear architecture with well-defined interfaces and responsibilities
+- **Type Safety**: Generated protobuf types ensure compile-time safety and correct serialization
 
 #### Build and Usage
 ```bash
 # Build the compliance compiler
 cd tools/compliance-compiler
-go build -o compliance-compiler
+make build
 
-# Or use make targets
-make build-compliance-compiler
+# Generate protobuf code with Buf CLI
+make proto
+
+# Or use individual make targets
+make proto-deps    # Install Buf CLI and dependencies
+make proto-lint    # Lint protobuf definitions
 ```
 
 #### Main Commands
 
 **1. Compile Command**
-Convert YAML policies to protobuf with comprehensive validation and optimization:
+Convert YAML policies to protobuf with comprehensive JSON Schema validation:
 ```bash
-# Basic compilation
+# Basic compilation with JSON Schema validation
 compliance-compiler compile policy.yaml
 
-# With jurisdiction and asset class validation
+# With jurisdiction-specific validation rules
 compliance-compiler compile policy.yaml --jurisdiction US --asset-class credit-card
 
-# With optimization and custom output
-compliance-compiler compile policy.yaml -o policy.pb --optimize --format binary
-
-# JSON format for debugging
+# Output in different formats (uses Buf-generated protobuf)
+compliance-compiler compile policy.yaml -o policy.pb --format binary
 compliance-compiler compile policy.yaml --format json -o policy.json
+
+# Strict mode fails on warnings
+compliance-compiler compile policy.yaml --strict
 ```
 
 **2. Validate Command**
-Comprehensive policy validation without compilation:
+JSON Schema-based validation with intelligent suggestions:
 ```bash
-# Basic validation
+# JSON Schema validation with suggestions
 compliance-compiler validate policy.yaml
 
-# Strict validation with custom schema
-compliance-compiler validate policy.yaml --strict --schema custom-schema.json
+# Strict validation mode
+compliance-compiler validate policy.yaml --strict
 
-# Recursive validation with detailed reporting
-compliance-compiler validate ./policies --recursive --report-format detailed --output report.json
+# Recursive validation of multiple policies
+compliance-compiler validate ./policies --recursive
 
-# Interactive validation with guided fixes
-compliance-compiler validate policy.yaml --interactive
+# Custom schema validation
+compliance-compiler validate policy.yaml --schema custom-schema.json
 ```
 
 **3. Test Command**

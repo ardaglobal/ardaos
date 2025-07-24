@@ -1,0 +1,26 @@
+policy_id: "simple_credit_card_policy"
+version: "1.0.0"
+jurisdiction: "US"
+asset_class: "credit-card"
+
+rules:
+  - name: "Credit Score Check"
+    description: "Borrower must have minimum credit score"
+    predicate:
+      field: "borrower.credit_score"
+      op: "gte"
+      value: 620
+    required: true
+    priority: 10
+
+  - name: "Income Verification"
+    description: "Borrower income must be verified"
+    predicate:
+      exists: "borrower.verified_income"
+      should_exist: true
+    required: true
+
+metadata:
+  title: "Simple Credit Card Policy"
+  description: "A minimal test policy for credit card receivables"
+  author: "Test User"

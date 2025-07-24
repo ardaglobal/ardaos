@@ -1,0 +1,592 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arda.org/schemas/compliance-policy.json",
+  "title": "ArdaOS Compliance Policy Schema",
+  "description": "JSON Schema for validating ArdaOS compliance policies before protobuf compilation",
+  "type": "object",
+  "required": ["policy_id", "version", "jurisdiction", "asset_class", "rules"],
+  "properties": {
+    "policy_id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$",
+      "minLength": 3,
+      "maxLength": 100,
+      "description": "Unique identifier for the policy (alphanumeric, dots, underscores, hyphens)"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$",
+      "description": "Semantic version (e.g., 1.0.0, 2.1.3-beta.1)"
+    },
+    "jurisdiction": {
+      "type": "string",
+      "enum": ["US", "EU", "CA", "UK", "AU", "JP", "SG", "US-CA", "US-NY", "US-TX", "US-FL", "GLOBAL"],
+      "description": "Target jurisdiction (ISO 3166-1 alpha-2 or custom regional codes)"
+    },
+    "asset_class": {
+      "type": "string",
+      "enum": ["credit-card", "installment-loan", "mca", "equipment-lease", "working-capital"],
+      "description": "Target asset class for specialized compliance rules"
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": { "$ref": "#/$defs/PolicyRule" },
+      "description": "Policy rules that define compliance conditions"
+    },
+    "attestations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/AttestationRequirement" },
+      "description": "Required attestations for compliance verification"
+    },
+    "enforcement": {
+      "$ref": "#/$defs/EnforcementConfig",
+      "description": "Enforcement configuration for policy violations"
+    },
+    "metadata": {
+      "$ref": "#/$defs/PolicyMetadata",
+      "description": "Policy metadata for documentation and organization"
+    }
+  },
+  "additionalProperties": false,
+
+  "$defs": {
+    "PolicyRule": {
+      "type": "object",
+      "required": ["name", "predicate"],
+      "properties": {
+        "rule_id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$",
+          "description": "Rule identifier unique within the policy"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Human-readable rule name"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Detailed description of the rule purpose"
+        },
+        "predicate": {
+          "$ref": "#/$defs/Predicate",
+          "description": "The logical conditions that define when the rule is satisfied"
+        },
+        "required": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether this rule is required for compliance (vs. advisory)"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 50,
+          "description": "Priority level for rule evaluation order (1=highest, 100=lowest)"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$"
+          },
+          "uniqueItems": true,
+          "description": "Tags for rule categorization and filtering"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "Predicate": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/ComparisonPredicate" },
+        { "$ref": "#/$defs/LogicalPredicate" },
+        { "$ref": "#/$defs/ExistsPredicate" },
+        { "$ref": "#/$defs/RangePredicate" },
+        { "$ref": "#/$defs/SetPredicate" },
+        { "$ref": "#/$defs/TimePredicate" },
+        { "$ref": "#/$defs/ExpressionPredicate" },
+        { "$ref": "#/$defs/RegexPredicate" }
+      ]
+    },
+
+    "ComparisonPredicate": {
+      "type": "object",
+      "required": ["field", "op", "value"],
+      "properties": {
+        "field": {
+          "$ref": "#/$defs/FieldPath",
+          "description": "Field path to compare"
+        },
+        "op": {
+          "type": "string",
+          "enum": ["eq", "ne", "gt", "gte", "lt", "lte", "contains", "starts_with", "ends_with"],
+          "description": "Comparison operator"
+        },
+        "value": {
+          "description": "Value to compare against (can be any JSON type)"
+        },
+        "value_expr": {
+          "type": "string",
+          "description": "Expression that evaluates to the comparison value"
+        }
+      },
+      "additionalProperties": false,
+      "not": {
+        "allOf": [
+          { "required": ["value"] },
+          { "required": ["value_expr"] }
+        ]
+      }
+    },
+
+    "LogicalPredicate": {
+      "type": "object",
+      "oneOf": [
+        {
+          "required": ["and"],
+          "properties": {
+            "and": {
+              "type": "array",
+              "minItems": 2,
+              "items": { "$ref": "#/$defs/Predicate" }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "required": ["or"],
+          "properties": {
+            "or": {
+              "type": "array",
+              "minItems": 2,
+              "items": { "$ref": "#/$defs/Predicate" }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "required": ["not"],
+          "properties": {
+            "not": { "$ref": "#/$defs/Predicate" }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+
+    "ExistsPredicate": {
+      "type": "object",
+      "required": ["exists"],
+      "properties": {
+        "exists": {
+          "$ref": "#/$defs/FieldPath",
+          "description": "Field path to check for existence"
+        },
+        "should_exist": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the field should exist (true) or not exist (false)"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "RangePredicate": {
+      "type": "object",
+      "required": ["range"],
+      "properties": {
+        "range": {
+          "type": "object",
+          "required": ["field"],
+          "properties": {
+            "field": {
+              "$ref": "#/$defs/FieldPath",
+              "description": "Field path to check range for"
+            },
+            "min": {
+              "description": "Minimum value (inclusive by default)"
+            },
+            "max": {
+              "description": "Maximum value (inclusive by default)"
+            },
+            "min_inclusive": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether minimum is inclusive"
+            },
+            "max_inclusive": {
+              "type": "boolean",
+              "default": true,
+              "description": "Whether maximum is inclusive"
+            }
+          },
+          "anyOf": [
+            { "required": ["min"] },
+            { "required": ["max"] }
+          ],
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "SetPredicate": {
+      "type": "object",
+      "oneOf": [
+        {
+          "required": ["field", "in"],
+          "properties": {
+            "field": { "$ref": "#/$defs/FieldPath" },
+            "in": {
+              "type": "array",
+              "minItems": 1,
+              "description": "Values that the field should match"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "required": ["field", "not_in"],
+          "properties": {
+            "field": { "$ref": "#/$defs/FieldPath" },
+            "not_in": {
+              "type": "array",
+              "minItems": 1,
+              "description": "Values that the field should not match"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+
+    "TimePredicate": {
+      "type": "object",
+      "required": ["time"],
+      "properties": {
+        "time": {
+          "type": "object",
+          "required": ["field", "op"],
+          "properties": {
+            "field": {
+              "$ref": "#/$defs/FieldPath",
+              "description": "Field path containing timestamp"
+            },
+            "op": {
+              "type": "string",
+              "enum": ["before", "after", "on", "within", "outside"],
+              "description": "Time comparison operator"
+            },
+            "reference_time": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Reference timestamp for comparison"
+            },
+            "duration": {
+              "type": "string",
+              "pattern": "^P(?:\\d+Y)?(?:\\d+M)?(?:\\d+D)?(?:T(?:\\d+H)?(?:\\d+M)?(?:\\d+(?:\\.\\d+)?S)?)?$",
+              "description": "Duration in ISO 8601 format (e.g., P1Y2M3DT4H5M6S)"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "ExpressionPredicate": {
+      "type": "object",
+      "required": ["expression"],
+      "properties": {
+        "expression": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Expression to evaluate"
+        },
+        "language": {
+          "type": "string",
+          "enum": ["cel", "jsonpath", "jmespath"],
+          "default": "cel",
+          "description": "Expression language"
+        },
+        "variables": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Variables available in the expression context"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "RegexPredicate": {
+      "type": "object",
+      "required": ["field", "regex"],
+      "properties": {
+        "field": {
+          "$ref": "#/$defs/FieldPath",
+          "description": "Field path to match against"
+        },
+        "regex": {
+          "type": "string",
+          "description": "Regular expression pattern"
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["i", "m", "s", "u"]
+          },
+          "uniqueItems": true,
+          "description": "Regex flags: i=case insensitive, m=multiline, s=dot all, u=unicode"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "FieldPath": {
+      "type": "string",
+      "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*(?:\\.[a-zA-Z_][a-zA-Z0-9_]*|\\[\\d+\\]|\\[[^\\]]+\\]|\\([^\\)]*\\))*$",
+      "description": "Dot-notation field path (e.g., 'borrower.credit_score', 'loans[0].amount')"
+    },
+
+    "AttestationRequirement": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "attestation_id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "identity_verification", "credit_check", "bank_verification",
+            "income_verification", "asset_valuation", "compliance_review",
+            "manual_review", "legal_opinion", "regulatory_approval", "custom"
+          ]
+        },
+        "required": {
+          "type": "boolean",
+          "default": true
+        },
+        "provider": {
+          "$ref": "#/$defs/AttestationProvider"
+        },
+        "validity_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Validity period in seconds"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "AttestationProvider": {
+      "type": "object",
+      "required": ["provider_id", "name"],
+      "properties": {
+        "provider_id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "endpoint": {
+          "type": "string",
+          "format": "uri"
+        },
+        "configuration": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "EnforcementConfig": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["advisory", "warning", "blocking", "quarantine", "reject"],
+          "default": "warning"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "log", "alert", "email", "slack", "webhook",
+              "queue_review", "block_transaction", "require_approval", "automatic_rejection"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "escalation": {
+          "$ref": "#/$defs/EscalationConfig"
+        },
+        "grace_period_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Grace period before enforcement takes effect"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "EscalationConfig": {
+      "type": "object",
+      "required": ["enabled"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "violation_threshold": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of violations to trigger escalation"
+        },
+        "time_window_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Time window for counting violations"
+        },
+        "escalated_level": {
+          "type": "string",
+          "enum": ["advisory", "warning", "blocking", "quarantine", "reject"]
+        },
+        "escalated_actions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "log", "alert", "email", "slack", "webhook",
+              "queue_review", "block_transaction", "require_approval", "automatic_rejection"
+            ]
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false,
+      "if": { "properties": { "enabled": { "const": true } } },
+      "then": {
+        "required": ["violation_threshold", "time_window_seconds", "escalated_level"]
+      }
+    },
+
+    "PolicyMetadata": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 2000
+        },
+        "author": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "organization": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$"
+          },
+          "uniqueItems": true
+        },
+        "references": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/ExternalReference" }
+        },
+        "regulatory_frameworks": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/RegulatoryFramework" }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "ExternalReference": {
+      "type": "object",
+      "required": ["title", "url"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "type": {
+          "type": "string",
+          "enum": ["regulation", "guidance", "documentation", "best_practice", "technical_standard"]
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "RegulatoryFramework": {
+      "type": "object",
+      "required": ["framework_id", "name", "jurisdiction"],
+      "properties": {
+        "framework_id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*[a-zA-Z0-9]$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "jurisdiction": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 10
+        },
+        "applicable_sections": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

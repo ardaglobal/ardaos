@@ -1,0 +1,38 @@
+# Build outputs
+bin/
+build/
+dist/
+
+# Coverage reports
+coverage.out
+coverage.html
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Generated files
+gen/
+
+# Temporary files
+*.tmp
+*.temp
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Profiles
+profiles/
+*.prof
+
+# Test outputs
+*.test
+*.out

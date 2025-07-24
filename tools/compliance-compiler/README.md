@@ -7,9 +7,41 @@ A comprehensive policy compilation and validation tool for ArdaOS blockchain com
 [![Go Report Card](https://goreportcard.com/badge/github.com/ardaos/arda-os/tools/compliance-compiler)](https://goreportcard.com/report/github.com/ardaos/arda-os/tools/compliance-compiler)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-## Features
+## How It Works
 
-### 🏦 **Comprehensive Finance Verticals**
+The ArdaOS Compliance Compiler transforms YAML compliance policies into blockchain-ready protobuf format through a modern, multi-stage architecture:
+
+### 🔄 **Processing Pipeline**
+
+```
+YAML Policy → JSON Schema Validation → Protobuf Conversion → Blockchain Output
+     ↓              ↓                         ↓                    ↓
+  Parse YAML    Validate Fields       Convert to Proto     Binary/JSON/Text
+  Structure     Check Rules           Use Generated        Ready for ArdaOS
+                Suggest Fixes         Types (Buf CLI)
+```
+
+### 🏗️ **Architecture Components**
+
+1. **📋 JSON Schema Validation**
+   - Comprehensive validation against `schemas/compliance-policy.json`
+   - Intelligent error messages with actionable suggestions
+   - Jurisdiction-specific and asset-class-specific warnings
+   - Best practices recommendations (e.g., missing metadata, enforcement config)
+
+2. **🔧 Buf CLI Integration**
+   - Modern protobuf management with `buf.yaml` configuration
+   - Generated Go types in `gen/compliance/v1/` package
+   - Linting, breaking change detection, and dependency management
+   - Clean separation between schema definition and code generation
+
+3. **⚙️ Multi-Stage Parser**
+   - YAML parsing with syntax validation
+   - JSON Schema validation with detailed error reporting
+   - Protobuf conversion using generated types
+   - Multiple output formats (binary, JSON, text)
+
+### 🏦 **Finance Verticals Supported**
 - **Credit Card Receivables**: CFPB/CARD Act, EU PSD2, risk-based underwriting
 - **Installment Loans**: TILA compliance, state-specific requirements, ability-to-repay
 - **Merchant Cash Advances**: Revenue-based qualification, daily collection, state regulations
@@ -20,19 +52,13 @@ A comprehensive policy compilation and validation tool for ArdaOS blockchain com
 - **US Federal**: CFPB, FDCPA, TILA, UCC, CARD Act
 - **State-Specific**: New York, California, Texas, and other state regulations
 - **International**: EU PSD2, other regional frameworks
-- **Automated Updates**: Regulatory changes tracked and updated automatically
-
-### 🛠️ **Powerful CLI Tool**
-- **Policy Compilation**: YAML to optimized protobuf conversion
-- **Comprehensive Validation**: Schema validation, regulatory compliance checks
-- **Template Generation**: Auto-generate compliant policy templates
-- **Testing Framework**: Comprehensive test data and validation
+- **Smart Validation**: Jurisdiction-aware validation with targeted suggestions
 
 ### 🚀 **Developer Experience**
-- **Cross-Platform**: Linux, macOS, Windows support
-- **Docker Ready**: Containerized for CI/CD integration
-- **Performance Optimized**: Sub-second compilation times
-- **Comprehensive Documentation**: Examples, guides, and API references
+- **Rich CLI Interface**: Colored output, progress bars, intelligent error messages
+- **Multiple Output Formats**: Binary protobuf, JSON (debugging), text (human-readable)
+- **Comprehensive Validation**: Schema validation with suggestions and warnings
+- **Performance Optimized**: Sub-second compilation times with efficient parsing
 
 ## Quick Start
 
@@ -66,24 +92,58 @@ make build
 
 ### Basic Usage
 
-#### Validate a Policy
+The compliance compiler currently supports the `compile` command with comprehensive JSON Schema validation:
+
+#### Compile Policy to Different Formats
 ```bash
-compliance-compiler validate policy.yaml
+# Compile to JSON format (for debugging and inspection)
+compliance-compiler compile policy.yaml --format json
+
+# Compile to binary protobuf (for ArdaOS blockchain)
+compliance-compiler compile policy.yaml --format binary -o policy.pb
+
+# Compile to text format (human-readable)
+compliance-compiler compile policy.yaml --format text
+
+# Quiet mode for CI/CD pipelines
+compliance-compiler compile policy.yaml --quiet
 ```
 
-#### Compile Policy to Protobuf
-```bash
-compliance-compiler compile policy.yaml -o policy.pb
+#### Example Policy Structure
+```yaml
+# Minimal credit card policy example
+policy_id: "credit_card_policy"
+version: "1.0.0"
+jurisdiction: "US"
+asset_class: "credit-card"
+
+rules:
+  - name: "Credit Score Check"
+    description: "Borrower must have minimum credit score"
+    predicate:
+      field: "borrower.credit_score"
+      op: "gte"
+      value: 620
+    required: true
+
+metadata:
+  title: "Credit Card Compliance Policy"
+  description: "Basic credit card receivables policy"
+  author: "Compliance Team"
 ```
 
-#### Generate Policy Template
+#### Validation Output
+The tool provides intelligent validation with suggestions:
 ```bash
-compliance-compiler generate --type credit-card --jurisdiction US --output template.yaml
-```
+$ compliance-compiler compile policy.yaml --format json
 
-#### Run Tests
-```bash
-compliance-compiler test policy.yaml --test-data tests/
+🚀 Starting compilation of: policy.yaml
+📖 Parsing and validating YAML policy file...
+  ⚠️  3 warnings found:
+    • metadata: Missing metadata section (Suggestion: Add metadata section...)
+    • enforcement: Missing enforcement configuration (Suggestion: Add enforcement section...)
+    • rules: Consider adding ability-to-pay assessment rules for US credit card compliance
+  ✅ Policy parsed and validated successfully
 ```
 
 ## Policy Templates
@@ -96,28 +156,6 @@ The compliance compiler includes comprehensive policy templates for all supporte
 - **Risk-Based Underwriting**: Credit scoring, debt-to-income analysis
 - **Forward Flow Agreements**: Portfolio sale compliance
 
-### Installment Loans
-- **US TILA Compliance**: APR calculation, disclosure requirements
-- **Ability-to-Repay**: QM standards, DTI verification
-- **State-Specific (CA)**: California CFL requirements
-- **Small Business**: SBA compliance, commercial lending standards
-
-### Merchant Cash Advances
-- **Revenue-Based Qualification**: Cash flow analysis, industry risk assessment
-- **Daily Collection**: ACH compliance, NACHA rules, FDCPA compliance
-- **NY State Regulatory**: Commercial financing disclosure law
-
-### Equipment Leasing
-- **UCC Article 9**: Security interest creation, perfection, priority
-- **Collateral Valuation**: Asset appraisal, depreciation schedules
-- **Lease Classification**: Operating vs finance lease determination
-
-### Working Capital Loans
-- **Asset-Based Lending**: Collateral monitoring, advance rates
-- **Receivables Factoring**: Account debtor verification, collection rights
-- **Inventory Financing**: Commodity pricing, storage requirements
-- **SBA Compliance**: Government guarantee requirements
-
 ## Examples
 
 ### Credit Card Policy Validation
@@ -128,25 +166,6 @@ compliance-compiler validate examples/templates/credit-card/us-cfpb-card-act.yam
 # Test with sample data
 compliance-compiler test examples/templates/credit-card/us-cfpb-card-act.yaml \
   --test-data examples/test-data/credit-card/positive-test-cases.json
-```
-
-### MCA Policy Compilation
-```bash
-# Compile NY state MCA policy
-compliance-compiler compile examples/templates/mca/state-regulatory-ny.yaml \
-  --format protobuf \
-  --output mca-ny-policy.pb \
-  --optimize
-```
-
-### Equipment Lease Template Generation
-```bash
-# Generate UCC Article 9 compliant template
-compliance-compiler generate \
-  --type equipment-lease \
-  --jurisdiction US \
-  --regulatory-framework "UCC Article 9" \
-  --output custom-equipment-lease.yaml
 ```
 
 ## Configuration
@@ -210,49 +229,82 @@ make help                 # Show all available targets
 
 ### Schema Structure
 
-Policy templates follow this structure:
+The compliance compiler uses a comprehensive JSON Schema for validation. Policies follow this structure:
 
 ```yaml
-# Template metadata
-template:
-  name: "Policy Name"
-  version: "1.0.0"
-  jurisdiction: "USA"
-  asset_class: "AssetType"
-  regulatory_framework: ["Framework1", "Framework2"]
+# Required fields
+policy_id: "unique_policy_identifier"
+version: "1.0.0"                    # Semantic versioning
+jurisdiction: "US"                   # US, EU, CA, UK, etc.
+asset_class: "credit-card"          # credit-card, installment-loan, mca, etc.
 
-# Configurable parameters
-parameters:
-  param_name:
-    type: "float"
-    default: 100.0
-    min: 0.0
-    max: 1000.0
-    description: "Parameter description"
+# Rules define compliance conditions
+rules:
+  - name: "Rule Name"
+    description: "Detailed rule description"
+    predicate:
+      # Comparison predicate
+      field: "borrower.credit_score"
+      op: "gte"                     # eq, ne, gt, gte, lt, lte, contains
+      value: 620
+    required: true                  # true for required rules
+    priority: 10                    # 1-100 (1=highest priority)
+    tags: ["credit", "underwriting"] # Optional categorization
 
-# Policy implementation
-policy:
-  metadata:
-    version: "1.0.0"
-    name: "policy-name"
+  # Logical predicates (AND, OR, NOT)
+  - name: "Complex Logic Rule"
+    predicate:
+      and:
+        - field: "borrower.income"
+          op: "gt"
+          value: 50000
+        - field: "borrower.employment_status"
+          op: "eq"
+          value: "employed"
 
-  rules:
-    - id: "rule_id"
-      name: "Rule Name"
-      type: "validation"
-      priority: "high"
-      conditions:
-        - "condition_expression"
-      actions:
-        - "action_to_take"
+  # Existence predicates
+  - name: "Required Field Check"
+    predicate:
+      exists: "borrower.ssn"
+      should_exist: true
 
-  attestations:
-    - id: "attestation_id"
-      name: "Attestation Name"
-      required: true
-      fields:
-        - "field_name"
+  # Range predicates
+  - name: "Debt to Income Range"
+    predicate:
+      range:
+        field: "borrower.debt_to_income_ratio"
+        max: 0.43
+        max_inclusive: true
+
+# Optional sections
+attestations:
+  - name: "Credit Bureau Check"
+    type: "credit_check"           # Predefined attestation types
+    required: true
+
+enforcement:
+  level: "blocking"                # advisory, warning, blocking, quarantine, reject
+  actions:
+    - "log"
+    - "block_transaction"
+
+metadata:
+  title: "Human-readable policy title"
+  description: "Detailed policy description"
+  author: "Policy author"
+  tags: ["compliance", "credit-card"]
 ```
+
+### JSON Schema Validation
+
+The tool validates policies against `schemas/compliance-policy.json` and provides:
+
+- **Field Validation**: Required fields, data types, format validation
+- **Enum Validation**: Jurisdiction codes, asset classes, operators, etc.
+- **Pattern Validation**: Policy IDs, version numbers, field paths
+- **Business Logic**: Cross-field validation and consistency checks
+- **Best Practices**: Warnings for missing recommended sections
+- **Jurisdiction-Specific**: Smart suggestions based on jurisdiction and asset class
 
 ## API Reference
 
