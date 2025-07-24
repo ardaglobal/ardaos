@@ -1,0 +1,594 @@
+syntax = "proto3";
+package ardaos.compliance.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/ardaOS/ardaOS/api/ardaos/compliance/v1";
+
+// Comprehensive enforcement configuration system for compliance policies
+message EnforcementConfig {
+  // Core enforcement settings
+  EnforcementLevel level = 1; // Overall enforcement level
+  repeated EnforcementAction actions = 2; // Actions to take on violations
+  AlertConfig alerts = 3; // Alert configuration
+
+  // Advanced enforcement features
+  bool auto_remediation = 4; // Enable automatic remediation
+  int64 grace_period_seconds = 5; // Grace period before enforcement
+  EscalationPolicy escalation = 6; // Escalation rules
+  RemediationConfig remediation = 7; // Remediation configuration
+
+  // Conditional enforcement
+  repeated EnforcementCondition conditions = 8; // Conditional enforcement rules
+  EnforcementSchedule schedule = 9; // Time-based enforcement schedule
+
+  // Audit and compliance
+  AuditConfig audit = 10; // Audit trail configuration
+  ComplianceReporting reporting = 11; // Reporting requirements
+
+  // Integration and automation
+  IntegrationConfig integrations = 12; // External system integrations
+  WorkflowConfig workflows = 13; // Automated workflow configuration
+}
+
+// Enforcement levels with detailed semantics
+enum EnforcementLevel {
+  ENFORCEMENT_LEVEL_UNSPECIFIED = 0;
+  ENFORCEMENT_LEVEL_DISABLED = 1; // Enforcement disabled
+  ENFORCEMENT_LEVEL_MONITORING = 2; // Monitor only, no action
+  ENFORCEMENT_LEVEL_ADVISORY = 3; // Log violations, allow transactions
+  ENFORCEMENT_LEVEL_WARNING = 4; // Warn but allow with confirmation
+  ENFORCEMENT_LEVEL_SOFT_BLOCKING = 5; // Block with override capability
+  ENFORCEMENT_LEVEL_BLOCKING = 6; // Block transactions on violations
+  ENFORCEMENT_LEVEL_CRITICAL = 7; // Block and alert authorities
+  ENFORCEMENT_LEVEL_EMERGENCY = 8; // Emergency lockdown mode
+}
+
+// Comprehensive enforcement actions
+enum EnforcementAction {
+  ENFORCEMENT_ACTION_UNSPECIFIED = 0;
+
+  // Logging and monitoring
+  ENFORCEMENT_ACTION_LOG = 1; // Log violation
+  ENFORCEMENT_ACTION_METRIC = 2; // Update metrics/counters
+  ENFORCEMENT_ACTION_TRACE = 3; // Create detailed trace
+
+  // Alerting and notification
+  ENFORCEMENT_ACTION_ALERT = 4; // Send alert
+  ENFORCEMENT_ACTION_NOTIFY_COMPLIANCE = 5; // Notify compliance team
+  ENFORCEMENT_ACTION_NOTIFY_REGULATOR = 6; // Notify regulatory authority
+  ENFORCEMENT_ACTION_ESCALATE = 7; // Escalate to higher authority
+
+  // Transaction control
+  ENFORCEMENT_ACTION_BLOCK_TRANSACTION = 8; // Block current transaction
+  ENFORCEMENT_ACTION_QUARANTINE_TRANSACTION = 9; // Quarantine for review
+  ENFORCEMENT_ACTION_DELAY_TRANSACTION = 10; // Delay transaction execution
+  ENFORCEMENT_ACTION_REQUIRE_APPROVAL = 11; // Require manual approval
+
+  // Account control
+  ENFORCEMENT_ACTION_FREEZE_ACCOUNT = 12; // Freeze account
+  ENFORCEMENT_ACTION_SUSPEND_ACCOUNT = 13; // Suspend account temporarily
+  ENFORCEMENT_ACTION_RESTRICT_ACCOUNT = 14; // Apply restrictions
+  ENFORCEMENT_ACTION_FLAG_ACCOUNT = 15; // Flag for monitoring
+
+  // Remediation
+  ENFORCEMENT_ACTION_TRIGGER_REMEDIATION = 16; // Start remediation process
+  ENFORCEMENT_ACTION_REQUIRE_ATTESTATION = 17; // Require new attestation
+  ENFORCEMENT_ACTION_FORCE_COMPLIANCE_CHECK = 18; // Force compliance re-check
+
+  // Legal and regulatory
+  ENFORCEMENT_ACTION_AUDIT_LOG = 19; // Create audit log entry
+  ENFORCEMENT_ACTION_REGULATORY_FILING = 20; // File regulatory report
+  ENFORCEMENT_ACTION_LEGAL_HOLD = 21; // Place on legal hold
+
+  // External integrations
+  ENFORCEMENT_ACTION_WEBHOOK = 22; // Send webhook notification
+  ENFORCEMENT_ACTION_API_CALL = 23; // Make external API call
+  ENFORCEMENT_ACTION_QUEUE_MESSAGE = 24; // Queue message for processing
+}
+
+// Alert configuration with advanced features
+message AlertConfig {
+  bool enabled = 1;
+  repeated AlertChannel channels = 2; // Multiple alert channels
+  AlertSeverity severity = 3;
+
+  // Rate limiting and deduplication
+  int64 cooldown_seconds = 4; // Minimum time between alerts
+  bool deduplicate = 5; // Deduplicate similar alerts
+  int32 max_alerts_per_hour = 6; // Maximum alerts per hour
+
+  // Alert content and formatting
+  AlertTemplate template = 7; // Alert message template
+  repeated string tags = 8; // Alert tags for routing
+  map<string, string> metadata = 9; // Additional metadata
+
+  // Follow-up and escalation
+  FollowUpConfig follow_up = 10; // Follow-up configuration
+  int64 acknowledgment_timeout_seconds = 11; // Time to acknowledge
+}
+
+message AlertChannel {
+  string name = 1; // Channel name/identifier
+  AlertChannelType type = 2; // Channel type
+  repeated string recipients = 3; // Recipients for this channel
+  ChannelConfig config = 4; // Channel-specific configuration
+  bool enabled = 5; // Whether channel is enabled
+  AlertSeverity min_severity = 6; // Minimum severity for this channel
+}
+
+enum AlertChannelType {
+  ALERT_CHANNEL_TYPE_UNSPECIFIED = 0;
+  ALERT_CHANNEL_TYPE_EMAIL = 1;
+  ALERT_CHANNEL_TYPE_SMS = 2;
+  ALERT_CHANNEL_TYPE_SLACK = 3;
+  ALERT_CHANNEL_TYPE_TEAMS = 4;
+  ALERT_CHANNEL_TYPE_WEBHOOK = 5;
+  ALERT_CHANNEL_TYPE_PUSH_NOTIFICATION = 6;
+  ALERT_CHANNEL_TYPE_PHONE_CALL = 7;
+  ALERT_CHANNEL_TYPE_PAGER = 8;
+  ALERT_CHANNEL_TYPE_INCIDENT_MANAGEMENT = 9;
+}
+
+message ChannelConfig {
+  map<string, string> parameters = 1; // Channel-specific parameters
+  bool encrypt_messages = 2; // Encrypt alert messages
+  string encryption_key_id = 3; // Encryption key identifier
+  AuthenticationConfig auth = 4; // Authentication for channel
+}
+
+message AuthenticationConfig {
+  oneof auth_type {
+    string api_key = 1;
+    OAuth oauth = 2;
+    BasicAuth basic_auth = 3;
+  }
+}
+
+message OAuth {
+  string client_id = 1;
+  string client_secret = 2;
+  string token_url = 3;
+  repeated string scopes = 4;
+}
+
+message BasicAuth {
+  string username = 1;
+  string password = 2;
+}
+
+enum AlertSeverity {
+  ALERT_SEVERITY_UNSPECIFIED = 0;
+  ALERT_SEVERITY_INFO = 1;
+  ALERT_SEVERITY_LOW = 2;
+  ALERT_SEVERITY_MEDIUM = 3;
+  ALERT_SEVERITY_HIGH = 4;
+  ALERT_SEVERITY_CRITICAL = 5;
+  ALERT_SEVERITY_EMERGENCY = 6;
+}
+
+message AlertTemplate {
+  string subject_template = 1; // Subject/title template
+  string body_template = 2; // Message body template
+  string format = 3; // Template format (text, html, markdown)
+  map<string, string> variables = 4; // Template variables
+  bool include_context = 5; // Include violation context
+  bool include_remediation_steps = 6; // Include remediation instructions
+}
+
+message FollowUpConfig {
+  bool enabled = 1;
+  repeated int64 follow_up_intervals_seconds = 2; // Follow-up intervals
+  int32 max_follow_ups = 3; // Maximum number of follow-ups
+  bool escalate_on_timeout = 4; // Escalate if not acknowledged
+  string escalation_target = 5; // Escalation target
+}
+
+// Escalation policy for violations
+message EscalationPolicy {
+  bool enabled = 1;
+  repeated EscalationLevel levels = 2; // Escalation levels
+  EscalationStrategy strategy = 3; // Escalation strategy
+  int64 max_escalation_time_seconds = 4; // Maximum time for escalation
+}
+
+message EscalationLevel {
+  int32 level = 1; // Escalation level (1, 2, 3, etc.)
+  int64 trigger_delay_seconds = 2; // Delay before escalation
+  repeated string escalation_targets = 3; // Who to escalate to
+  repeated EnforcementAction actions = 4; // Actions at this level
+  EscalationTrigger trigger = 5; // What triggers escalation
+}
+
+message EscalationTrigger {
+  EscalationTriggerType type = 1;
+  google.protobuf.Any parameters = 2; // Trigger-specific parameters
+}
+
+enum EscalationTriggerType {
+  ESCALATION_TRIGGER_TYPE_UNSPECIFIED = 0;
+  ESCALATION_TRIGGER_TYPE_TIME_BASED = 1; // Time-based escalation
+  ESCALATION_TRIGGER_TYPE_SEVERITY_BASED = 2; // Severity threshold
+  ESCALATION_TRIGGER_TYPE_VOLUME_BASED = 3; // Volume of violations
+  ESCALATION_TRIGGER_TYPE_MANUAL = 4; // Manual escalation
+  ESCALATION_TRIGGER_TYPE_AUTOMATED = 5; // Automated analysis
+}
+
+enum EscalationStrategy {
+  ESCALATION_STRATEGY_UNSPECIFIED = 0;
+  ESCALATION_STRATEGY_LINEAR = 1; // Linear escalation through levels
+  ESCALATION_STRATEGY_EXPONENTIAL = 2; // Exponential backoff
+  ESCALATION_STRATEGY_IMMEDIATE = 3; // Immediate escalation to highest level
+  ESCALATION_STRATEGY_CONDITIONAL = 4; // Conditional based on violation type
+}
+
+// Remediation configuration
+message RemediationConfig {
+  bool enabled = 1;
+  repeated RemediationStrategy strategies = 2; // Available strategies
+  RemediationPolicy policy = 3; // Remediation policy
+  bool auto_execute = 4; // Automatically execute remediation
+  int64 timeout_seconds = 5; // Remediation timeout
+}
+
+message RemediationStrategy {
+  string name = 1; // Strategy name
+  RemediationStrategyType type = 2; // Strategy type
+  repeated RemediationAction actions = 3; // Remediation actions
+  RemediationCondition applicability = 4; // When strategy applies
+  int32 priority = 5; // Strategy priority
+  bool requires_approval = 6; // Whether strategy requires approval
+}
+
+enum RemediationStrategyType {
+  REMEDIATION_STRATEGY_TYPE_UNSPECIFIED = 0;
+  REMEDIATION_STRATEGY_TYPE_AUTOMATIC = 1; // Fully automated
+  REMEDIATION_STRATEGY_TYPE_GUIDED = 2; // Guided manual process
+  REMEDIATION_STRATEGY_TYPE_MANUAL = 3; // Manual intervention required
+  REMEDIATION_STRATEGY_TYPE_HYBRID = 4; // Mix of automated and manual
+}
+
+message RemediationAction {
+  string name = 1;
+  RemediationActionType type = 2;
+  google.protobuf.Any parameters = 3; // Action-specific parameters
+  bool required = 4; // Whether action is required
+  int32 order = 5; // Execution order
+}
+
+enum RemediationActionType {
+  REMEDIATION_ACTION_TYPE_UNSPECIFIED = 0;
+  REMEDIATION_ACTION_TYPE_UPDATE_ATTESTATION = 1; // Update attestation
+  REMEDIATION_ACTION_TYPE_REQUEST_DOCUMENTS = 2; // Request additional docs
+  REMEDIATION_ACTION_TYPE_SCHEDULE_REVIEW = 3; // Schedule compliance review
+  REMEDIATION_ACTION_TYPE_RESTRICT_OPERATIONS = 4; // Restrict certain operations
+  REMEDIATION_ACTION_TYPE_REQUIRE_TRAINING = 5; // Require compliance training
+  REMEDIATION_ACTION_TYPE_AUDIT_PROCESS = 6; // Initiate audit process
+  REMEDIATION_ACTION_TYPE_EXTERNAL_VERIFICATION = 7; // External verification
+  REMEDIATION_ACTION_TYPE_POLICY_UPDATE = 8; // Update policy/procedures
+}
+
+message RemediationCondition {
+  string expression = 1; // Condition expression
+  map<string, google.protobuf.Any> context = 2; // Evaluation context
+}
+
+message RemediationPolicy {
+  RemediationPolicyType type = 1;
+  int32 max_attempts = 2; // Maximum remediation attempts
+  int64 retry_delay_seconds = 3; // Delay between attempts
+  bool require_documentation = 4; // Require remediation documentation
+  bool notify_on_completion = 5; // Notify when remediation complete
+}
+
+enum RemediationPolicyType {
+  REMEDIATION_POLICY_TYPE_UNSPECIFIED = 0;
+  REMEDIATION_POLICY_TYPE_IMMEDIATE = 1; // Immediate remediation
+  REMEDIATION_POLICY_TYPE_SCHEDULED = 2; // Scheduled remediation
+  REMEDIATION_POLICY_TYPE_ON_DEMAND = 3; // On-demand remediation
+  REMEDIATION_POLICY_TYPE_BATCH = 4; // Batch remediation
+}
+
+// Conditional enforcement rules
+message EnforcementCondition {
+  string name = 1; // Condition name
+  string expression = 2; // Condition expression (CEL or similar)
+  EnforcementOverride override = 3; // Enforcement override when condition met
+  bool enabled = 4; // Whether condition is enabled
+  int32 priority = 5; // Condition priority
+}
+
+message EnforcementOverride {
+  EnforcementLevel level_override = 1; // Override enforcement level
+  repeated EnforcementAction action_overrides = 2; // Override actions
+  bool disable_alerts = 3; // Disable alerts
+  string reason = 4; // Reason for override
+}
+
+// Time-based enforcement scheduling
+message EnforcementSchedule {
+  bool enabled = 1;
+  repeated ScheduleRule rules = 2; // Schedule rules
+  string timezone = 3; // Timezone for schedule
+  bool inherit_from_jurisdiction = 4; // Inherit business hours from jurisdiction
+}
+
+message ScheduleRule {
+  string name = 1; // Rule name
+  ScheduleRuleType type = 2; // Rule type
+  TimeRange time_range = 3; // Time range for rule
+  EnforcementLevel enforcement_level = 4; // Enforcement level during time range
+  repeated string days_of_week = 5; // Days of week (monday, tuesday, etc.)
+  repeated string holidays = 6; // Holiday dates (ISO 8601)
+  bool business_hours_only = 7; // Apply only during business hours
+}
+
+enum ScheduleRuleType {
+  SCHEDULE_RULE_TYPE_UNSPECIFIED = 0;
+  SCHEDULE_RULE_TYPE_BUSINESS_HOURS = 1; // Business hours rule
+  SCHEDULE_RULE_TYPE_MAINTENANCE_WINDOW = 2; // Maintenance window
+  SCHEDULE_RULE_TYPE_HIGH_VOLUME_PERIOD = 3; // High volume period
+  SCHEDULE_RULE_TYPE_HOLIDAY = 4; // Holiday period
+  SCHEDULE_RULE_TYPE_EMERGENCY = 5; // Emergency period
+}
+
+message TimeRange {
+  string start_time = 1; // Start time (HH:MM format)
+  string end_time = 2; // End time (HH:MM format)
+  google.protobuf.Timestamp start_date = 3 [(gogoproto.stdtime) = true]; // Start date
+  google.protobuf.Timestamp end_date = 4 [(gogoproto.stdtime) = true]; // End date
+}
+
+// Audit configuration for enforcement
+message AuditConfig {
+  bool enabled = 1;
+  AuditLevel level = 2; // Audit detail level
+  repeated AuditEvent events = 3; // Events to audit
+  AuditStorage storage = 4; // Audit storage configuration
+  AuditRetention retention = 5; // Audit retention policy
+  bool encrypt_logs = 6; // Encrypt audit logs
+  string encryption_key_id = 7; // Encryption key identifier
+}
+
+enum AuditLevel {
+  AUDIT_LEVEL_UNSPECIFIED = 0;
+  AUDIT_LEVEL_BASIC = 1; // Basic audit information
+  AUDIT_LEVEL_DETAILED = 2; // Detailed audit information
+  AUDIT_LEVEL_COMPREHENSIVE = 3; // Comprehensive audit trail
+  AUDIT_LEVEL_DEBUG = 4; // Debug-level audit information
+}
+
+enum AuditEvent {
+  AUDIT_EVENT_UNSPECIFIED = 0;
+  AUDIT_EVENT_VIOLATION_DETECTED = 1; // Compliance violation detected
+  AUDIT_EVENT_ENFORCEMENT_ACTION = 2; // Enforcement action taken
+  AUDIT_EVENT_ALERT_SENT = 3; // Alert sent
+  AUDIT_EVENT_ESCALATION = 4; // Escalation triggered
+  AUDIT_EVENT_REMEDIATION_STARTED = 5; // Remediation started
+  AUDIT_EVENT_REMEDIATION_COMPLETED = 6; // Remediation completed
+  AUDIT_EVENT_OVERRIDE_APPLIED = 7; // Enforcement override applied
+  AUDIT_EVENT_POLICY_EVALUATION = 8; // Policy evaluation
+  AUDIT_EVENT_CONFIGURATION_CHANGE = 9; // Configuration change
+}
+
+message AuditStorage {
+  AuditStorageType type = 1;
+  string connection_string = 2; // Storage connection string
+  map<string, string> configuration = 3; // Storage-specific config
+  bool replicate = 4; // Replicate audit logs
+  repeated string replica_locations = 5; // Replica storage locations
+}
+
+enum AuditStorageType {
+  AUDIT_STORAGE_TYPE_UNSPECIFIED = 0;
+  AUDIT_STORAGE_TYPE_DATABASE = 1; // Database storage
+  AUDIT_STORAGE_TYPE_FILE_SYSTEM = 2; // File system storage
+  AUDIT_STORAGE_TYPE_CLOUD_STORAGE = 3; // Cloud storage (S3, GCS, etc.)
+  AUDIT_STORAGE_TYPE_BLOCKCHAIN = 4; // Blockchain storage
+  AUDIT_STORAGE_TYPE_DISTRIBUTED_LOG = 5; // Distributed log system
+}
+
+message AuditRetention {
+  int64 retention_period_seconds = 1; // How long to keep audit logs
+  AuditArchivalPolicy archival = 2; // Archival policy
+  bool compress_archived = 3; // Compress archived logs
+  bool verify_integrity = 4; // Verify log integrity
+}
+
+message AuditArchivalPolicy {
+  bool enabled = 1;
+  int64 archive_after_seconds = 2; // Archive logs after this time
+  string archive_location = 3; // Archive storage location
+  AuditStorageType archive_storage_type = 4; // Archive storage type
+}
+
+// Compliance reporting configuration
+message ComplianceReporting {
+  bool enabled = 1;
+  repeated ReportTemplate templates = 2; // Report templates
+  ReportSchedule schedule = 3; // Reporting schedule
+  repeated string recipients = 4; // Report recipients
+  ReportDelivery delivery = 5; // Report delivery configuration
+}
+
+message ReportTemplate {
+  string name = 1; // Template name
+  ReportType type = 2; // Report type
+  string template_content = 3; // Report template content
+  string format = 4; // Report format (PDF, HTML, CSV, etc.)
+  repeated string data_sources = 5; // Data sources for report
+  map<string, string> parameters = 6; // Template parameters
+}
+
+enum ReportType {
+  REPORT_TYPE_UNSPECIFIED = 0;
+  REPORT_TYPE_VIOLATION_SUMMARY = 1; // Violation summary report
+  REPORT_TYPE_ENFORCEMENT_METRICS = 2; // Enforcement metrics report
+  REPORT_TYPE_COMPLIANCE_STATUS = 3; // Overall compliance status
+  REPORT_TYPE_AUDIT_TRAIL = 4; // Audit trail report
+  REPORT_TYPE_REGULATORY_FILING = 5; // Regulatory filing report
+  REPORT_TYPE_RISK_ASSESSMENT = 6; // Risk assessment report
+}
+
+message ReportSchedule {
+  ReportFrequency frequency = 1; // Report frequency
+  string cron_expression = 2; // Cron expression for scheduling
+  string timezone = 3; // Timezone for scheduling
+  bool include_weekends = 4; // Include weekends in reporting
+  repeated string excluded_dates = 5; // Excluded dates (holidays, etc.)
+}
+
+enum ReportFrequency {
+  REPORT_FREQUENCY_UNSPECIFIED = 0;
+  REPORT_FREQUENCY_REAL_TIME = 1; // Real-time reporting
+  REPORT_FREQUENCY_HOURLY = 2; // Hourly reports
+  REPORT_FREQUENCY_DAILY = 3; // Daily reports
+  REPORT_FREQUENCY_WEEKLY = 4; // Weekly reports
+  REPORT_FREQUENCY_MONTHLY = 5; // Monthly reports
+  REPORT_FREQUENCY_QUARTERLY = 6; // Quarterly reports
+  REPORT_FREQUENCY_ANNUALLY = 7; // Annual reports
+  REPORT_FREQUENCY_ON_DEMAND = 8; // On-demand reports
+}
+
+message ReportDelivery {
+  repeated ReportDeliveryMethod methods = 1; // Delivery methods
+  bool encrypt_reports = 2; // Encrypt reports
+  string encryption_key_id = 3; // Encryption key identifier
+  bool require_acknowledgment = 4; // Require delivery acknowledgment
+  int64 retry_attempts = 5; // Retry attempts for failed delivery
+}
+
+enum ReportDeliveryMethod {
+  REPORT_DELIVERY_METHOD_UNSPECIFIED = 0;
+  REPORT_DELIVERY_METHOD_EMAIL = 1; // Email delivery
+  REPORT_DELIVERY_METHOD_FILE_SYSTEM = 2; // File system delivery
+  REPORT_DELIVERY_METHOD_API_ENDPOINT = 3; // API endpoint delivery
+  REPORT_DELIVERY_METHOD_CLOUD_STORAGE = 4; // Cloud storage delivery
+  REPORT_DELIVERY_METHOD_SECURE_PORTAL = 5; // Secure portal delivery
+}
+
+// Integration configuration
+message IntegrationConfig {
+  repeated ExternalIntegration integrations = 1; // External integrations
+  bool enable_webhooks = 2; // Enable webhook notifications
+  WebhookConfig webhook_config = 3; // Webhook configuration
+  ApiGatewayConfig api_gateway = 4; // API gateway configuration
+}
+
+message ExternalIntegration {
+  string name = 1; // Integration name
+  IntegrationType type = 2; // Integration type
+  string endpoint = 3; // Integration endpoint
+  AuthenticationConfig auth = 4; // Authentication configuration
+  map<string, string> configuration = 5; // Integration-specific config
+  bool enabled = 6; // Whether integration is enabled
+  repeated EnforcementAction trigger_actions = 7; // Actions that trigger integration
+}
+
+enum IntegrationType {
+  INTEGRATION_TYPE_UNSPECIFIED = 0;
+  INTEGRATION_TYPE_SIEM = 1; // Security Information and Event Management
+  INTEGRATION_TYPE_CASE_MANAGEMENT = 2; // Case management system
+  INTEGRATION_TYPE_WORKFLOW_ENGINE = 3; // Workflow automation
+  INTEGRATION_TYPE_NOTIFICATION_SERVICE = 4; // Notification service
+  INTEGRATION_TYPE_DATA_LAKE = 5; // Data lake/warehouse
+  INTEGRATION_TYPE_REGULATORY_SYSTEM = 6; // Regulatory reporting system
+  INTEGRATION_TYPE_RISK_MANAGEMENT = 7; // Risk management platform
+}
+
+message WebhookConfig {
+  repeated WebhookEndpoint endpoints = 1; // Webhook endpoints
+  int64 timeout_seconds = 2; // Webhook timeout
+  int32 max_retries = 3; // Maximum retry attempts
+  bool verify_ssl = 4; // Verify SSL certificates
+  string secret_key = 5; // Secret key for webhook signature
+}
+
+message WebhookEndpoint {
+  string name = 1; // Endpoint name
+  string url = 2; // Webhook URL
+  repeated string events = 3; // Events to send to this endpoint
+  map<string, string> headers = 4; // Custom headers
+  bool enabled = 5; // Whether endpoint is enabled
+}
+
+message ApiGatewayConfig {
+  string base_url = 1; // API gateway base URL
+  string api_key = 2; // API key for gateway
+  int64 rate_limit_per_minute = 3; // Rate limit
+  bool enable_circuit_breaker = 4; // Enable circuit breaker
+  CircuitBreakerConfig circuit_breaker = 5; // Circuit breaker configuration
+}
+
+message CircuitBreakerConfig {
+  int32 failure_threshold = 1; // Failure threshold
+  int64 recovery_timeout_seconds = 2; // Recovery timeout
+  int32 success_threshold = 3; // Success threshold for recovery
+}
+
+// Workflow configuration
+message WorkflowConfig {
+  bool enabled = 1;
+  repeated WorkflowTemplate templates = 2; // Workflow templates
+  WorkflowEngine engine = 3; // Workflow engine configuration
+  bool auto_execute = 4; // Auto-execute workflows
+}
+
+message WorkflowTemplate {
+  string name = 1; // Workflow name
+  string description = 2; // Workflow description
+  repeated WorkflowStep steps = 3; // Workflow steps
+  repeated WorkflowTrigger triggers = 4; // Workflow triggers
+  bool enabled = 5; // Whether workflow is enabled
+}
+
+message WorkflowStep {
+  string name = 1; // Step name
+  WorkflowStepType type = 2; // Step type
+  google.protobuf.Any parameters = 3; // Step parameters
+  int32 order = 4; // Execution order
+  repeated string dependencies = 5; // Step dependencies
+}
+
+enum WorkflowStepType {
+  WORKFLOW_STEP_TYPE_UNSPECIFIED = 0;
+  WORKFLOW_STEP_TYPE_APPROVAL = 1; // Approval step
+  WORKFLOW_STEP_TYPE_NOTIFICATION = 2; // Notification step
+  WORKFLOW_STEP_TYPE_DATA_COLLECTION = 3; // Data collection step
+  WORKFLOW_STEP_TYPE_VERIFICATION = 4; // Verification step
+  WORKFLOW_STEP_TYPE_REMEDIATION = 5; // Remediation step
+  WORKFLOW_STEP_TYPE_INTEGRATION_CALL = 6; // External integration call
+}
+
+message WorkflowTrigger {
+  WorkflowTriggerType type = 1; // Trigger type
+  google.protobuf.Any parameters = 2; // Trigger parameters
+}
+
+enum WorkflowTriggerType {
+  WORKFLOW_TRIGGER_TYPE_UNSPECIFIED = 0;
+  WORKFLOW_TRIGGER_TYPE_VIOLATION = 1; // Compliance violation
+  WORKFLOW_TRIGGER_TYPE_THRESHOLD = 2; // Threshold breach
+  WORKFLOW_TRIGGER_TYPE_SCHEDULE = 3; // Scheduled trigger
+  WORKFLOW_TRIGGER_TYPE_MANUAL = 4; // Manual trigger
+  WORKFLOW_TRIGGER_TYPE_API_CALL = 5; // API call trigger
+}
+
+message WorkflowEngine {
+  WorkflowEngineType type = 1; // Engine type
+  string endpoint = 2; // Engine endpoint
+  AuthenticationConfig auth = 3; // Engine authentication
+  map<string, string> configuration = 4; // Engine configuration
+}
+
+enum WorkflowEngineType {
+  WORKFLOW_ENGINE_TYPE_UNSPECIFIED = 0;
+  WORKFLOW_ENGINE_TYPE_INTERNAL = 1; // Internal workflow engine
+  WORKFLOW_ENGINE_TYPE_TEMPORAL = 2; // Temporal workflow engine
+  WORKFLOW_ENGINE_TYPE_CAMUNDA = 3; // Camunda workflow engine
+  WORKFLOW_ENGINE_TYPE_AZURE_LOGIC_APPS = 4; // Azure Logic Apps
+  WORKFLOW_ENGINE_TYPE_AWS_STEP_FUNCTIONS = 5; // AWS Step Functions
+}

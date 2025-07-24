@@ -1,0 +1,450 @@
+# Template metadata
+template:
+  name: "MCA Daily Collection Compliance"
+  version: "1.0.0"
+  jurisdiction: "USA"
+  asset_class: "MerchantCashAdvance"
+  description: "Daily collection process compliance for merchant cash advances"
+  author: "Arda Compliance Team"
+  regulatory_framework: ["FDCPA", "UCC Article 9", "NACHA Rules", "State Collection Laws"]
+  last_updated: "2024-01-15"
+
+# Configurable parameters
+parameters:
+  max_consecutive_failed_attempts:
+    type: "int"
+    default: 5
+    min: 3
+    max: 10
+    description: "Maximum consecutive failed collection attempts before escalation"
+
+  nsf_fee_amount:
+    type: "float"
+    default: 25.00
+    min: 10.00
+    max: 50.00
+    description: "NSF fee amount (where legally permitted)"
+
+  collection_retry_hours:
+    type: "int"
+    default: 24
+    min: 12
+    max: 72
+    description: "Hours to wait before retrying failed collection"
+
+  split_payment_threshold:
+    type: "float"
+    default: 0.50
+    min: 0.30
+    max: 0.80
+    description: "Minimum percentage of scheduled payment to accept as partial"
+
+  weekend_collection_enabled:
+    type: "boolean"
+    default: false
+    description: "Whether to attempt collections on weekends"
+
+  holiday_collection_enabled:
+    type: "boolean"
+    default: false
+    description: "Whether to attempt collections on federal holidays"
+
+  max_daily_attempts:
+    type: "int"
+    default: 2
+    min: 1
+    max: 5
+    description: "Maximum collection attempts per day"
+
+# Policy implementation
+policy:
+  metadata:
+    version: "1.0.0"
+    name: "MCA-Daily-Collection-Compliance"
+    description: "Daily collection process compliance for MCA products"
+    tags: ["mca", "collections", "ach", "nacha", "fdcpa"]
+
+  rules:
+    # ACH Collection Processing
+    - id: "ach_collection_processing"
+      name: "ACH Collection Processing Standards"
+      description: "Ensure ACH collections comply with NACHA rules"
+      type: "operational"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "ach_authorization_valid == true"
+        - "collection_amount <= authorized_amount"
+        - "collection_timing_compliant == true"
+        - "nacha_formatting_correct == true"
+        - "originator_id_valid == true"
+      actions:
+        - "validate_ach_authorization"
+        - "verify_collection_amount"
+        - "ensure_nacha_compliance"
+        - "format_ach_transaction"
+        - "submit_ach_collection"
+
+    # Collection Timing and Frequency
+    - id: "collection_timing_rules"
+      name: "Collection Timing and Frequency Rules"
+      description: "Ensure collections follow proper timing and frequency rules"
+      type: "operational"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "collection_day IN business_days OR weekend_collection_enabled == true"
+        - "federal_holiday_check_passed == true OR holiday_collection_enabled == true"
+        - "daily_attempt_count <= ${max_daily_attempts}"
+        - "time_between_attempts >= ${collection_retry_hours}_hours"
+        - "collection_window_appropriate == true"
+      actions:
+        - "verify_business_day_status"
+        - "check_federal_holiday_calendar"
+        - "enforce_daily_attempt_limits"
+        - "implement_retry_delay"
+        - "schedule_collection_within_window"
+
+    # Failed Payment Handling
+    - id: "failed_payment_handling"
+      name: "Failed Payment Processing and Management"
+      description: "Proper handling of failed payment attempts"
+      type: "operational"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "failed_payment_reason_captured == true"
+        - "consecutive_failures <= ${max_consecutive_failed_attempts}"
+        - "nsf_fee_legally_compliant == true IF nsf_fee_applied"
+        - "merchant_notification_sent == true"
+        - "escalation_procedures_followed == true IF threshold_exceeded"
+      actions:
+        - "capture_failure_reason"
+        - "track_consecutive_failures"
+        - "apply_compliant_nsf_fees"
+        - "notify_merchant_of_failure"
+        - "escalate_if_threshold_exceeded"
+
+    # Partial Payment Processing
+    - id: "partial_payment_processing"
+      name: "Partial Payment Acceptance and Processing"
+      description: "Handle partial payments according to agreement terms"
+      type: "operational"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "partial_payment_amount >= (scheduled_amount * ${split_payment_threshold})"
+        - "partial_payment_terms_agreed == true"
+        - "remaining_balance_calculated == true"
+        - "payment_allocation_documented == true"
+        - "merchant_acknowledgment_obtained == true"
+      actions:
+        - "validate_partial_payment_minimum"
+        - "calculate_remaining_balance"
+        - "allocate_payment_appropriately"
+        - "document_partial_payment"
+        - "update_payment_schedule"
+
+    # Collection Documentation
+    - id: "collection_documentation"
+      name: "Collection Activity Documentation"
+      description: "Maintain comprehensive collection activity records"
+      type: "compliance"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "collection_attempts_logged == true"
+        - "payment_confirmations_documented == true"
+        - "failure_reasons_recorded == true"
+        - "merchant_communications_logged == true"
+        - "audit_trail_complete == true"
+      actions:
+        - "log_all_collection_attempts"
+        - "document_payment_confirmations"
+        - "record_detailed_failure_reasons"
+        - "maintain_communication_logs"
+        - "ensure_complete_audit_trail"
+
+    # Merchant Account Monitoring
+    - id: "account_monitoring"
+      name: "Merchant Account Balance Monitoring"
+      description: "Monitor merchant account status and balance adequacy"
+      type: "monitoring"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "account_balance_monitoring_active == true"
+        - "insufficient_funds_detected == true IF account_balance_low"
+        - "account_status_current == true"
+        - "closed_account_detection_active == true"
+        - "fraud_indicators_monitored == true"
+      actions:
+        - "monitor_account_balance_trends"
+        - "detect_insufficient_fund_patterns"
+        - "verify_account_status_regularly"
+        - "identify_closed_accounts_quickly"
+        - "flag_potential_fraud_indicators"
+
+    # Communication and Notifications
+    - id: "collection_communications"
+      name: "Collection Communication Standards"
+      description: "Ensure proper communication during collection process"
+      type: "communication"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "payment_confirmations_sent == true"
+        - "failure_notifications_timely == true"
+        - "collection_communications_compliant == true"
+        - "merchant_response_tracking == true"
+        - "escalation_communications_proper == true"
+      actions:
+        - "send_payment_confirmations"
+        - "provide_timely_failure_notifications"
+        - "ensure_fdcpa_compliant_communications"
+        - "track_merchant_responses"
+        - "manage_escalation_communications"
+
+    # FDCPA Compliance
+    - id: "fdcpa_compliance"
+      name: "Fair Debt Collection Practices Act Compliance"
+      description: "Ensure collection practices comply with FDCPA"
+      type: "regulatory"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "collection_communications_time_compliant == true"
+        - "harassment_avoidance_protocols_active == true"
+        - "third_party_disclosure_restricted == true"
+        - "merchant_rights_disclosed == true"
+        - "validation_notice_provided == true IF disputed"
+      actions:
+        - "restrict_communication_timing"
+        - "prevent_harassment_tactics"
+        - "limit_third_party_disclosures"
+        - "provide_debt_validation_rights"
+        - "handle_disputes_appropriately"
+
+    # UCC Security Interest Protection
+    - id: "ucc_security_protection"
+      name: "UCC Security Interest Protection"
+      description: "Protect UCC security interests during collection"
+      type: "legal"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "ucc_filing_current == true"
+        - "security_interest_perfected == true"
+        - "collateral_monitoring_active == true"
+        - "lien_priority_maintained == true"
+        - "default_procedures_documented == true"
+      actions:
+        - "maintain_current_ucc_filings"
+        - "monitor_security_interest_status"
+        - "track_collateral_value_changes"
+        - "protect_lien_priority_position"
+        - "document_default_procedures"
+
+  # Required attestations
+  attestations:
+    - id: "collection_process_attestation"
+      name: "Collection Process Compliance"
+      description: "Daily collection process compliance attestation"
+      type: "operational"
+      required: true
+      fields:
+        - "ach_processing_compliant"
+        - "timing_rules_followed"
+        - "nacha_standards_met"
+        - "collection_officer_signature"
+        - "process_date"
+
+    - id: "fdcpa_compliance_attestation"
+      name: "FDCPA Compliance Documentation"
+      description: "Fair debt collection practices compliance"
+      type: "regulatory"
+      required: true
+      fields:
+        - "communication_timing_compliant"
+        - "harassment_prevention_confirmed"
+        - "third_party_restrictions_observed"
+        - "compliance_officer_signature"
+        - "compliance_date"
+
+    - id: "failed_payment_attestation"
+      name: "Failed Payment Handling Documentation"
+      description: "Failed payment processing compliance"
+      type: "operational"
+      required: true
+      condition: "failed_payments_occurred == true"
+      fields:
+        - "failure_reasons_documented"
+        - "retry_procedures_followed"
+        - "escalation_protocols_triggered"
+        - "merchant_notifications_sent"
+        - "handling_officer_signature"
+        - "handling_date"
+
+    - id: "ucc_security_attestation"
+      name: "UCC Security Interest Protection"
+      description: "UCC security interest compliance during collections"
+      type: "legal"
+      required: true
+      fields:
+        - "ucc_filings_current"
+        - "security_interest_maintained"
+        - "collateral_monitoring_active"
+        - "legal_counsel_review"
+        - "protection_date"
+
+  # Configuration
+  config:
+    validation:
+      strict_mode: true
+      fail_on_warnings: false
+
+    execution:
+      timeout: "60s"
+      max_retries: 3
+
+    logging:
+      level: "info"
+      audit_enabled: true
+      collection_activity_logging: true
+      payment_processing_logging: true
+      retention_days: 2190  # 6 years for collection records
+
+    monitoring:
+      real_time_monitoring: true
+      alert_thresholds_enabled: true
+      performance_metrics_tracking: true
+
+    integration:
+      ach_processor_integration: true
+      account_verification_services: true
+      fraud_detection_integration: true
+
+# Collection Processing Workflow
+collection_workflow:
+  daily_processing_steps:
+    1: "Retrieve scheduled collections for business day"
+    2: "Validate merchant account status and authorization"
+    3: "Format ACH transactions per NACHA standards"
+    4: "Submit ACH file to processor"
+    5: "Monitor transaction status and responses"
+    6: "Process successful payments and update records"
+    7: "Handle failed payments per escalation procedures"
+    8: "Generate daily collection reports"
+    9: "Update merchant notifications and communications"
+
+  failure_handling_workflow:
+    1: "Capture and categorize failure reason"
+    2: "Update consecutive failure counter"
+    3: "Apply NSF fees if legally permitted"
+    4: "Send merchant notification of failure"
+    5: "Schedule retry attempt if within limits"
+    6: "Escalate to collections team if threshold exceeded"
+    7: "Document all actions in audit trail"
+
+# NACHA Compliance Requirements
+nacha_compliance:
+  file_formatting:
+    - "Standard Entry Class (SEC) codes: CCD, WEB"
+    - "Proper batch and entry detail records"
+    - "Accurate routing and account numbers"
+    - "Correct transaction codes and amounts"
+
+  authorization_requirements:
+    - "Valid ACH authorization on file"
+    - "Authorization includes amount and frequency"
+    - "Revocation procedures implemented"
+    - "Re-authorization for material changes"
+
+  return_processing:
+    - "Process returns within 24 hours"
+    - "Honor stop payment requests"
+    - "Handle unauthorized returns appropriately"
+    - "Maintain return rate thresholds"
+
+# FDCPA Compliance Guidelines
+fdcpa_guidelines:
+  communication_restrictions:
+    time_restrictions:
+      - "No contact before 8:00 AM local time"
+      - "No contact after 9:00 PM local time"
+      - "Respect time zone differences"
+
+    location_restrictions:
+      - "No contact at inconvenient places"
+      - "No workplace contact if prohibited"
+      - "Respect merchant's communication preferences"
+
+    frequency_restrictions:
+      - "Avoid excessive or harassing contacts"
+      - "Reasonable frequency based on circumstances"
+      - "Document communication frequency"
+
+  prohibited_practices:
+    - "No threats of violence or harm"
+    - "No use of obscene or profane language"
+    - "No false or misleading representations"
+    - "No unfair collection practices"
+    - "No publication of debtor information"
+
+# State-Specific Considerations
+state_considerations:
+  new_york:
+    - "Commercial financing disclosure requirements"
+    - "Truth in commercial financing disclosures"
+    - "Broker registration requirements"
+
+  california:
+    - "CFL licensing requirements if applicable"
+    - "Usury law considerations"
+    - "Consumer protection provisions"
+
+  general_requirements:
+    - "State licensing compliance verification"
+    - "Local collection law adherence"
+    - "State-specific disclosure requirements"
+
+# Collection Performance Metrics
+performance_metrics:
+  collection_efficiency:
+    - "Collection success rate"
+    - "Average collection time"
+    - "Failed payment recovery rate"
+    - "Payment processing costs"
+
+  compliance_metrics:
+    - "NACHA return rates"
+    - "FDCPA violation incidents"
+    - "Merchant complaint rates"
+    - "Regulatory examination findings"
+
+  operational_metrics:
+    - "Daily processing volume"
+    - "System uptime and availability"
+    - "Error rates and resolution times"
+    - "Staff productivity measures"
+
+# Integration notes
+integration:
+  ardaos_modules:
+    - "tokenfactory: Collection status token updates"
+    - "compliance: Real-time collection compliance monitoring"
+    - "syndication: Investor payment distributions"
+
+  external_systems:
+    - "ACH processing networks (FedACH, EPN)"
+    - "Bank account verification services"
+    - "Fraud detection platforms"
+    - "Collection management systems"
+    - "NACHA file processing services"
+
+  automation_capabilities:
+    - "Automated ACH file generation"
+    - "Real-time payment status monitoring"
+    - "Failed payment retry automation"
+    - "Compliance rule enforcement"
+    - "Performance metrics calculation"

@@ -124,3 +124,561 @@ ignite generate proto-go --yes  # Direct proto generation
 - **Arda Bridge**: Cross-chain asset transfers via Hyperlane
 - **Zero-Knowledge Proofs**: Privacy-preserving bridging options
 - **Global Coordination**: Settlement through Arda Core layer
+
+## Compliance Compiler Tool
+
+### Overview
+The compliance compiler (`tools/compliance-compiler/`) is a standalone CLI tool for compiling YAML compliance policies into protobuf format for use with ArdaOS blockchain compliance modules. It provides comprehensive policy management, validation, testing, and template generation capabilities.
+
+### CLI Commands
+
+#### Build and Usage
+```bash
+# Build the compliance compiler
+cd tools/compliance-compiler
+go build -o compliance-compiler
+
+# Or use make targets
+make build-compliance-compiler
+```
+
+#### Main Commands
+
+**1. Compile Command**
+Convert YAML policies to protobuf with comprehensive validation and optimization:
+```bash
+# Basic compilation
+compliance-compiler compile policy.yaml
+
+# With jurisdiction and asset class validation
+compliance-compiler compile policy.yaml --jurisdiction US --asset-class credit-card
+
+# With optimization and custom output
+compliance-compiler compile policy.yaml -o policy.pb --optimize --format binary
+
+# JSON format for debugging
+compliance-compiler compile policy.yaml --format json -o policy.json
+```
+
+**2. Validate Command**
+Comprehensive policy validation without compilation:
+```bash
+# Basic validation
+compliance-compiler validate policy.yaml
+
+# Strict validation with custom schema
+compliance-compiler validate policy.yaml --strict --schema custom-schema.json
+
+# Recursive validation with detailed reporting
+compliance-compiler validate ./policies --recursive --report-format detailed --output report.json
+
+# Interactive validation with guided fixes
+compliance-compiler validate policy.yaml --interactive
+```
+
+**3. Test Command**
+Test policies against sample transaction data:
+```bash
+# Basic testing with sample data
+compliance-compiler test policy.yaml --samples ./test-data/
+
+# With coverage analysis and benchmarking
+compliance-compiler test policy.yaml --samples ./test-data/ --coverage --benchmark --output results.html
+
+# Generate test cases from policy
+compliance-compiler test policy.yaml --generate-cases --output generated-tests.json
+
+# Interactive testing mode
+compliance-compiler test policy.yaml --interactive
+```
+
+**4. Generate Command**
+Generate policy templates and examples:
+```bash
+# Generate basic template
+compliance-compiler generate --output-dir ./templates
+
+# Generate jurisdiction-specific template
+compliance-compiler generate --jurisdiction US --asset-class credit-card --output-dir ./templates
+
+# Generate with examples and documentation
+compliance-compiler generate --jurisdiction EU --asset-class installment-loan --include-examples --output-dir ./templates
+```
+
+### Comprehensive Template Library
+
+The compliance compiler includes a comprehensive library of ready-to-use policy templates covering all five small business finance verticals. Each template is designed to meet specific regulatory requirements while maintaining flexibility for customization.
+
+#### 1. Credit Card Receivables (`examples/templates/credit-card/`)
+
+**Available Templates:**
+- **US CFPB/CARD Act Compliance** (`us-cfpb-card-act.yaml`)
+  - Comprehensive CFPB and CARD Act compliance
+  - Ability-to-pay assessment frameworks
+  - Consumer protection provisions
+  - Rate and fee limitations
+
+- **EU PSD2 Consumer Protection** (`eu-psd2-consumer-protection.yaml`)
+  - PSD2 Strong Customer Authentication (SCA)
+  - GDPR data protection compliance
+  - Consumer cooling-off periods
+  - Open banking requirements
+
+- **Risk-Based Underwriting** (`risk-based-underwriting.yaml`)
+  - Advanced machine learning models
+  - Composite risk scoring
+  - Behavioral analysis
+  - Portfolio concentration management
+
+- **Forward Flow Agreement** (`forward-flow-agreement.yaml`)
+  - Securitization compliance
+  - True sale requirements
+  - Credit enhancement structures
+  - Ongoing monitoring frameworks
+
+#### 2. Installment Loans (`examples/templates/installment-loan/`)
+
+**Available Templates:**
+- **US TILA Compliance** (`us-tila-compliance.yaml`)
+  - Truth in Lending Act compliance
+  - APR calculation and disclosure
+  - Right of rescission procedures
+  - Payment schedule requirements
+
+- **Ability-to-Repay Assessment** (`ability-to-repay.yaml`)
+  - Comprehensive ATR framework
+  - Income verification standards
+  - Debt service coverage analysis
+  - Compensating factors evaluation
+
+- **Small Business Qualification** (`small-business-qualification.yaml`)
+  - Commercial lending standards
+  - Business entity verification
+  - Industry risk assessment
+  - Collateral evaluation frameworks
+
+- **CA State-Specific Compliance** (`us-state-specific-ca.yaml`)
+  - California Financing Law (CFL) compliance
+  - State-specific rate limitations
+  - Online lending requirements
+  - Consumer protection provisions
+
+#### 3. Merchant Cash Advances (`examples/templates/mca/`)
+
+**Available Templates:**
+- **Revenue-Based Qualification** (`revenue-based-qualification.yaml`)
+  - Revenue verification methodologies
+  - Payment capacity assessment
+  - Industry risk classification
+  - Seasonal adjustment frameworks
+
+- **Daily Collection Compliance** (`daily-collection-compliance.yaml`)
+  - ACH processing standards
+  - FDCPA compliance
+  - Failed payment handling
+  - UCC security protection
+
+- **NY State Regulatory Compliance** (`state-regulatory-ny.yaml`)
+  - NY Commercial Financing Disclosure Law
+  - Truth in Commercial Financing
+  - Broker registration requirements
+  - Consumer protection standards
+
+#### 4. Equipment Leasing (`examples/templates/equipment-lease/`)
+
+**Available Templates:**
+- **UCC Article 9 Compliance** (`ucc-article-9-compliance.yaml`)
+  - Security interest creation and perfection
+  - UCC filing requirements
+  - Lien priority management
+  - Default and enforcement procedures
+
+- **Collateral Valuation** (`collateral-valuation.yaml`)
+  - Equipment appraisal standards
+  - Depreciation modeling
+  - Market value assessment
+  - Insurance requirements
+
+- **Lease Classification** (`lease-classification.yaml`)
+  - Operating vs finance lease determination
+  - Accounting standard compliance (ASC 842)
+  - Tax implications
+  - Regulatory considerations
+
+#### 5. Working Capital Loans (`examples/templates/working-capital/`)
+
+**Available Templates:**
+- **Asset-Based Lending** (`asset-based-lending.yaml`)
+  - Collateral-based qualification
+  - Advance rate determination
+  - Monitoring and reporting requirements
+  - Field examination standards
+
+- **Accounts Receivable Factoring** (`receivables-factoring.yaml`)
+  - Invoice verification procedures
+  - Customer credit assessment
+  - Collection procedures
+  - Reserve and holdback management
+
+- **SBA Compliance** (`sba-compliance.yaml`)
+  - SBA program requirements
+  - Eligibility criteria
+  - Documentation standards
+  - Ongoing compliance monitoring
+
+### Key Features
+
+#### User Experience
+- **Colored Output**: Visual feedback with emojis and colored status messages
+- **Progress Indicators**: Real-time progress bars for long-running operations
+- **Interactive Mode**: Guided policy creation and validation with user prompts
+- **Shell Completion**: Tab completion for commands, flags, and values (bash/zsh)
+- **Configuration Files**: Support for `.compliance-compiler.yaml` configuration
+
+#### Error Handling
+- **User-Friendly Messages**: Clear error descriptions with actionable suggestions
+- **Detailed Diagnostics**: Comprehensive validation reports with line numbers and context
+- **Graduated Severity**: Warnings, errors, and fatal issues with appropriate handling
+- **Recovery Suggestions**: Specific recommendations for fixing common issues
+
+#### Compliance Features
+- **Multi-Jurisdiction Support**: US Federal, state-specific, and EU regulatory frameworks
+- **Asset Class Specialization**: Tailored rules for each small business finance vertical
+- **Real-Time Validation**: Continuous compliance checking during policy development
+- **Audit Trails**: Comprehensive logging and documentation for regulatory examinations
+
+#### Integration with ArdaOS
+- **Native Protobuf**: Seamless integration with ArdaOS compliance module
+- **Token Factory Integration**: Automatic compliance-aware token creation
+- **Syndication Support**: Multi-investor distribution with embedded compliance
+- **Real-Time Enforcement**: Live policy enforcement on ArdaOS blockchain
+
+### Development Workflow
+
+#### Policy Development Lifecycle
+1. **Template Selection**: Choose appropriate template from library
+2. **Parameter Configuration**: Customize thresholds and business rules
+3. **Validation**: Comprehensive syntax and business logic validation
+4. **Testing**: Verify against sample transaction data
+5. **Compilation**: Convert to optimized protobuf format
+6. **Deployment**: Deploy to ArdaOS compliance module
+7. **Monitoring**: Real-time compliance monitoring and reporting
+
+#### Quality Assurance
+- **Automated Testing**: Comprehensive test suites for all templates
+- **Performance Benchmarking**: Load testing with large datasets
+- **Regulatory Accuracy**: Templates validated by compliance experts
+- **Version Control**: Semantic versioning with backward compatibility
+
+### Template Structure
+Each policy template follows a standardized YAML structure:
+
+```yaml
+# Template metadata
+template:
+  name: "Template Name"
+  version: "1.0.0"
+  jurisdiction: "Applicable Jurisdiction"
+  asset_class: "Asset Class"
+  description: "Template description"
+  regulatory_framework: ["List of regulations"]
+
+# Configurable parameters
+parameters:
+  parameter_name:
+    type: "data_type"
+    default: default_value
+    description: "Parameter description"
+
+# Policy implementation
+policy:
+  rules:
+    - id: "rule_id"
+      name: "Rule Name"
+      conditions: ["condition1", "condition2"]
+      actions: ["action1", "action2"]
+
+  attestations:
+    - id: "attestation_id"
+      required: true
+      fields: ["field1", "field2"]
+```
+
+### Test Data Library
+
+#### Comprehensive Test Coverage
+Each vertical includes comprehensive test data:
+
+**Test Data Categories:**
+- **Positive Test Cases**: Applications that should pass compliance
+- **Negative Test Cases**: Applications that should fail compliance
+- **Edge Cases**: Boundary conditions and unusual scenarios
+- **Performance Tests**: Large datasets for load testing
+- **Real-World Examples**: Anonymized production-like data
+
+**Test Data Structure:**
+```json
+{
+  "test_case_id": "unique_identifier",
+  "description": "Test case description",
+  "test_type": "positive|negative|edge|performance",
+  "expected_result": "approved|declined|manual_review",
+  "applicant": {
+    // Applicant data
+  },
+  "application_details": {
+    // Application-specific data
+  },
+  "expected_outcome": {
+    // Expected policy results
+  },
+  "compliance_checks": {
+    // Required compliance validations
+  }
+}
+```
+
+#### Template Usage Instructions
+
+**1. Template Selection**
+Choose the appropriate template based on:
+- Asset class (credit card, installment loan, MCA, equipment lease, working capital)
+- Jurisdiction (US, EU, state-specific)
+- Regulatory requirements
+- Business model
+
+**2. Parameter Configuration**
+Customize template parameters:
+- Adjust thresholds and limits
+- Configure risk tolerances
+- Set jurisdiction-specific values
+- Define business rules
+
+**3. Policy Compilation**
+```bash
+# Validate template
+compliance-compiler validate template.yaml
+
+# Test with sample data
+compliance-compiler test template.yaml test-data.json
+
+# Compile to protobuf
+compliance-compiler compile template.yaml -o policy.pb
+```
+
+**4. Integration with ArdaOS**
+- Deploy compiled policies to ArdaOS compliance module
+- Configure real-time policy enforcement
+- Set up monitoring and alerting
+- Implement policy versioning
+
+#### Regulatory Coverage
+
+**United States**
+- **Federal**: CFPB, CARD Act, TILA, FCRA, FDCPA, UCC
+- **State-Specific**: California (CFL), New York (Commercial Financing Disclosure)
+- **Industry**: SBA, Equipment Leasing Association standards
+
+**European Union**
+- **EU-Wide**: PSD2, GDPR, MiFID II, Consumer Credit Directive
+- **Member State**: Local implementation variations
+- **Data Protection**: GDPR compliance frameworks
+
+**Global Standards**
+- **Basel III**: Risk management frameworks
+- **IFRS**: International accounting standards
+- **AML/KYC**: Anti-money laundering compliance
+
+#### Maintenance and Updates
+
+**Version Control**
+- Semantic versioning (major.minor.patch)
+- Backward compatibility considerations
+- Migration guides for version updates
+
+**Regulatory Changes**
+- Continuous monitoring of regulatory updates
+- Template updates for new requirements
+- Deprecation notices for outdated rules
+
+**Community Contributions**
+- Template improvement suggestions
+- New jurisdiction templates
+- Industry-specific customizations
+
+#### Validation Framework
+- **Syntax Validation**: YAML structure and format checking
+- **Business Logic**: Rule consistency and completeness
+- **Regulatory Compliance**: Jurisdiction-specific requirement verification
+- **Performance Analysis**: Policy execution efficiency assessment
+
+### Integration Notes
+
+#### ArdaOS Modules
+- **compliance/**: Real-time policy enforcement and validation
+- **tokenfactory/**: Compliance-aware token issuance and management
+- **syndication/**: Multi-investor distribution with embedded compliance
+- **escrow/**: Trust-minimized escrow with compliance checkpoints
+
+#### External Systems
+- Credit bureaus and data providers
+- Regulatory reporting systems
+- Document management platforms
+- Payment processing networks
+
+#### Automation Features
+- Real-time compliance checking
+- Automated document generation
+- Policy performance monitoring
+- Regulatory change detection
+
+### Support and Documentation
+
+#### Getting Started
+1. Review template library overview
+2. Select appropriate templates
+3. Configure parameters
+4. Test with sample data
+5. Deploy to production
+
+#### Advanced Usage
+- Custom rule development
+- Multi-jurisdiction policies
+- Performance optimization
+- Monitoring and alerting
+
+#### Troubleshooting
+- Common configuration issues
+- Performance tuning guidelines
+- Regulatory interpretation guidance
+- Integration support
+
+For detailed documentation, see the compliance compiler guides in `tools/compliance-compiler/docs/`:
+
+## Compliance Compiler Documentation
+
+### Complete Documentation Suite
+
+The compliance compiler includes comprehensive documentation covering all aspects of policy development, deployment, and maintenance:
+
+#### 1. **User Guide** (`docs/user-guide.md`)
+Complete end-to-end guide for users:
+- **Installation & Setup**: Multiple installation methods (source, Go install, Docker)
+- **Quick Start Tutorial**: Step-by-step first policy creation
+- **Complete CLI Reference**: All commands, flags, and options with examples
+- **Policy Development Workflow**: Best practices for the development lifecycle
+- **Troubleshooting Guide**: Common issues and solutions
+- **Performance Optimization**: Tips for efficient policy development
+
+#### 2. **Policy Developer Guide** (`docs/policy-guide.md`)
+In-depth technical guide for policy authors:
+- **YAML Policy Syntax Reference**: Complete syntax documentation with examples
+- **Predicate System Deep Dive**: Advanced conditional logic and expressions
+- **Expression Language Documentation**: Built-in functions and custom extensions
+- **Field Path Reference**: Complete data structure navigation for all asset classes
+- **Attestation Provider Integration**: External service integration patterns
+- **Multi-Jurisdictional Policies**: Cross-border compliance strategies
+- **Performance Optimization**: Rule ordering, caching, and parallel execution
+
+#### 3. **API Reference** (`docs/api-reference.md`)
+Comprehensive Go library documentation:
+- **Go Library Usage**: Integration patterns and examples
+- **Core Types & Interfaces**: Complete API documentation
+- **Compiler API**: Policy compilation and optimization
+- **Parser API**: YAML parsing and validation
+- **Evaluation Engine**: Runtime policy execution
+- **Integration Examples**: Real-world usage patterns
+- **Error Handling**: Comprehensive error management strategies
+- **Thread Safety**: Concurrent usage patterns and best practices
+
+#### 4. **Architecture Guide** (`docs/architecture-guide.md`)
+Deep technical architecture documentation:
+- **System Architecture**: High-level component overview and interactions
+- **Component Architecture**: Detailed internal structure of each component
+- **Compilation Pipeline**: Step-by-step compilation process
+- **Extension Mechanisms**: Plugin architecture and custom extensions
+- **Performance Characteristics**: Benchmarks, optimization strategies, and scaling
+- **Security Considerations**: Sandboxing, access control, and audit logging
+- **Deployment Architecture**: Standalone, microservice, and container deployment
+
+#### 5. **Regulatory Compliance Guide** (`docs/compliance-guide.md`)
+Regulatory and compliance documentation:
+- **Jurisdiction-Specific Requirements**: US Federal, state, and EU regulations
+- **Regulatory Mapping**: Asset class to regulation mapping
+- **Compliance Verification**: Automated and manual verification procedures
+- **Audit Trail Requirements**: Comprehensive logging and retention policies
+- **Reporting Standards**: Regulatory reporting and examination preparation
+
+### Development and Testing Infrastructure
+
+The compliance compiler includes a comprehensive development and testing infrastructure:
+
+#### **Testing Framework** (`internal/testing/`)
+- **Unit Test Helpers** (`helpers.go`): Mock data generation, assertion functions, benchmarking utilities
+- **Integration Test Suite** (`integration_test.go`): Cross-platform testing, template validation, performance testing
+- **Property-Based Testing** (`property_test.go`): Random data generation, shrinking, invariant testing
+
+#### **Development Tools** (`tools/`)
+- **Live-Reload Dev Server** (`dev-server.go`): WebSocket-based development server with hot reloading
+- **Interactive Policy Debugger** (`policy-debugger.go`): Step-by-step debugging with breakpoints and variable inspection
+- **Schema Validator** (`schema-validator.go`): Comprehensive schema validation with detailed error reporting
+- **Performance Profiler** (`perf-profiler.go`): CPU and memory profiling with optimization recommendations
+
+#### **Documentation Generation** (`internal/docs/`)
+- **Automated Documentation Generator** (`generator.go`): CLI, API, template, and schema documentation generation
+- **Template Documentation**: Comprehensive template library documentation
+- **Schema Documentation**: Auto-generated schema reference
+- **API Documentation**: Go AST-based API documentation extraction
+
+### Advanced Features
+
+#### **Expression Engine**
+Sophisticated expression evaluation system with:
+- **Built-in Functions**: Mathematical, statistical, financial, text processing, and date/time functions
+- **Custom Functions**: Plugin-based function registration and execution
+- **Conditional Expressions**: Complex if-then-else and case expressions
+- **Error Handling**: Safe evaluation with try-catch mechanisms
+- **Performance Optimizations**: Caching, lazy evaluation, and parallel processing
+
+#### **Multi-Jurisdictional Support**
+Comprehensive support for complex regulatory environments:
+- **Dynamic Jurisdiction Resolution**: Automatic jurisdiction determination based on transaction data
+- **Regulatory Framework Mapping**: Business rules mapped to specific regulatory requirements
+- **Cross-Border Compliance**: International sanctions screening and reporting
+- **State-Specific Rules**: Conditional logic for state-specific requirements
+
+#### **Attestation System**
+Flexible attestation and verification framework:
+- **Built-in Attestation Types**: Legal, regulatory, risk management, and business attestations
+- **External Provider Integration**: Third-party verification services and APIs
+- **Custom Attestation Providers**: Plugin architecture for custom verification logic
+- **Workflow Management**: Multi-step approval processes with conditional logic
+
+#### **Performance and Scalability**
+Optimized for high-volume transaction processing:
+- **Rule Optimization**: Condition reordering, early exit patterns, parallel execution
+- **Caching Strategy**: Multi-level caching with TTL and invalidation
+- **Memory Management**: Object pooling, lazy loading, and garbage collection optimization
+- **Performance Monitoring**: Real-time metrics, profiling, and bottleneck identification
+
+### Integration Ecosystem
+
+#### **ArdaOS Blockchain Integration**
+- **Native Protobuf Format**: Seamless integration with ArdaOS compliance module
+- **Real-Time Enforcement**: Live policy enforcement on blockchain transactions
+- **Token Factory Integration**: Compliance-aware asset token creation and management
+- **Syndication Support**: Multi-investor distribution with embedded compliance verification
+
+#### **External System Integration**
+- **Credit Bureau APIs**: Experian, Equifax, TransUnion integration patterns
+- **Bank Verification Services**: Account verification and monitoring
+- **Regulatory Databases**: OFAC, sanctions screening, and compliance checking
+- **Document Management**: Integration with document storage and retrieval systems
+
+#### **Development Workflow Integration**
+- **CI/CD Pipeline**: Continuous integration and deployment patterns
+- **Version Control**: Git-based policy versioning and deployment strategies
+- **Monitoring and Alerting**: Production monitoring and alerting configurations
+- **Testing Automation**: Automated testing and validation in development pipelines
+
+This comprehensive system provides everything needed for enterprise-grade compliance policy development, testing, and deployment in regulated financial services environments.

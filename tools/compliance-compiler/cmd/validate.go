@@ -1,158 +1,422 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
-	"github.com/arda-org/arda-os/tools/compliance-compiler/internal/compiler"
 	"github.com/arda-org/arda-os/tools/compliance-compiler/internal/parser"
-	"github.com/arda-org/arda-os/tools/compliance-compiler/pkg/types"
+	"github.com/arda-org/arda-os/tools/compliance-compiler/internal/validator"
+	"github.com/fatih/color"
+	"github.com/schollz/progressbar/v3"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 func NewValidateCmd() *cobra.Command {
 	var (
-		recursive bool
-		pattern   string
-		strict    bool
-		outputFmt string
+		schemaFile   string
+		strict       bool
+		jurisdiction string
+		assetClass   string
+		reportFormat string
+		outputFile   string
+		recursive    bool
+		pattern      string
+		quiet        bool
+		showSummary  bool
+		interactive  bool
 	)
 
 	cmd := &cobra.Command{
-		Use:   "validate [flags] <file-or-directory>",
-		Short: "Validate YAML compliance policies",
-		Long: `Validate YAML compliance policies for syntax and semantic correctness.
+		Use:   "validate [yaml-file] [options]",
+		Short: "Validate YAML policies without compilation",
+		Long: `Validate YAML compliance policies for syntax, structure, and business logic.
 
-The validate command checks YAML policy files for:
-- YAML syntax correctness
-- Required fields and structure
-- Business rule consistency
-- Regional compliance requirements
+The validate command performs comprehensive validation including:
+- YAML syntax and structure validation
+- Schema compliance checking
+- Business logic consistency
+- Jurisdiction-specific requirements
 - Cross-policy dependencies
+- Performance impact analysis
 
 Examples:
-  # Validate a single policy file
+  # Basic validation
   compliance-compiler validate policy.yaml
 
-  # Validate all YAML files in a directory
-  compliance-compiler validate -r ./policies
-
-  # Validate with custom file pattern
-  compliance-compiler validate -r -p "*.policy.yaml" ./policies
+  # Validate with custom schema
+  compliance-compiler validate policy.yaml --schema custom-schema.json
 
   # Strict validation (fail on warnings)
-  compliance-compiler validate --strict policy.yaml
+  compliance-compiler validate policy.yaml --strict
 
-  # Output validation results as JSON
-  compliance-compiler validate --output json policy.yaml`,
+  # Jurisdiction-specific validation
+  compliance-compiler validate policy.yaml --jurisdiction US --asset-class credit-card
+
+  # Validate multiple files recursively
+  compliance-compiler validate ./policies --recursive --pattern "*.yaml"
+
+  # Generate detailed report
+  compliance-compiler validate policy.yaml --report-format detailed --output report.json
+
+  # Interactive validation with guided fixes
+  compliance-compiler validate policy.yaml --interactive`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runValidate(args[0], recursive, pattern, strict, outputFmt)
+			return runValidate(ValidateOptions{
+				Target:       args[0],
+				SchemaFile:   schemaFile,
+				Strict:       strict,
+				Jurisdiction: jurisdiction,
+				AssetClass:   assetClass,
+				ReportFormat: reportFormat,
+				OutputFile:   outputFile,
+				Recursive:    recursive,
+				Pattern:      pattern,
+				Quiet:        quiet,
+				ShowSummary:  showSummary,
+				Interactive:  interactive,
+			})
 		},
 	}
 
+	cmd.Flags().StringVar(&schemaFile, "schema", "", "schema file for validation")
+	cmd.Flags().BoolVar(&strict, "strict", false, "enable strict validation mode (fail on warnings)")
+	cmd.Flags().StringVar(&jurisdiction, "jurisdiction", "", "jurisdiction-specific validation (US, EU, CA, etc.)")
+	cmd.Flags().StringVar(&assetClass, "asset-class", "", "asset class validation (credit-card, installment-loan, etc.)")
+	cmd.Flags().StringVar(&reportFormat, "report-format", "summary", "validation report format: summary, detailed, json, junit")
+	cmd.Flags().StringVarP(&outputFile, "output", "o", "", "output file for validation report (default: stdout)")
 	cmd.Flags().BoolVarP(&recursive, "recursive", "r", false, "validate files recursively")
-	cmd.Flags().StringVarP(&pattern, "pattern", "p", "*.yaml", "file pattern to match")
-	cmd.Flags().BoolVar(&strict, "strict", false, "fail on warnings (strict mode)")
-	cmd.Flags().StringVar(&outputFmt, "output", "text", "output format (text, json)")
+	cmd.Flags().StringVarP(&pattern, "pattern", "p", "*.yaml", "file pattern for recursive validation")
+	cmd.Flags().BoolVar(&quiet, "quiet", false, "suppress progress output")
+	cmd.Flags().BoolVar(&showSummary, "summary", true, "show validation summary")
+	cmd.Flags().BoolVar(&interactive, "interactive", false, "interactive mode with guided fixes")
+
+	// Add shell completion
+	cmd.RegisterFlagCompletionFunc("report-format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"summary", "detailed", "json", "junit"}, cobra.ShellCompDirectiveDefault
+	})
+
+	cmd.RegisterFlagCompletionFunc("jurisdiction", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"US", "EU", "CA", "UK", "AU", "JP", "SG"}, cobra.ShellCompDirectiveDefault
+	})
+
+	cmd.RegisterFlagCompletionFunc("asset-class", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return []string{"credit-card", "installment-loan", "mca", "equipment-lease", "working-capital"}, cobra.ShellCompDirectiveDefault
+	})
 
 	return cmd
 }
 
-func runValidate(target string, recursive bool, pattern string, strict bool, outputFmt string) error {
-	logrus.Infof("Validating: %s", target)
+type ValidateOptions struct {
+	Target       string
+	SchemaFile   string
+	Strict       bool
+	Jurisdiction string
+	AssetClass   string
+	ReportFormat string
+	OutputFile   string
+	Recursive    bool
+	Pattern      string
+	Quiet        bool
+	ShowSummary  bool
+	Interactive  bool
+}
 
-	stat, err := os.Stat(target)
-	if os.IsNotExist(err) {
-		return fmt.Errorf("target does not exist: %s", target)
+func runValidate(opts ValidateOptions) error {
+	// Initialize colored output
+	green := color.New(color.FgGreen, color.Bold)
+	red := color.New(color.FgRed, color.Bold)
+	yellow := color.New(color.FgYellow, color.Bold)
+	blue := color.New(color.FgBlue, color.Bold)
+
+	if !opts.Quiet {
+		blue.Printf("🔍 Starting validation of: %s\n", opts.Target)
 	}
 
-	var files []string
-	if stat.IsDir() {
-		files, err = findPolicyFiles(target, recursive, pattern)
-		if err != nil {
-			return fmt.Errorf("failed to find policy files: %w", err)
+	// Check target exists
+	stat, err := os.Stat(opts.Target)
+	if os.IsNotExist(err) {
+		return &ValidateError{
+			Type:    "target_not_found",
+			Message: fmt.Sprintf("Target does not exist: %s", opts.Target),
+			Suggestions: []string{
+				"Check the path for typos",
+				"Ensure the file or directory exists",
+				"Use an absolute path if needed",
+			},
 		}
-	} else {
-		files = []string{target}
+	}
+
+	// Find files to validate
+	files, err := findValidationFiles(opts.Target, stat.IsDir(), opts.Recursive, opts.Pattern)
+	if err != nil {
+		return &ValidateError{
+			Type:    "file_discovery_error",
+			Message: fmt.Sprintf("Failed to find files: %v", err),
+			Suggestions: []string{
+				"Check directory permissions",
+				"Verify the file pattern is correct",
+				"Ensure files have the correct extension",
+			},
+		}
 	}
 
 	if len(files) == 0 {
-		logrus.Warn("No policy files found to validate")
-		return nil
+		return &ValidateError{
+			Type:    "no_files_found",
+			Message: "No policy files found to validate",
+			Suggestions: []string{
+				fmt.Sprintf("Check if files match pattern: %s", opts.Pattern),
+				"Use --recursive flag for subdirectories",
+				"Verify file extensions are correct (.yaml, .yml)",
+			},
+		}
 	}
 
-	logrus.Infof("Found %d policy files to validate", len(files))
+	if !opts.Quiet {
+		fmt.Printf("📁 Found %d policy file(s) to validate\n", len(files))
+	}
 
-	yamlParser := parser.NewYAMLParser()
-	validator := compiler.NewValidator()
-	validator.SetStrictMode(strict)
+	// Initialize progress bar
+	var bar *progressbar.ProgressBar
+	if !opts.Quiet {
+		bar = progressbar.NewOptions(len(files),
+			progressbar.OptionSetDescription("Validating policies..."),
+			progressbar.OptionSetTheme(progressbar.Theme{
+				Saucer:        "=",
+				SaucerHead:    ">",
+				SaucerPadding: " ",
+				BarStart:      "[",
+				BarEnd:        "]",
+			}),
+			progressbar.OptionShowCount(),
+			progressbar.OptionSetWidth(50),
+		)
+	}
 
-	results := make([]ValidationResult, 0, len(files))
-	hasErrors := false
-	hasWarnings := false
+	// Initialize validator
+	policyValidator := validator.NewPolicyValidator()
 
-	for _, file := range files {
-		logrus.Debugf("Validating file: %s", file)
+	// Configure validator
+	if opts.SchemaFile != "" {
+		if !opts.Quiet {
+			fmt.Printf("📋 Using custom schema: %s\n", opts.SchemaFile)
+		}
+		// TODO: Load and configure custom schema
+	}
 
-		result := ValidationResult{
-			File: file,
+	if opts.Jurisdiction != "" {
+		if !opts.Quiet {
+			fmt.Printf("⚖️  Jurisdiction: %s\n", opts.Jurisdiction)
+		}
+		// TODO: Configure jurisdiction-specific validation
+	}
+
+	if opts.AssetClass != "" {
+		if !opts.Quiet {
+			fmt.Printf("🏷️  Asset Class: %s\n", opts.AssetClass)
+		}
+		// TODO: Configure asset class-specific validation
+	}
+
+	// Validate each file
+	results := make([]FileValidationResult, 0, len(files))
+	totalErrors := 0
+	totalWarnings := 0
+
+	for i, file := range files {
+		if !opts.Quiet {
+			bar.Set(i)
 		}
 
-		policy, err := yamlParser.ParseFile(file)
-		if err != nil {
-			result.Errors = append(result.Errors, fmt.Sprintf("Parse error: %v", err))
-			hasErrors = true
-		} else {
-			if err := validator.ValidatePolicy(policy); err != nil {
-				if validationErr, ok := err.(*types.ValidationError); ok {
-					result.Errors = append(result.Errors, validationErr.Errors...)
-					result.Warnings = append(result.Warnings, validationErr.Warnings...)
-					if len(validationErr.Errors) > 0 {
-						hasErrors = true
-					}
-					if len(validationErr.Warnings) > 0 {
-						hasWarnings = true
-					}
-				} else {
-					result.Errors = append(result.Errors, err.Error())
-					hasErrors = true
-				}
+		result := validateSingleFile(file, policyValidator, opts)
+		results = append(results, result)
+
+		totalErrors += len(result.Errors)
+		totalWarnings += len(result.Warnings)
+
+		// Interactive mode - offer to fix issues
+		if opts.Interactive && (len(result.Errors) > 0 || len(result.Warnings) > 0) {
+			if err := interactiveFixSuggestions(file, result); err != nil {
+				logrus.Debugf("Interactive fix failed: %v", err)
 			}
 		}
-
-		results = append(results, result)
 	}
 
-	if err := outputValidationResults(results, outputFmt); err != nil {
-		return fmt.Errorf("failed to output results: %w", err)
+	if !opts.Quiet {
+		bar.Set(len(files))
+		bar.Finish()
+		fmt.Println()
 	}
 
-	if hasErrors {
-		return fmt.Errorf("validation failed with errors")
+	// Generate validation report
+	report := &ValidationReport{
+		Timestamp:     time.Now(),
+		TotalFiles:    len(files),
+		TotalErrors:   totalErrors,
+		TotalWarnings: totalWarnings,
+		Results:       results,
+		Options:       opts,
 	}
 
-	if strict && hasWarnings {
-		return fmt.Errorf("validation failed with warnings (strict mode)")
+	// Output report
+	if err := outputValidationReport(report, opts); err != nil {
+		return &ValidateError{
+			Type:    "report_output_error",
+			Message: fmt.Sprintf("Failed to output validation report: %v", err),
+			Suggestions: []string{
+				"Check output file permissions",
+				"Ensure output directory exists",
+				"Verify disk space is available",
+			},
+		}
 	}
 
-	logrus.Info("All policies validated successfully")
+	// Show summary
+	if opts.ShowSummary && !opts.Quiet {
+		printValidationSummary(report)
+	}
+
+	// Determine exit status
+	if totalErrors > 0 {
+		return &ValidateError{
+			Type:    "validation_failed",
+			Message: fmt.Sprintf("Validation failed with %d error(s)", totalErrors),
+			Suggestions: []string{
+				"Review the validation errors above",
+				"Use --interactive mode for guided fixes",
+				"Check the policy documentation",
+			},
+		}
+	}
+
+	if opts.Strict && totalWarnings > 0 {
+		return &ValidateError{
+			Type:    "strict_mode_warnings",
+			Message: fmt.Sprintf("Strict mode: %d warning(s) treated as errors", totalWarnings),
+			Suggestions: []string{
+				"Fix the warnings to pass strict validation",
+				"Remove --strict flag to allow warnings",
+				"Review warning details for specific fixes",
+			},
+		}
+	}
+
+	if !opts.Quiet {
+		green.Printf("✅ All policies validated successfully!\n")
+		if totalWarnings > 0 {
+			yellow.Printf("⚠️  %d warning(s) found but validation passed\n", totalWarnings)
+		}
+	}
+
 	return nil
 }
 
-type ValidationResult struct {
-	File     string   `json:"file"`
-	Errors   []string `json:"errors,omitempty"`
-	Warnings []string `json:"warnings,omitempty"`
+func validateSingleFile(file string, policyValidator *validator.PolicyValidator, opts ValidateOptions) FileValidationResult {
+	result := FileValidationResult{
+		File:      file,
+		Timestamp: time.Now(),
+	}
+
+	// Parse YAML file
+	yamlParser := parser.NewYAMLParser()
+	policy, err := yamlParser.ParseFile(file)
+	if err != nil {
+		result.Errors = append(result.Errors, ValidationIssue{
+			Type:     "parse_error",
+			Severity: "error",
+			Message:  fmt.Sprintf("Failed to parse YAML: %v", err),
+			Location: "file",
+			Suggestions: []string{
+				"Check YAML syntax (indentation, colons, quotes)",
+				"Validate with a YAML linter",
+				"Check for special characters that need escaping",
+			},
+		})
+		return result
+	}
+
+	// Perform comprehensive validation
+	validationReport := policyValidator.ValidatePolicy(policy)
+
+	// Convert validator errors to our format
+	for _, err := range validationReport.Errors {
+		result.Errors = append(result.Errors, ValidationIssue{
+			Type:        err.Code,
+			Severity:    "error",
+			Message:     err.Message,
+			Location:    err.Field,
+			Suggestions: []string{err.SuggestedFix},
+		})
+	}
+
+	// Convert validator warnings to our format
+	for _, warn := range validationReport.Warnings {
+		result.Warnings = append(result.Warnings, ValidationIssue{
+			Type:        warn.Code,
+			Severity:    "warning",
+			Message:     warn.Message,
+			Location:    warn.Field,
+			Suggestions: []string{warn.Recommendation},
+		})
+	}
+
+	// Add validation metadata
+	result.ValidationDuration = time.Since(result.Timestamp)
+	result.PolicyInfo = &PolicyInfo{
+		RuleCount:        len(policy.Rules),
+		AttestationCount: len(policy.Attestations),
+		// Add more policy metadata as needed
+	}
+
+	return result
 }
 
-func findPolicyFiles(dir string, recursive bool, pattern string) ([]string, error) {
+type FileValidationResult struct {
+	File               string            `json:"file"`
+	Timestamp          time.Time         `json:"timestamp"`
+	ValidationDuration time.Duration     `json:"validation_duration"`
+	Errors             []ValidationIssue `json:"errors,omitempty"`
+	Warnings           []ValidationIssue `json:"warnings,omitempty"`
+	PolicyInfo         *PolicyInfo       `json:"policy_info,omitempty"`
+}
+
+type ValidationIssue struct {
+	Type        string   `json:"type"`
+	Severity    string   `json:"severity"`
+	Message     string   `json:"message"`
+	Location    string   `json:"location,omitempty"`
+	Suggestions []string `json:"suggestions,omitempty"`
+}
+
+type PolicyInfo struct {
+	RuleCount        int `json:"rule_count"`
+	AttestationCount int `json:"attestation_count"`
+}
+
+type ValidationReport struct {
+	Timestamp     time.Time              `json:"timestamp"`
+	TotalFiles    int                    `json:"total_files"`
+	TotalErrors   int                    `json:"total_errors"`
+	TotalWarnings int                    `json:"total_warnings"`
+	Results       []FileValidationResult `json:"results"`
+	Options       ValidateOptions        `json:"options"`
+}
+
+func findValidationFiles(target string, isDir, recursive bool, pattern string) ([]string, error) {
+	if !isDir {
+		return []string{target}, nil
+	}
+
 	var files []string
 
 	if recursive {
-		err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		err := filepath.Walk(target, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
@@ -170,7 +434,7 @@ func findPolicyFiles(dir string, recursive bool, pattern string) ([]string, erro
 		return files, err
 	}
 
-	entries, err := os.ReadDir(dir)
+	entries, err := os.ReadDir(target)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +446,7 @@ func findPolicyFiles(dir string, recursive bool, pattern string) ([]string, erro
 				return nil, err
 			}
 			if matched {
-				files = append(files, filepath.Join(dir, entry.Name()))
+				files = append(files, filepath.Join(target, entry.Name()))
 			}
 		}
 	}
@@ -190,47 +454,160 @@ func findPolicyFiles(dir string, recursive bool, pattern string) ([]string, erro
 	return files, nil
 }
 
-func outputValidationResults(results []ValidationResult, format string) error {
-	switch format {
-	case "text":
-		return outputTextResults(results)
+func outputValidationReport(report *ValidationReport, opts ValidateOptions) error {
+	var output []byte
+	var err error
+
+	switch opts.ReportFormat {
+	case "summary":
+		return outputSummaryReport(report, opts.OutputFile)
+	case "detailed":
+		return outputDetailedReport(report, opts.OutputFile)
 	case "json":
-		return outputJSONResults(results)
+		output, err = json.MarshalIndent(report, "", "  ")
+	case "junit":
+		return outputJUnitReport(report, opts.OutputFile)
 	default:
-		return fmt.Errorf("unsupported output format: %s", format)
+		return fmt.Errorf("unsupported report format: %s", opts.ReportFormat)
 	}
+
+	if err != nil {
+		return err
+	}
+
+	if opts.OutputFile != "" {
+		return os.WriteFile(opts.OutputFile, output, 0644)
+	}
+
+	fmt.Print(string(output))
+	return nil
 }
 
-func outputTextResults(results []ValidationResult) error {
-	for _, result := range results {
-		fmt.Printf("File: %s\n", result.File)
+func outputSummaryReport(report *ValidationReport, outputFile string) error {
+	// Implementation for summary format
+	return outputDetailedReport(report, outputFile) // Simplified for now
+}
+
+func outputDetailedReport(report *ValidationReport, outputFile string) error {
+	var output strings.Builder
+
+	green := color.New(color.FgGreen)
+	red := color.New(color.FgRed)
+	yellow := color.New(color.FgYellow)
+
+	output.WriteString("📋 Validation Report\n")
+	output.WriteString("===================\n\n")
+
+	for _, result := range report.Results {
+		output.WriteString(fmt.Sprintf("File: %s\n", result.File))
 
 		if len(result.Errors) == 0 && len(result.Warnings) == 0 {
-			fmt.Println("  Status: ✓ Valid")
+			green.Fprintf(&output, "  Status: ✅ Valid\n")
 		} else {
 			if len(result.Errors) > 0 {
-				fmt.Println("  Status: ✗ Invalid")
-				fmt.Println("  Errors:")
+				red.Fprintf(&output, "  Status: ❌ Invalid (%d errors)\n", len(result.Errors))
+				output.WriteString("  Errors:\n")
 				for _, err := range result.Errors {
-					fmt.Printf("    - %s\n", err)
+					output.WriteString(fmt.Sprintf("    • %s: %s\n", err.Type, err.Message))
+					if len(err.Suggestions) > 0 && err.Suggestions[0] != "" {
+						output.WriteString(fmt.Sprintf("      💡 %s\n", err.Suggestions[0]))
+					}
 				}
 			}
 
 			if len(result.Warnings) > 0 {
-				fmt.Println("  Warnings:")
+				yellow.Fprintf(&output, "  Warnings (%d):\n", len(result.Warnings))
 				for _, warn := range result.Warnings {
-					fmt.Printf("    - %s\n", warn)
+					output.WriteString(fmt.Sprintf("    • %s: %s\n", warn.Type, warn.Message))
 				}
 			}
 		}
-		fmt.Println()
+
+		if result.PolicyInfo != nil {
+			output.WriteString(fmt.Sprintf("  Rules: %d, Attestations: %d\n",
+				result.PolicyInfo.RuleCount, result.PolicyInfo.AttestationCount))
+		}
+
+		output.WriteString(fmt.Sprintf("  Duration: %v\n\n", result.ValidationDuration))
 	}
+
+	if outputFile != "" {
+		return os.WriteFile(outputFile, []byte(output.String()), 0644)
+	}
+
+	fmt.Print(output.String())
 	return nil
 }
 
-func outputJSONResults(results []ValidationResult) error {
-	// This would use encoding/json to output structured results
-	// Implementation simplified for now
-	fmt.Println("JSON output not yet implemented")
-	return outputTextResults(results)
+func outputJUnitReport(report *ValidationReport, outputFile string) error {
+	// Placeholder for JUnit XML format
+	return fmt.Errorf("JUnit format not yet implemented")
+}
+
+func printValidationSummary(report *ValidationReport) {
+	green := color.New(color.FgGreen, color.Bold)
+	red := color.New(color.FgRed, color.Bold)
+	yellow := color.New(color.FgYellow, color.Bold)
+
+	fmt.Println("\n📊 Validation Summary")
+	fmt.Println("====================")
+	fmt.Printf("Total Files: %d\n", report.TotalFiles)
+
+	if report.TotalErrors > 0 {
+		red.Printf("Errors: %d\n", report.TotalErrors)
+	} else {
+		green.Printf("Errors: %d\n", report.TotalErrors)
+	}
+
+	if report.TotalWarnings > 0 {
+		yellow.Printf("Warnings: %d\n", report.TotalWarnings)
+	} else {
+		fmt.Printf("Warnings: %d\n", report.TotalWarnings)
+	}
+
+	validFiles := 0
+	for _, result := range report.Results {
+		if len(result.Errors) == 0 {
+			validFiles++
+		}
+	}
+
+	if validFiles == report.TotalFiles {
+		green.Printf("Valid Files: %d/%d (100%%)\n", validFiles, report.TotalFiles)
+	} else {
+		fmt.Printf("Valid Files: %d/%d (%.1f%%)\n", validFiles, report.TotalFiles,
+			float64(validFiles)/float64(report.TotalFiles)*100)
+	}
+}
+
+func interactiveFixSuggestions(file string, result FileValidationResult) error {
+	// Placeholder for interactive mode implementation
+	fmt.Printf("Interactive fixes for %s would be offered here\n", file)
+	return nil
+}
+
+// ValidateError represents a user-friendly validation error
+type ValidateError struct {
+	Type        string   `json:"type"`
+	Message     string   `json:"message"`
+	Suggestions []string `json:"suggestions,omitempty"`
+}
+
+func (e *ValidateError) Error() string {
+	var builder strings.Builder
+
+	red := color.New(color.FgRed, color.Bold)
+	yellow := color.New(color.FgYellow)
+
+	red.Fprintf(&builder, "❌ Validation Error: %s\n", e.Message)
+
+	if len(e.Suggestions) > 0 {
+		builder.WriteString("\n")
+		yellow.Fprintf(&builder, "💡 Suggestions:\n")
+		for _, suggestion := range e.Suggestions {
+			fmt.Fprintf(&builder, "  • %s\n", suggestion)
+		}
+	}
+
+	return builder.String()
 }

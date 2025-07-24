@@ -1,0 +1,447 @@
+# Template metadata
+template:
+  name: "Small Business Installment Loan Qualification"
+  version: "1.0.0"
+  jurisdiction: "USA"
+  asset_class: "InstallmentLoan"
+  description: "Small business qualification criteria for installment loans"
+  author: "Arda Compliance Team"
+  regulatory_framework: ["SBA Guidelines", "CRA Requirements", "ECOA", "Fair Lending"]
+  last_updated: "2024-01-15"
+
+# Configurable parameters
+parameters:
+  max_loan_amount:
+    type: "float"
+    default: 500000.00
+    min: 25000.00
+    max: 2000000.00
+    description: "Maximum small business loan amount"
+
+  min_business_age_months:
+    type: "int"
+    default: 24
+    min: 12
+    max: 60
+    description: "Minimum business operating history in months"
+
+  min_annual_revenue:
+    type: "float"
+    default: 100000.00
+    min: 50000.00
+    max: 500000.00
+    description: "Minimum annual business revenue"
+
+  max_debt_service_coverage_ratio:
+    type: "float"
+    default: 1.25
+    min: 1.15
+    max: 1.50
+    description: "Minimum debt service coverage ratio"
+
+  min_credit_score_business:
+    type: "int"
+    default: 650
+    min: 580
+    max: 720
+    description: "Minimum business credit score"
+
+  min_credit_score_personal:
+    type: "int"
+    default: 680
+    min: 620
+    max: 740
+    description: "Minimum personal credit score for guarantors"
+
+  max_industry_risk_rating:
+    type: "int"
+    default: 3
+    min: 1
+    max: 5
+    description: "Maximum acceptable industry risk rating (1=low, 5=high)"
+
+  collateral_coverage_ratio:
+    type: "float"
+    default: 1.20
+    min: 1.00
+    max: 1.50
+    description: "Required collateral coverage ratio for secured loans"
+
+# Policy implementation
+policy:
+  metadata:
+    version: "1.0.0"
+    name: "SmallBusiness-InstallmentLoan-Qualification"
+    description: "Small business installment loan qualification framework"
+    tags: ["installment-loan", "small-business", "commercial-lending", "qualification"]
+
+  rules:
+    # Business Entity Verification
+    - id: "business_entity_verification"
+      name: "Business Entity and Legal Structure Verification"
+      description: "Verify business entity formation and legal compliance"
+      type: "verification"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "business_registration_verified == true"
+        - "ein_number_valid == true"
+        - "business_licenses_current == true"
+        - "legal_structure IN ['LLC', 'Corporation', 'Partnership', 'Sole_Proprietorship']"
+        - "good_standing_with_state == true"
+      actions:
+        - "verify_business_registration"
+        - "validate_ein_number"
+        - "check_required_licenses"
+        - "confirm_good_standing_status"
+        - "document_entity_structure"
+
+    # Business Operating History
+    - id: "operating_history_assessment"
+      name: "Business Operating History Assessment"
+      description: "Evaluate business operating history and stability"
+      type: "assessment"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "months_in_operation >= ${min_business_age_months}"
+        - "business_continuity_demonstrated == true"
+        - "management_experience_adequate == true"
+        - "operating_history_consistent == true"
+        - "seasonal_variations_explained == true IF seasonal_business"
+      actions:
+        - "verify_business_start_date"
+        - "assess_operating_continuity"
+        - "evaluate_management_experience"
+        - "analyze_business_evolution"
+
+    # Financial Performance Analysis
+    - id: "financial_performance_analysis"
+      name: "Business Financial Performance Assessment"
+      description: "Comprehensive analysis of business financial performance"
+      type: "financial"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "annual_revenue >= ${min_annual_revenue}"
+        - "financial_statements_complete == true"
+        - "revenue_trend != 'declining_significantly'"
+        - "profitability_demonstrated == true OR startup_projections_realistic"
+        - "cash_flow_positive == true OR seasonal_patterns_acceptable"
+      actions:
+        - "analyze_revenue_trends"
+        - "assess_profitability_metrics"
+        - "evaluate_cash_flow_patterns"
+        - "review_financial_statements"
+        - "validate_financial_projections"
+
+    # Debt Service Coverage Analysis
+    - id: "debt_service_coverage"
+      name: "Debt Service Coverage Ratio Assessment"
+      description: "Calculate and evaluate debt service coverage capacity"
+      type: "calculation"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "net_operating_income > 0"
+        - "existing_debt_service >= 0"
+        - "proposed_debt_service > 0"
+        - "debt_service_coverage_ratio = (net_operating_income) / (existing_debt_service + proposed_debt_service)"
+        - "debt_service_coverage_ratio >= ${max_debt_service_coverage_ratio}"
+      actions:
+        - "calculate_net_operating_income"
+        - "determine_total_debt_service"
+        - "compute_coverage_ratio"
+        - "assess_coverage_adequacy"
+        - "evaluate_cash_flow_variability"
+
+    # Credit Assessment (Business and Personal)
+    - id: "credit_assessment"
+      name: "Business and Personal Credit Assessment"
+      description: "Evaluate business and guarantor credit profiles"
+      type: "credit"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "business_credit_score >= ${min_credit_score_business} OR business_credit_limited_but_acceptable"
+        - "personal_guarantor_credit_score >= ${min_credit_score_personal}"
+        - "trade_references_satisfactory == true"
+        - "banking_relationships_positive == true"
+        - "major_derogatory_items_explained == true IF present"
+      actions:
+        - "pull_business_credit_reports"
+        - "obtain_personal_guarantor_credit"
+        - "verify_trade_references"
+        - "assess_banking_relationships"
+        - "document_credit_analysis"
+
+    # Industry and Market Analysis
+    - id: "industry_risk_assessment"
+      name: "Industry and Market Risk Assessment"
+      description: "Assess industry-specific risks and market conditions"
+      type: "risk"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "industry_risk_rating <= ${max_industry_risk_rating}"
+        - "market_conditions != 'severely_declining'"
+        - "competitive_position_acceptable == true"
+        - "industry_outlook != 'negative'"
+        - "regulatory_risks_manageable == true"
+      actions:
+        - "classify_business_industry"
+        - "assess_industry_risk_factors"
+        - "analyze_market_conditions"
+        - "evaluate_competitive_position"
+        - "identify_regulatory_risks"
+
+    # Management and Key Person Assessment
+    - id: "management_assessment"
+      name: "Management Team and Key Person Risk"
+      description: "Evaluate management quality and key person dependencies"
+      type: "assessment"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "management_experience_years >= 3 OR relevant_industry_experience >= 5"
+        - "key_person_risk != 'critical'"
+        - "management_depth_adequate == true IF larger_business"
+        - "succession_planning_considered == true IF key_person_risk_present"
+      actions:
+        - "assess_management_experience"
+        - "evaluate_key_person_dependencies"
+        - "analyze_management_depth"
+        - "consider_succession_planning"
+
+    # Collateral and Security Assessment
+    - id: "collateral_assessment"
+      name: "Collateral and Security Assessment"
+      description: "Evaluate collateral adequacy and security structure"
+      type: "collateral"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "IF secured_loan == true THEN collateral_identified == true"
+        - "IF collateral_required == true THEN collateral_value >= (loan_amount * ${collateral_coverage_ratio})"
+        - "collateral_marketability_acceptable == true"
+        - "lien_position_appropriate == true"
+        - "collateral_insurance_adequate == true"
+      actions:
+        - "identify_available_collateral"
+        - "obtain_collateral_appraisals"
+        - "assess_collateral_marketability"
+        - "determine_lien_priority"
+        - "verify_insurance_coverage"
+
+    # Use of Proceeds Verification
+    - id: "use_of_proceeds"
+      name: "Use of Proceeds Verification"
+      description: "Verify and approve intended use of loan proceeds"
+      type: "verification"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "use_of_proceeds_specified == true"
+        - "use_of_proceeds IN ['working_capital', 'equipment_purchase', 'expansion', 'refinancing', 'inventory']"
+        - "use_aligns_with_business_plan == true"
+        - "prohibited_uses_avoided == true"
+        - "loan_to_value_appropriate_for_use == true"
+      actions:
+        - "document_intended_use"
+        - "verify_business_purpose"
+        - "assess_use_appropriateness"
+        - "confirm_no_prohibited_uses"
+
+    # Cash Flow Projections
+    - id: "cash_flow_projections"
+      name: "Business Cash Flow Projections"
+      description: "Analyze business cash flow projections and repayment capacity"
+      type: "projection"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "cash_flow_projections_provided == true"
+        - "projections_realistic_and_supported == true"
+        - "stress_test_scenarios_acceptable == true"
+        - "repayment_capacity_adequate == true"
+        - "working_capital_needs_met == true"
+      actions:
+        - "review_cash_flow_projections"
+        - "stress_test_assumptions"
+        - "validate_growth_assumptions"
+        - "assess_repayment_capacity"
+        - "evaluate_working_capital_impact"
+
+  # Required attestations
+  attestations:
+    - id: "business_verification_attestation"
+      name: "Business Entity Verification"
+      description: "Attestation of business entity verification completion"
+      type: "verification"
+      required: true
+      fields:
+        - "business_name"
+        - "ein_number"
+        - "legal_structure"
+        - "registration_status"
+        - "license_verification"
+        - "verification_officer"
+        - "verification_date"
+
+    - id: "financial_analysis_attestation"
+      name: "Financial Analysis Documentation"
+      description: "Comprehensive financial analysis attestation"
+      type: "financial"
+      required: true
+      fields:
+        - "financial_statements_reviewed"
+        - "debt_service_coverage_calculated"
+        - "cash_flow_analysis_completed"
+        - "financial_projections_assessed"
+        - "credit_analyst_signature"
+        - "analysis_date"
+
+    - id: "risk_assessment_attestation"
+      name: "Business Risk Assessment"
+      description: "Industry and business risk assessment attestation"
+      type: "risk"
+      required: true
+      fields:
+        - "industry_classification"
+        - "risk_rating_assigned"
+        - "risk_factors_identified"
+        - "risk_mitigation_measures"
+        - "risk_officer_approval"
+        - "assessment_date"
+
+    - id: "loan_decision_attestation"
+      name: "Loan Decision Documentation"
+      description: "Final loan decision and rationale attestation"
+      type: "decision"
+      required: true
+      fields:
+        - "loan_decision"
+        - "decision_rationale"
+        - "conditions_of_approval"
+        - "monitoring_requirements"
+        - "senior_credit_officer"
+        - "decision_date"
+
+  # Configuration
+  config:
+    validation:
+      strict_mode: true
+      fail_on_warnings: false
+
+    execution:
+      timeout: "180s"
+      max_retries: 3
+
+    logging:
+      level: "info"
+      audit_enabled: true
+      decision_trail_logging: true
+      retention_days: 2555  # 7 years for commercial lending
+
+    workflow:
+      credit_committee_required: true
+      secondary_review_threshold: 250000.00
+      senior_approval_threshold: 1000000.00
+
+# Industry Risk Classifications
+industry_classifications:
+  low_risk:
+    rating: 1
+    industries:
+      - "Professional Services"
+      - "Healthcare Services"
+      - "Technology Services"
+      - "Government Contracting"
+    characteristics:
+      - "Stable demand"
+      - "Recurring revenue"
+      - "Low capital requirements"
+
+  moderate_risk:
+    rating: 2-3
+    industries:
+      - "Manufacturing"
+      - "Retail Trade"
+      - "Construction"
+      - "Transportation"
+    characteristics:
+      - "Cyclical demand"
+      - "Moderate capital requirements"
+      - "Competitive markets"
+
+  high_risk:
+    rating: 4-5
+    industries:
+      - "Restaurants"
+      - "Real Estate Development"
+      - "Oil & Gas"
+      - "Startups/New Technology"
+    characteristics:
+      - "Volatile cash flows"
+      - "High failure rates"
+      - "Significant capital requirements"
+
+# Loan Structuring Guidelines
+loan_structuring:
+  term_guidelines:
+    working_capital: "12-60 months"
+    equipment_financing: "Based on useful life (max 84 months)"
+    expansion_projects: "36-84 months"
+    refinancing: "Match or improve existing terms"
+
+  amortization_options:
+    - "Fully amortizing"
+    - "Interest-only period (max 12 months)"
+    - "Seasonal payment adjustments"
+    - "Balloon payment (max 25% of original principal)"
+
+  security_requirements:
+    unsecured_maximum: 150000.00
+    blanket_lien_threshold: 250000.00
+    personal_guarantee_standard: true
+    cross_default_provisions: true
+
+# Monitoring and Covenant Requirements
+ongoing_monitoring:
+  financial_reporting:
+    monthly_statements_threshold: 500000.00
+    quarterly_statements_required: true
+    annual_audited_statements_threshold: 1000000.00
+
+  operational_covenants:
+    - "Maintain minimum debt service coverage ratio"
+    - "Maintain minimum working capital"
+    - "Provide insurance certificates annually"
+    - "Notify of material adverse changes"
+
+  financial_covenants:
+    - "Maximum debt-to-equity ratio"
+    - "Minimum tangible net worth"
+    - "Maximum capital expenditures"
+    - "Debt service coverage maintenance"
+
+# Integration notes
+integration:
+  ardaos_modules:
+    - "tokenfactory: Small business loan token creation"
+    - "compliance: Automated compliance monitoring"
+    - "syndication: Commercial loan distribution"
+
+  external_systems:
+    - "Business credit bureaus (D&B, Experian Business)"
+    - "UCC filing systems"
+    - "Industry databases"
+    - "SBA systems (if SBA guaranteed)"
+    - "Financial statement spreading software"
+
+  automation_features:
+    - "Automated financial spreading"
+    - "Industry risk rating assignment"
+    - "Covenant monitoring"
+    - "Portfolio reporting"
+    - "Early warning system triggers"

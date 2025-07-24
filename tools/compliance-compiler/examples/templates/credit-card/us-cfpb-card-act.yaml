@@ -1,0 +1,276 @@
+# Template metadata
+template:
+  name: "US Credit Card Receivables - CFPB/CARD Act Compliance"
+  version: "1.0.0"
+  jurisdiction: "USA"
+  asset_class: "CreditCard"
+  description: "US credit card receivables compliance per CFPB rules and CARD Act"
+  author: "Arda Compliance Team"
+  regulatory_framework: ["CFPB", "CARD Act", "Truth in Lending Act", "Fair Credit Reporting Act"]
+  last_updated: "2024-01-15"
+
+# Configurable parameters
+parameters:
+  max_debt_to_income_ratio:
+    type: "float"
+    default: 0.43
+    min: 0.0
+    max: 1.0
+    description: "Maximum debt-to-income ratio for approval"
+
+  min_credit_score:
+    type: "int"
+    default: 620
+    min: 300
+    max: 850
+    description: "Minimum FICO credit score requirement"
+
+  max_credit_limit:
+    type: "float"
+    default: 50000.00
+    min: 500.00
+    max: 100000.00
+    description: "Maximum credit limit per account"
+
+  max_apr:
+    type: "float"
+    default: 29.99
+    min: 0.0
+    max: 36.0
+    description: "Maximum annual percentage rate (APR)"
+
+  minimum_payment_percentage:
+    type: "float"
+    default: 0.02
+    min: 0.01
+    max: 0.05
+    description: "Minimum payment as percentage of balance"
+
+  overlimit_fee_max:
+    type: "float"
+    default: 25.00
+    min: 0.0
+    max: 39.00
+    description: "Maximum over-limit fee per CARD Act"
+
+  late_fee_max:
+    type: "float"
+    default: 29.00
+    min: 0.0
+    max: 40.00
+    description: "Maximum late payment fee per CARD Act"
+
+# Policy implementation
+policy:
+  metadata:
+    version: "1.0.0"
+    name: "US-CreditCard-CFPB-CARD-Compliance"
+    description: "Comprehensive US credit card compliance policy"
+    tags: ["credit-card", "cfpb", "card-act", "usa", "consumer-protection"]
+
+  # Ability-to-Pay Assessment (CARD Act Section 109)
+  rules:
+    - id: "ability_to_pay_assessment"
+      name: "CARD Act Ability-to-Pay Assessment"
+      description: "Verify consumer's ability to make required minimum payments"
+      type: "regulatory"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "applicant.age >= 21 OR (applicant.age >= 18 AND independent_income_verified == true)"
+        - "debt_to_income_ratio <= ${max_debt_to_income_ratio}"
+        - "monthly_income > 0"
+        - "monthly_income >= (credit_limit * ${minimum_payment_percentage})"
+      actions:
+        - "calculate_payment_ability"
+        - "document_income_verification"
+        - "approve_or_decline"
+
+    - id: "credit_score_verification"
+      name: "Credit Score Assessment"
+      description: "Minimum credit score requirement with FCRA compliance"
+      type: "validation"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "credit_score >= ${min_credit_score}"
+        - "credit_report_date >= (current_date - 90_days)"
+        - "adverse_action_notice_sent == true IF credit_score < ${min_credit_score}"
+      actions:
+        - "pull_credit_report"
+        - "validate_credit_score"
+        - "send_adverse_action_notice_if_declined"
+
+    - id: "credit_limit_determination"
+      name: "Credit Limit Assignment"
+      description: "Set appropriate credit limit based on ability to pay"
+      type: "business"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "proposed_credit_limit <= ${max_credit_limit}"
+        - "proposed_credit_limit <= (monthly_income * 12 * 0.2)"
+        - "initial_credit_limit <= min(${max_credit_limit}, ability_to_pay_limit)"
+      actions:
+        - "calculate_credit_limit"
+        - "document_limit_rationale"
+        - "set_credit_limit"
+
+    # CARD Act Rate and Fee Restrictions
+    - id: "apr_compliance"
+      name: "APR Compliance Check"
+      description: "Ensure APR complies with CARD Act restrictions"
+      type: "regulatory"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "apr <= ${max_apr}"
+        - "promotional_rate_period >= 6_months IF promotional_rate_offered"
+        - "rate_increase_notice_days >= 45 IF rate_increase_planned"
+      actions:
+        - "validate_apr"
+        - "schedule_rate_increase_notice"
+        - "document_rate_justification"
+
+    - id: "fee_limitations"
+      name: "CARD Act Fee Limitations"
+      description: "Enforce CARD Act fee restrictions"
+      type: "regulatory"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "late_fee <= ${late_fee_max}"
+        - "overlimit_fee <= ${overlimit_fee_max}"
+        - "overlimit_fee == 0 UNLESS overlimit_opt_in == true"
+        - "penalty_fees_first_violation <= 25.00"
+        - "total_fees_first_year <= (credit_limit * 0.25)"
+      actions:
+        - "validate_fee_structure"
+        - "cap_fees_per_card_act"
+        - "track_first_year_fees"
+
+    # Payment Processing Requirements
+    - id: "payment_processing_rules"
+      name: "Payment Processing Compliance"
+      description: "CARD Act payment processing requirements"
+      type: "regulatory"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "payment_due_time >= 17:00 IF same_day_processing_required"
+        - "payment_allocation_method == 'highest_apr_first' UNLESS customer_specified"
+        - "grace_period_days >= 21 IF grace_period_offered"
+      actions:
+        - "process_payment_by_cutoff"
+        - "allocate_payment_correctly"
+        - "maintain_grace_period"
+
+    # Under-21 Restrictions
+    - id: "under_21_restrictions"
+      name: "CARD Act Under-21 Restrictions"
+      description: "Special requirements for applicants under 21"
+      type: "regulatory"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "IF applicant.age < 21 THEN (cosigner_verified == true OR independent_income_verified == true)"
+        - "IF applicant.age < 21 THEN credit_limit_increases_require_cosigner_consent == true"
+      actions:
+        - "verify_cosigner_or_income"
+        - "require_cosigner_consent_for_increases"
+        - "document_under_21_compliance"
+
+  # Required attestations
+  attestations:
+    - id: "ability_to_pay_attestation"
+      name: "Ability-to-Pay Documentation"
+      description: "Attestation of ability-to-pay assessment completion"
+      type: "regulatory"
+      required: true
+      fields:
+        - "applicant_id"
+        - "income_verification_method"
+        - "debt_to_income_calculation"
+        - "ability_to_pay_determination"
+        - "assessment_date"
+        - "reviewing_officer"
+
+    - id: "card_act_compliance_attestation"
+      name: "CARD Act Compliance Confirmation"
+      description: "Comprehensive CARD Act compliance attestation"
+      type: "regulatory"
+      required: true
+      fields:
+        - "account_id"
+        - "fee_structure_compliance"
+        - "rate_compliance"
+        - "disclosure_compliance"
+        - "compliance_officer_signature"
+        - "attestation_date"
+
+    - id: "fcra_compliance_attestation"
+      name: "FCRA Compliance Documentation"
+      description: "Fair Credit Reporting Act compliance attestation"
+      type: "regulatory"
+      required: true
+      fields:
+        - "credit_report_source"
+        - "permissible_purpose"
+        - "adverse_action_notice_sent"
+        - "credit_score_disclosure"
+        - "fcra_compliance_date"
+
+  # Configuration
+  config:
+    validation:
+      strict_mode: true
+      fail_on_warnings: false
+
+    execution:
+      timeout: "60s"
+      max_retries: 3
+
+    logging:
+      level: "info"
+      audit_enabled: true
+      retention_days: 2555  # 7 years for regulatory compliance
+
+    reporting:
+      cfpb_reporting_enabled: true
+      quarterly_reports: true
+      examination_ready: true
+
+# Regulatory requirements documentation
+regulatory_requirements:
+  - requirement: "CARD Act Section 109 - Ability to Pay"
+    description: "Credit card issuers must verify ability to make minimum payments"
+    implementation: "ability_to_pay_assessment rule"
+
+  - requirement: "CARD Act Section 101 - General Rule"
+    description: "Restrictions on interest rate increases"
+    implementation: "apr_compliance rule"
+
+  - requirement: "CARD Act Section 102 - Limitations on Fees"
+    description: "Caps on penalty fees and overlimit fees"
+    implementation: "fee_limitations rule"
+
+  - requirement: "CARD Act Section 106 - Rules for Under-21"
+    description: "Special protections for consumers under 21"
+    implementation: "under_21_restrictions rule"
+
+  - requirement: "CFPB Regulation Z"
+    description: "Truth in Lending Act implementation for credit cards"
+    implementation: "Multiple rules for disclosure and rate compliance"
+
+# Integration notes
+integration:
+  ardaos_modules:
+    - "tokenfactory: For credit limit token issuance"
+    - "compliance: For regulatory rule enforcement"
+    - "syndication: For portfolio sales and securitization"
+
+  external_systems:
+    - "Credit bureaus (Experian, Equifax, TransUnion)"
+    - "CFPB examination systems"
+    - "Payment processors"
+    - "Core banking systems"

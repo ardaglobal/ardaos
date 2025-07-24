@@ -1,0 +1,315 @@
+[
+  {
+    "test_case_id": "cc_positive_001",
+    "description": "Standard credit card application - prime borrower",
+    "test_type": "positive",
+    "expected_result": "approved",
+    "applicant": {
+      "age": 35,
+      "annual_income": 75000,
+      "employment_status": "full_time",
+      "employment_length_months": 48,
+      "credit_score": 720,
+      "debt_to_income_ratio": 0.28,
+      "existing_credit_accounts": 5,
+      "payment_history": "excellent",
+      "bankruptcy_history": false,
+      "military_status": false
+    },
+    "application_details": {
+      "requested_credit_limit": 15000,
+      "intended_use": "general_purchases",
+      "application_method": "online",
+      "income_verification_method": "paystubs",
+      "identity_verified": true
+    },
+    "expected_approval": {
+      "credit_limit": 15000,
+      "apr": 16.99,
+      "risk_tier": "prime",
+      "reason_codes": ["excellent_credit_score", "stable_income", "low_dti"]
+    },
+    "compliance_checks": {
+      "ability_to_pay_verified": true,
+      "card_act_compliant": true,
+      "fcra_compliant": true,
+      "tila_disclosures_required": true
+    }
+  },
+  {
+    "test_case_id": "cc_positive_002",
+    "description": "Near-prime borrower with compensating factors",
+    "test_type": "positive",
+    "expected_result": "approved",
+    "applicant": {
+      "age": 28,
+      "annual_income": 55000,
+      "employment_status": "full_time",
+      "employment_length_months": 24,
+      "credit_score": 660,
+      "debt_to_income_ratio": 0.38,
+      "existing_credit_accounts": 3,
+      "payment_history": "good",
+      "bankruptcy_history": false,
+      "military_status": false
+    },
+    "application_details": {
+      "requested_credit_limit": 8000,
+      "intended_use": "balance_transfer",
+      "application_method": "online",
+      "income_verification_method": "tax_returns",
+      "identity_verified": true
+    },
+    "expected_approval": {
+      "credit_limit": 6500,
+      "apr": 22.99,
+      "risk_tier": "near_prime",
+      "reason_codes": ["adequate_credit_score", "stable_employment", "moderate_dti"]
+    },
+    "compliance_checks": {
+      "ability_to_pay_verified": true,
+      "card_act_compliant": true,
+      "fcra_compliant": true,
+      "tila_disclosures_required": true
+    }
+  },
+  {
+    "test_case_id": "cc_positive_003",
+    "description": "High-income applicant with excellent credit",
+    "test_type": "positive",
+    "expected_result": "approved",
+    "applicant": {
+      "age": 42,
+      "annual_income": 150000,
+      "employment_status": "full_time",
+      "employment_length_months": 120,
+      "credit_score": 780,
+      "debt_to_income_ratio": 0.15,
+      "existing_credit_accounts": 8,
+      "payment_history": "excellent",
+      "bankruptcy_history": false,
+      "military_status": false
+    },
+    "application_details": {
+      "requested_credit_limit": 50000,
+      "intended_use": "business_expenses",
+      "application_method": "branch",
+      "income_verification_method": "employment_verification",
+      "identity_verified": true
+    },
+    "expected_approval": {
+      "credit_limit": 50000,
+      "apr": 13.99,
+      "risk_tier": "super_prime",
+      "reason_codes": ["excellent_credit_score", "high_income", "very_low_dti"]
+    },
+    "compliance_checks": {
+      "ability_to_pay_verified": true,
+      "card_act_compliant": true,
+      "fcra_compliant": true,
+      "tila_disclosures_required": true
+    }
+  },
+  {
+    "test_case_id": "cc_positive_004",
+    "description": "Young adult with limited credit history but good income",
+    "test_type": "positive",
+    "expected_result": "approved",
+    "applicant": {
+      "age": 23,
+      "annual_income": 45000,
+      "employment_status": "full_time",
+      "employment_length_months": 18,
+      "credit_score": 680,
+      "debt_to_income_ratio": 0.25,
+      "existing_credit_accounts": 2,
+      "payment_history": "good",
+      "bankruptcy_history": false,
+      "military_status": false
+    },
+    "application_details": {
+      "requested_credit_limit": 5000,
+      "intended_use": "building_credit",
+      "application_method": "online",
+      "income_verification_method": "bank_statements",
+      "identity_verified": true
+    },
+    "expected_approval": {
+      "credit_limit": 3000,
+      "apr": 19.99,
+      "risk_tier": "standard",
+      "reason_codes": ["limited_credit_history", "young_age", "stable_income"]
+    },
+    "compliance_checks": {
+      "ability_to_pay_verified": true,
+      "card_act_compliant": true,
+      "fcra_compliant": true,
+      "tila_disclosures_required": true
+    }
+  },
+  {
+    "test_case_id": "cc_positive_005",
+    "description": "Military service member with special protections",
+    "test_type": "positive",
+    "expected_result": "approved",
+    "applicant": {
+      "age": 26,
+      "annual_income": 48000,
+      "employment_status": "military_active_duty",
+      "employment_length_months": 36,
+      "credit_score": 640,
+      "debt_to_income_ratio": 0.32,
+      "existing_credit_accounts": 4,
+      "payment_history": "good",
+      "bankruptcy_history": false,
+      "military_status": true
+    },
+    "application_details": {
+      "requested_credit_limit": 7500,
+      "intended_use": "emergency_expenses",
+      "application_method": "online",
+      "income_verification_method": "military_pay_stub",
+      "identity_verified": true
+    },
+    "expected_approval": {
+      "credit_limit": 5000,
+      "apr": 18.99,
+      "risk_tier": "standard",
+      "reason_codes": ["military_service", "stable_employment", "acceptable_credit"]
+    },
+    "compliance_checks": {
+      "ability_to_pay_verified": true,
+      "card_act_compliant": true,
+      "mla_compliant": true,
+      "scra_protections_applied": true,
+      "fcra_compliant": true,
+      "tila_disclosures_required": true
+    }
+  },
+  {
+    "test_case_id": "cc_positive_006",
+    "description": "Self-employed applicant with verified income",
+    "test_type": "positive",
+    "expected_result": "approved",
+    "applicant": {
+      "age": 38,
+      "annual_income": 85000,
+      "employment_status": "self_employed",
+      "employment_length_months": 60,
+      "credit_score": 700,
+      "debt_to_income_ratio": 0.30,
+      "existing_credit_accounts": 6,
+      "payment_history": "excellent",
+      "bankruptcy_history": false,
+      "military_status": false
+    },
+    "application_details": {
+      "requested_credit_limit": 20000,
+      "intended_use": "business_cash_flow",
+      "application_method": "phone",
+      "income_verification_method": "tax_returns_2_years",
+      "identity_verified": true
+    },
+    "expected_approval": {
+      "credit_limit": 12000,
+      "apr": 18.99,
+      "risk_tier": "near_prime",
+      "reason_codes": ["self_employed_income_verified", "good_credit_score", "business_purpose"]
+    },
+    "compliance_checks": {
+      "ability_to_pay_verified": true,
+      "card_act_compliant": true,
+      "fcra_compliant": true,
+      "business_purpose_noted": true,
+      "tila_disclosures_required": true
+    }
+  },
+  {
+    "test_case_id": "cc_positive_007",
+    "description": "Existing customer with relationship history",
+    "test_type": "positive",
+    "expected_result": "approved",
+    "applicant": {
+      "age": 31,
+      "annual_income": 62000,
+      "employment_status": "full_time",
+      "employment_length_months": 42,
+      "credit_score": 685,
+      "debt_to_income_ratio": 0.35,
+      "existing_credit_accounts": 4,
+      "payment_history": "good",
+      "bankruptcy_history": false,
+      "military_status": false,
+      "existing_customer": true,
+      "relationship_length_months": 24,
+      "account_performance": "excellent"
+    },
+    "application_details": {
+      "requested_credit_limit": 10000,
+      "intended_use": "consolidation",
+      "application_method": "online",
+      "income_verification_method": "existing_records",
+      "identity_verified": true
+    },
+    "expected_approval": {
+      "credit_limit": 10000,
+      "apr": 19.99,
+      "risk_tier": "standard",
+      "reason_codes": ["existing_customer", "good_payment_history", "relationship_value"]
+    },
+    "compliance_checks": {
+      "ability_to_pay_verified": true,
+      "card_act_compliant": true,
+      "fcra_compliant": true,
+      "existing_relationship_considered": true,
+      "tila_disclosures_required": true
+    }
+  },
+  {
+    "test_case_id": "cc_positive_008",
+    "description": "College student with cosigner",
+    "test_type": "positive",
+    "expected_result": "approved",
+    "applicant": {
+      "age": 20,
+      "annual_income": 8000,
+      "employment_status": "part_time_student",
+      "employment_length_months": 12,
+      "credit_score": 0,
+      "debt_to_income_ratio": 0.10,
+      "existing_credit_accounts": 0,
+      "payment_history": "no_history",
+      "bankruptcy_history": false,
+      "military_status": false,
+      "student_status": true
+    },
+    "cosigner": {
+      "relationship": "parent",
+      "annual_income": 95000,
+      "credit_score": 750,
+      "debt_to_income_ratio": 0.25,
+      "employment_status": "full_time",
+      "cosigner_consent": true
+    },
+    "application_details": {
+      "requested_credit_limit": 2000,
+      "intended_use": "student_expenses",
+      "application_method": "branch",
+      "income_verification_method": "student_aid_documents",
+      "identity_verified": true
+    },
+    "expected_approval": {
+      "credit_limit": 1500,
+      "apr": 21.99,
+      "risk_tier": "student",
+      "reason_codes": ["student_application", "cosigner_strength", "limited_credit_need"]
+    },
+    "compliance_checks": {
+      "ability_to_pay_verified": true,
+      "card_act_under_21_compliant": true,
+      "cosigner_requirements_met": true,
+      "fcra_compliant": true,
+      "tila_disclosures_required": true
+    }
+  }
+]

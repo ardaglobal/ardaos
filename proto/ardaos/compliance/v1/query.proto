@@ -1,0 +1,323 @@
+syntax = "proto3";
+package ardaos.compliance.v1;
+
+import "ardaos/compliance/v1/policy.proto";
+import "google/api/annotations.proto";
+import "cosmos/base/query/v1beta1/pagination.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/ardaOS/ardaOS/api/ardaos/compliance/v1";
+
+// Query defines the gRPC querier service for the compliance module
+service Query {
+  // Policies queries all compliance policies
+  rpc Policies(QueryPoliciesRequest) returns (QueryPoliciesResponse) {
+    option (google.api.http).get = "/ardaos/compliance/v1/policies";
+  }
+
+  // Policy queries a specific compliance policy by ID
+  rpc Policy(QueryPolicyRequest) returns (QueryPolicyResponse) {
+    option (google.api.http).get = "/ardaos/compliance/v1/policies/{policy_id}";
+  }
+
+  // PolicyVersions queries all versions of a specific policy
+  rpc PolicyVersions(QueryPolicyVersionsRequest) returns (QueryPolicyVersionsResponse) {
+    option (google.api.http).get = "/ardaos/compliance/v1/policies/{policy_id}/versions";
+  }
+
+  // PoliciesByJurisdiction queries policies for a specific jurisdiction
+  rpc PoliciesByJurisdiction(QueryPoliciesByJurisdictionRequest) returns (QueryPoliciesByJurisdictionResponse) {
+    option (google.api.http).get = "/ardaos/compliance/v1/policies/jurisdiction/{jurisdiction}";
+  }
+
+  // PoliciesByAssetClass queries policies for a specific asset class
+  rpc PoliciesByAssetClass(QueryPoliciesByAssetClassRequest) returns (QueryPoliciesByAssetClassResponse) {
+    option (google.api.http).get = "/ardaos/compliance/v1/policies/asset-class/{asset_class}";
+  }
+
+  // ValidatePolicy validates a policy definition
+  rpc ValidatePolicy(QueryValidatePolicyRequest) returns (QueryValidatePolicyResponse) {
+    option (google.api.http).post = "/ardaos/compliance/v1/policies/validate";
+    option (google.api.http).body = "*";
+  }
+
+  // EvaluatePolicy evaluates a policy against provided context
+  rpc EvaluatePolicy(QueryEvaluatePolicyRequest) returns (QueryEvaluatePolicyResponse) {
+    option (google.api.http).post = "/ardaos/compliance/v1/policies/{policy_id}/evaluate";
+    option (google.api.http).body = "*";
+  }
+
+  // EvaluateTransaction evaluates all applicable policies for a transaction
+  rpc EvaluateTransaction(QueryEvaluateTransactionRequest) returns (QueryEvaluateTransactionResponse) {
+    option (google.api.http).post = "/ardaos/compliance/v1/evaluate";
+    option (google.api.http).body = "*";
+  }
+
+  // ComplianceStatus queries the compliance status for an account
+  rpc ComplianceStatus(QueryComplianceStatusRequest) returns (QueryComplianceStatusResponse) {
+    option (google.api.http).get = "/ardaos/compliance/v1/status/{account_address}";
+  }
+
+  // AttestationRequirements queries attestation requirements for a jurisdiction/asset class
+  rpc AttestationRequirements(QueryAttestationRequirementsRequest) returns (QueryAttestationRequirementsResponse) {
+    option (google.api.http).get = "/ardaos/compliance/v1/attestations/requirements";
+  }
+
+  // Attestations queries attestations for an account
+  rpc Attestations(QueryAttestationsRequest) returns (QueryAttestationsResponse) {
+    option (google.api.http).get = "/ardaos/compliance/v1/attestations/{account_address}";
+  }
+
+  // ViolationHistory queries violation history for an account
+  rpc ViolationHistory(QueryViolationHistoryRequest) returns (QueryViolationHistoryResponse) {
+    option (google.api.http).get = "/ardaos/compliance/v1/violations/{account_address}";
+  }
+
+  // ActivePolicies queries currently active policies for a context
+  rpc ActivePolicies(QueryActivePoliciesRequest) returns (QueryActivePoliciesResponse) {
+    option (google.api.http).get = "/ardaos/compliance/v1/active-policies";
+  }
+
+  // PolicyMetrics queries metrics and statistics for policies
+  rpc PolicyMetrics(QueryPolicyMetricsRequest) returns (QueryPolicyMetricsResponse) {
+    option (google.api.http).get = "/ardaos/compliance/v1/metrics";
+  }
+}
+
+// Query all policies
+message QueryPoliciesRequest {
+  cosmos.base.query.v1beta1.PageRequest pagination = 1;
+  string jurisdiction = 2;
+  string asset_class = 3;
+  string category = 4;
+  repeated string tags = 5;
+}
+
+message QueryPoliciesResponse {
+  repeated CompliancePolicy policies = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// Query specific policy
+message QueryPolicyRequest {
+  string policy_id = 1;
+  string version = 2; // Optional, defaults to latest
+}
+
+message QueryPolicyResponse {
+  CompliancePolicy policy = 1;
+}
+
+// Query policy versions
+message QueryPolicyVersionsRequest {
+  string policy_id = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+}
+
+message QueryPolicyVersionsResponse {
+  repeated CompliancePolicy policies = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// Query policies by jurisdiction
+message QueryPoliciesByJurisdictionRequest {
+  string jurisdiction = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+  string asset_class = 3; // Optional filter
+}
+
+message QueryPoliciesByJurisdictionResponse {
+  repeated CompliancePolicy policies = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// Query policies by asset class
+message QueryPoliciesByAssetClassRequest {
+  string asset_class = 1;
+  cosmos.base.query.v1beta1.PageRequest pagination = 2;
+  string jurisdiction = 3; // Optional filter
+}
+
+message QueryPoliciesByAssetClassResponse {
+  repeated CompliancePolicy policies = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// Validate policy
+message QueryValidatePolicyRequest {
+  CompliancePolicy policy = 1;
+}
+
+message QueryValidatePolicyResponse {
+  PolicyValidationResult result = 1;
+}
+
+// Evaluate policy
+message QueryEvaluatePolicyRequest {
+  string policy_id = 1;
+  string version = 2; // Optional, defaults to latest
+  EvaluationContext context = 3;
+}
+
+message QueryEvaluatePolicyResponse {
+  PolicyEvaluationResult result = 1;
+}
+
+// Evaluate transaction
+message QueryEvaluateTransactionRequest {
+  EvaluationContext context = 1;
+  bool include_advisory = 2; // Include advisory level policies
+}
+
+message QueryEvaluateTransactionResponse {
+  repeated PolicyEvaluationResult results = 1;
+  bool overall_compliant = 2;
+  repeated string blocking_policies = 3;
+  repeated string warning_policies = 4;
+}
+
+// Query compliance status
+message QueryComplianceStatusRequest {
+  string account_address = 1;
+  string jurisdiction = 2; // Optional filter
+  string asset_class = 3; // Optional filter
+}
+
+message QueryComplianceStatusResponse {
+  ComplianceStatus status = 1;
+}
+
+message ComplianceStatus {
+  string account_address = 1;
+  bool overall_compliant = 2;
+  repeated PolicyComplianceStatus policy_statuses = 3;
+  repeated AttestationStatus attestation_statuses = 4;
+  int64 last_evaluated_height = 5;
+}
+
+message PolicyComplianceStatus {
+  string policy_id = 1;
+  string version = 2;
+  bool compliant = 3;
+  string last_violation = 4;
+  int64 violation_count = 5;
+}
+
+message AttestationStatus {
+  string attestation_name = 1;
+  AttestationType type = 2;
+  bool satisfied = 3;
+  string last_verified = 4;
+  string expires_at = 5;
+}
+
+// Query attestation requirements
+message QueryAttestationRequirementsRequest {
+  string jurisdiction = 1;
+  string asset_class = 2;
+  string account_type = 3; // individual, institutional, etc.
+}
+
+message QueryAttestationRequirementsResponse {
+  repeated AttestationRequirement requirements = 1;
+}
+
+// Query attestations
+message QueryAttestationsRequest {
+  string account_address = 1;
+  AttestationType type = 2; // Optional filter
+  cosmos.base.query.v1beta1.PageRequest pagination = 3;
+}
+
+message QueryAttestationsResponse {
+  repeated Attestation attestations = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message Attestation {
+  string id = 1;
+  string account_address = 2;
+  AttestationType type = 3;
+  string data_hash = 4;
+  string verifier = 5;
+  string verified_at = 6;
+  string expires_at = 7;
+  AttestationStatus status = 8;
+  map<string, string> metadata = 9;
+}
+
+// Query violation history
+message QueryViolationHistoryRequest {
+  string account_address = 1;
+  string policy_id = 2; // Optional filter
+  cosmos.base.query.v1beta1.PageRequest pagination = 3;
+  string from_date = 4; // Optional date filter (ISO 8601)
+  string to_date = 5;   // Optional date filter (ISO 8601)
+}
+
+message QueryViolationHistoryResponse {
+  repeated ComplianceViolation violations = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+message ComplianceViolation {
+  string id = 1;
+  string account_address = 2;
+  string policy_id = 3;
+  string rule_name = 4;
+  string violation_type = 5;
+  string message = 6;
+  string transaction_hash = 7;
+  int64 block_height = 8;
+  string occurred_at = 9;
+  EnforcementAction action_taken = 10;
+  bool resolved = 11;
+  string resolved_at = 12;
+  map<string, string> metadata = 13;
+}
+
+// Query active policies
+message QueryActivePoliciesRequest {
+  string jurisdiction = 1;
+  string asset_class = 2;
+  string account_address = 3; // Optional - get policies applicable to specific account
+  cosmos.base.query.v1beta1.PageRequest pagination = 4;
+}
+
+message QueryActivePoliciesResponse {
+  repeated CompliancePolicy policies = 1;
+  cosmos.base.query.v1beta1.PageResponse pagination = 2;
+}
+
+// Query policy metrics
+message QueryPolicyMetricsRequest {
+  string policy_id = 1; // Optional - specific policy metrics
+  string jurisdiction = 2; // Optional filter
+  string from_date = 3; // Optional date range (ISO 8601)
+  string to_date = 4;   // Optional date range (ISO 8601)
+}
+
+message QueryPolicyMetricsResponse {
+  PolicyMetrics metrics = 1;
+}
+
+message PolicyMetrics {
+  string policy_id = 1;
+  int64 total_evaluations = 2;
+  int64 successful_evaluations = 3;
+  int64 failed_evaluations = 4;
+  int64 violation_count = 5;
+  double success_rate = 6;
+  int64 avg_execution_time_ms = 7;
+  repeated RuleMetrics rule_metrics = 8;
+  map<string, int64> violation_by_rule = 9;
+  map<string, int64> evaluation_by_day = 10;
+}
+
+message RuleMetrics {
+  string rule_name = 1;
+  int64 evaluations = 2;
+  int64 violations = 3;
+  double violation_rate = 4;
+  int64 avg_execution_time_ms = 5;
+}

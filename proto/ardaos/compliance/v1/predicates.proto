@@ -1,0 +1,343 @@
+syntax = "proto3";
+package ardaos.compliance.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/ardaOS/ardaOS/api/ardaos/compliance/v1";
+
+// Core predicate system for rule evaluation with comprehensive logic support
+message Predicate {
+  oneof predicate_type {
+    LogicalPredicate logical = 1;
+    ComparisonPredicate comparison = 2;
+    ExistsPredicate exists = 3;
+    RangePredicate range = 4;
+    SetPredicate set = 5;
+    TimePredicate time = 6;
+    ExpressionPredicate expression = 7; // For complex mathematical/logical expressions
+    RegexPredicate regex = 8;
+    ArrayPredicate array = 9;
+    ObjectPredicate object = 10;
+    FunctionPredicate function = 11; // Built-in function calls
+  }
+
+  // Metadata for debugging and audit
+  PredicateMetadata metadata = 12;
+}
+
+// Logical operations with short-circuit evaluation support
+message LogicalPredicate {
+  LogicalOperator operator = 1;
+  repeated Predicate operands = 2;
+  bool short_circuit = 3; // Enable short-circuit evaluation for performance
+}
+
+enum LogicalOperator {
+  LOGICAL_OPERATOR_UNSPECIFIED = 0;
+  LOGICAL_OPERATOR_AND = 1;
+  LOGICAL_OPERATOR_OR = 2;
+  LOGICAL_OPERATOR_NOT = 3;
+  LOGICAL_OPERATOR_XOR = 4; // Exclusive OR
+  LOGICAL_OPERATOR_NAND = 5; // NOT AND
+  LOGICAL_OPERATOR_NOR = 6; // NOT OR
+}
+
+// Enhanced comparison operations with type safety
+message ComparisonPredicate {
+  FieldPath field_path = 1; // Enhanced field path resolution
+  ComparisonOperator operator = 2;
+  google.protobuf.Any value = 3;
+  DataType expected_type = 4; // Expected data type for validation
+  bool case_sensitive = 5; // For string comparisons
+  string locale = 6; // For locale-aware comparisons
+}
+
+enum ComparisonOperator {
+  COMPARISON_OPERATOR_UNSPECIFIED = 0;
+  COMPARISON_OPERATOR_EQUAL = 1;
+  COMPARISON_OPERATOR_NOT_EQUAL = 2;
+  COMPARISON_OPERATOR_LESS_THAN = 3;
+  COMPARISON_OPERATOR_GREATER_THAN = 4;
+  COMPARISON_OPERATOR_LESS_THAN_OR_EQUAL = 5;
+  COMPARISON_OPERATOR_GREATER_THAN_OR_EQUAL = 6;
+  COMPARISON_OPERATOR_CONTAINS = 7;
+  COMPARISON_OPERATOR_STARTS_WITH = 8;
+  COMPARISON_OPERATOR_ENDS_WITH = 9;
+  COMPARISON_OPERATOR_MATCHES_REGEX = 10;
+  COMPARISON_OPERATOR_FUZZY_MATCH = 11; // Fuzzy string matching
+  COMPARISON_OPERATOR_APPROXIMATELY_EQUAL = 12; // For floating point comparisons
+}
+
+// Enhanced field path resolution with array indexing and nested object access
+message FieldPath {
+  repeated PathComponent components = 1;
+  string raw_path = 2; // Original path string (e.g., "loan.borrower.credit_score")
+  bool optional = 3; // Whether missing fields should be treated as null vs error
+  google.protobuf.Any default_value = 4; // Default value if field is missing
+}
+
+message PathComponent {
+  oneof component_type {
+    string field_name = 1; // Object field access
+    int32 array_index = 2; // Array index access
+    string array_filter = 3; // Array filter expression (e.g., "[amount > 1000]")
+    FunctionCall function_call = 4; // Function call in path (e.g., "sum()", "max()")
+  }
+}
+
+// Function call support for path resolution and predicates
+message FunctionCall {
+  string name = 1; // Function name
+  repeated google.protobuf.Any arguments = 2; // Function arguments
+  map<string, google.protobuf.Any> named_arguments = 3; // Named arguments
+}
+
+// Data type enumeration for type safety
+enum DataType {
+  DATA_TYPE_UNSPECIFIED = 0;
+  DATA_TYPE_STRING = 1;
+  DATA_TYPE_INTEGER = 2;
+  DATA_TYPE_FLOAT = 3;
+  DATA_TYPE_BOOLEAN = 4;
+  DATA_TYPE_TIMESTAMP = 5;
+  DATA_TYPE_ARRAY = 6;
+  DATA_TYPE_OBJECT = 7;
+  DATA_TYPE_BYTES = 8;
+  DATA_TYPE_DECIMAL = 9; // For precise financial calculations
+  DATA_TYPE_UUID = 10;
+  DATA_TYPE_EMAIL = 11;
+  DATA_TYPE_URL = 12;
+  DATA_TYPE_PHONE = 13;
+}
+
+// Existence check predicate with enhanced null handling
+message ExistsPredicate {
+  FieldPath field_path = 1;
+  bool should_exist = 2;
+  ExistenceCheck check_type = 3; // Type of existence check
+}
+
+enum ExistenceCheck {
+  EXISTENCE_CHECK_UNSPECIFIED = 0;
+  EXISTENCE_CHECK_NOT_NULL = 1; // Field exists and is not null
+  EXISTENCE_CHECK_NOT_EMPTY = 2; // Field exists, not null, and not empty
+  EXISTENCE_CHECK_HAS_VALUE = 3; // Field has a meaningful value (not null, empty, or default)
+  EXISTENCE_CHECK_IS_SET = 4; // Field is explicitly set (vs inherited or default)
+}
+
+// Range check predicate with enhanced boundary handling
+message RangePredicate {
+  FieldPath field_path = 1;
+  google.protobuf.Any min_value = 2;
+  google.protobuf.Any max_value = 3;
+  bool min_inclusive = 4;
+  bool max_inclusive = 5;
+  DataType value_type = 6; // Expected data type
+  string comparison_unit = 7; // Unit for comparisons (e.g., "USD", "days", "percent")
+}
+
+// Set membership predicate with enhanced set operations
+message SetPredicate {
+  FieldPath field_path = 1;
+  repeated google.protobuf.Any values = 2;
+  bool is_member = 3; // true for IN, false for NOT IN
+  SetOperation operation = 4; // Additional set operations
+  bool case_sensitive = 5; // For string sets
+}
+
+enum SetOperation {
+  SET_OPERATION_UNSPECIFIED = 0;
+  SET_OPERATION_IN = 1; // Standard membership test
+  SET_OPERATION_NOT_IN = 2; // Negative membership test
+  SET_OPERATION_SUBSET = 3; // Field value is subset of set
+  SET_OPERATION_SUPERSET = 4; // Field value is superset of set
+  SET_OPERATION_INTERSECTS = 5; // Field value intersects with set
+  SET_OPERATION_DISJOINT = 6; // Field value is disjoint from set
+}
+
+// Time-based predicate with enhanced temporal logic
+message TimePredicate {
+  FieldPath field_path = 1;
+  TimeOperator operator = 2;
+  google.protobuf.Timestamp reference_time = 3 [(gogoproto.stdtime) = true];
+  int64 duration_seconds = 4; // For relative time operations
+  string timezone = 5; // Timezone for time calculations
+  TimeGranularity granularity = 6; // Granularity for time comparisons
+  BusinessCalendar business_calendar = 7; // Business day calculations
+}
+
+enum TimeOperator {
+  TIME_OPERATOR_UNSPECIFIED = 0;
+  TIME_OPERATOR_BEFORE = 1;
+  TIME_OPERATOR_AFTER = 2;
+  TIME_OPERATOR_WITHIN = 3; // Within duration from reference_time
+  TIME_OPERATOR_OLDER_THAN = 4; // Older than duration from now
+  TIME_OPERATOR_NEWER_THAN = 5; // Newer than duration from now
+  TIME_OPERATOR_SAME_DAY = 6; // Same calendar day
+  TIME_OPERATOR_SAME_WEEK = 7; // Same calendar week
+  TIME_OPERATOR_SAME_MONTH = 8; // Same calendar month
+  TIME_OPERATOR_SAME_YEAR = 9; // Same calendar year
+  TIME_OPERATOR_BUSINESS_DAYS_BETWEEN = 10; // Business days between dates
+  TIME_OPERATOR_WEEKEND = 11; // Is weekend
+  TIME_OPERATOR_BUSINESS_HOUR = 12; // Is within business hours
+}
+
+enum TimeGranularity {
+  TIME_GRANULARITY_UNSPECIFIED = 0;
+  TIME_GRANULARITY_SECOND = 1;
+  TIME_GRANULARITY_MINUTE = 2;
+  TIME_GRANULARITY_HOUR = 3;
+  TIME_GRANULARITY_DAY = 4;
+  TIME_GRANULARITY_WEEK = 5;
+  TIME_GRANULARITY_MONTH = 6;
+  TIME_GRANULARITY_YEAR = 7;
+}
+
+message BusinessCalendar {
+  repeated string holidays = 1; // ISO 8601 date strings
+  repeated int32 business_days = 2; // Days of week (1=Monday, 7=Sunday)
+  string start_time = 3; // Business hours start (HH:MM format)
+  string end_time = 4; // Business hours end (HH:MM format)
+  string timezone = 5; // Business timezone
+}
+
+// Expression predicate for complex mathematical and logical expressions
+message ExpressionPredicate {
+  string expression = 1; // Expression string (e.g., "loan.principal * 1.2 > borrower.income")
+  ExpressionLanguage language = 2; // Expression language/syntax
+  map<string, google.protobuf.Any> variables = 3; // Variable bindings
+  repeated string required_fields = 4; // Fields required for evaluation
+}
+
+enum ExpressionLanguage {
+  EXPRESSION_LANGUAGE_UNSPECIFIED = 0;
+  EXPRESSION_LANGUAGE_CEL = 1; // Common Expression Language
+  EXPRESSION_LANGUAGE_JSONPATH = 2; // JSONPath expressions
+  EXPRESSION_LANGUAGE_JAVASCRIPT = 3; // JavaScript expressions (sandboxed)
+  EXPRESSION_LANGUAGE_GOLANG = 4; // Go-like expressions
+  EXPRESSION_LANGUAGE_SQL = 5; // SQL-like expressions
+}
+
+// Regular expression predicate with enhanced pattern matching
+message RegexPredicate {
+  FieldPath field_path = 1;
+  string pattern = 2; // Regular expression pattern
+  repeated RegexFlag flags = 3; // Regex flags
+  int32 max_length = 4; // Maximum string length to prevent ReDoS
+  int64 timeout_ms = 5; // Timeout for regex evaluation
+}
+
+enum RegexFlag {
+  REGEX_FLAG_UNSPECIFIED = 0;
+  REGEX_FLAG_CASE_INSENSITIVE = 1;
+  REGEX_FLAG_MULTILINE = 2;
+  REGEX_FLAG_DOT_ALL = 4;
+  REGEX_FLAG_UNICODE = 8;
+  REGEX_FLAG_EXTENDED = 16;
+}
+
+// Array predicate for operations on array fields
+message ArrayPredicate {
+  FieldPath field_path = 1; // Path to array field
+  ArrayOperation operation = 2;
+  Predicate element_predicate = 3; // Predicate to apply to array elements
+  int32 min_matches = 4; // Minimum number of matching elements
+  int32 max_matches = 5; // Maximum number of matching elements
+}
+
+enum ArrayOperation {
+  ARRAY_OPERATION_UNSPECIFIED = 0;
+  ARRAY_OPERATION_ALL_MATCH = 1; // All elements match predicate
+  ARRAY_OPERATION_ANY_MATCH = 2; // At least one element matches
+  ARRAY_OPERATION_NONE_MATCH = 3; // No elements match
+  ARRAY_OPERATION_COUNT_MATCHES = 4; // Count of matching elements
+  ARRAY_OPERATION_UNIQUE = 5; // All elements are unique
+  ARRAY_OPERATION_SORTED = 6; // Array is sorted
+  ARRAY_OPERATION_LENGTH = 7; // Array length check
+}
+
+// Object predicate for operations on nested objects
+message ObjectPredicate {
+  FieldPath field_path = 1; // Path to object field
+  ObjectOperation operation = 2;
+  repeated string required_fields = 3; // Required object fields
+  repeated Predicate field_predicates = 4; // Predicates for object fields
+  bool allow_extra_fields = 5; // Whether extra fields are allowed
+}
+
+enum ObjectOperation {
+  OBJECT_OPERATION_UNSPECIFIED = 0;
+  OBJECT_OPERATION_HAS_FIELDS = 1; // Object has required fields
+  OBJECT_OPERATION_VALID_SCHEMA = 2; // Object matches schema
+  OBJECT_OPERATION_NOT_EMPTY = 3; // Object is not empty
+  OBJECT_OPERATION_FIELD_COUNT = 4; // Number of fields check
+}
+
+// Function predicate for built-in function calls
+message FunctionPredicate {
+  string function_name = 1;
+  repeated google.protobuf.Any arguments = 2;
+  map<string, google.protobuf.Any> named_arguments = 3;
+  FunctionCategory category = 4; // Function category for security
+  bool pure_function = 5; // Whether function has no side effects
+}
+
+enum FunctionCategory {
+  FUNCTION_CATEGORY_UNSPECIFIED = 0;
+  FUNCTION_CATEGORY_MATH = 1; // Mathematical functions
+  FUNCTION_CATEGORY_STRING = 2; // String manipulation functions
+  FUNCTION_CATEGORY_DATE = 3; // Date/time functions
+  FUNCTION_CATEGORY_ARRAY = 4; // Array manipulation functions
+  FUNCTION_CATEGORY_OBJECT = 5; // Object manipulation functions
+  FUNCTION_CATEGORY_VALIDATION = 6; // Validation functions
+  FUNCTION_CATEGORY_CONVERSION = 7; // Type conversion functions
+  FUNCTION_CATEGORY_CRYPTO = 8; // Cryptographic functions
+  FUNCTION_CATEGORY_EXTERNAL = 9; // External data source functions
+}
+
+// Metadata for predicates (debugging and audit trail)
+message PredicateMetadata {
+  string description = 1; // Human-readable description
+  repeated string tags = 2; // Tags for categorization
+  string created_by = 3 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  google.protobuf.Timestamp created_at = 4 [(gogoproto.stdtime) = true];
+  int32 complexity_score = 5; // Computational complexity estimate
+  repeated string dependencies = 6; // Required fields/functions
+  bool cacheable = 7; // Whether result can be cached
+  int64 cache_ttl_seconds = 8; // Cache time-to-live
+  map<string, string> custom_metadata = 9;
+}
+
+// Predicate evaluation result with detailed debugging information
+message PredicateEvaluationResult {
+  bool result = 1; // Final evaluation result
+  repeated PredicateStepResult steps = 2; // Step-by-step evaluation
+  int64 execution_time_ms = 3; // Execution time in milliseconds
+  string error_message = 4; // Error message if evaluation failed
+  map<string, google.protobuf.Any> debug_info = 5; // Debug information
+}
+
+message PredicateStepResult {
+  string step_name = 1; // Name of evaluation step
+  PredicateStepType step_type = 2; // Type of step
+  google.protobuf.Any input_value = 3; // Input value for this step
+  google.protobuf.Any output_value = 4; // Output value from this step
+  bool success = 5; // Whether step succeeded
+  string error_message = 6; // Error message if step failed
+  int64 execution_time_ms = 7; // Step execution time
+}
+
+enum PredicateStepType {
+  PREDICATE_STEP_TYPE_UNSPECIFIED = 0;
+  PREDICATE_STEP_TYPE_FIELD_RESOLUTION = 1; // Resolving field path
+  PREDICATE_STEP_TYPE_TYPE_CONVERSION = 2; // Converting data types
+  PREDICATE_STEP_TYPE_COMPARISON = 3; // Performing comparison
+  PREDICATE_STEP_TYPE_LOGICAL_OPERATION = 4; // Logical AND/OR/NOT
+  PREDICATE_STEP_TYPE_FUNCTION_CALL = 5; // Function invocation
+  PREDICATE_STEP_TYPE_EXPRESSION_EVALUATION = 6; // Expression evaluation
+  PREDICATE_STEP_TYPE_CACHE_LOOKUP = 7; // Cache lookup
+  PREDICATE_STEP_TYPE_CACHE_STORE = 8; // Cache storage
+}

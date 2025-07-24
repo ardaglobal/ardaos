@@ -1,246 +1,416 @@
-# ArdaOS Compliance Compiler Makefile
+# ArdaOS Compliance Compiler Build System
+# Build, test, and distribution automation for the compliance compiler tool
 
-# Variables
-BINARY_NAME=compliance-compiler
-VERSION?=dev
-COMMIT?=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-BUILD_DATE?=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-LDFLAGS=-ldflags "-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(BUILD_DATE)"
+.DEFAULT_GOAL := help
+.PHONY: help build test clean install proto deps build-all release docker lint fmt vet bench integration-test validate-examples update-schemas
 
-# Go related variables
-GOBASE=$(shell pwd)
-GOBIN=$(GOBASE)/bin
-GOBUILD=$(GOBASE)/build
-GOFILES=$(wildcard *.go)
+# Build configuration
+BINARY_NAME := compliance-compiler
+MAIN_PACKAGE := ./cmd/compliance-compiler
+BUILD_DIR := bin
+COVERAGE_FILE := coverage.out
+COVERAGE_HTML := coverage.html
 
-# Build targets
-.PHONY: help build install clean test test-unit test-race test-cover lint fmt fmt-check vet deps example-policies docs
+# Version and build information
+VERSION ?= $(shell git describe --tags --always --dirty)
+BUILD_TIME := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+GIT_COMMIT := $(shell git rev-parse HEAD)
+GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 
-## help: Show this help message
-help: Makefile
+# Build flags
+LDFLAGS := -ldflags "-X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME) -X main.gitCommit=$(GIT_COMMIT) -X main.gitBranch=$(GIT_BRANCH)"
+
+# Go configuration
+GO := go
+GOFMT := gofmt
+GOLINT := golangci-lint
+GOVET := go vet
+GOTEST := go test
+
+# External tools
+BUF := buf
+PROTOC_GEN_GO := protoc-gen-go
+
+# Docker configuration
+DOCKER_IMAGE := ardaos/compliance-compiler
+DOCKER_TAG := $(VERSION)
+
+# Platform targets for cross-compilation
+PLATFORMS := linux/amd64 darwin/amd64 darwin/arm64 windows/amd64
+
+help: ## Display this help message
+	@echo "ArdaOS Compliance Compiler Build System"
+	@echo "======================================="
+	@echo ""
 	@echo "Available targets:"
-	@sed -n 's/^##//p' $< | column -t -s ':' | sed -e 's/^/ /'
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo ""
+	@echo "Build flags:"
+	@echo "  VERSION=$(VERSION)"
+	@echo "  BUILD_TIME=$(BUILD_TIME)"
+	@echo "  GIT_COMMIT=$(GIT_COMMIT)"
+	@echo "  GIT_BRANCH=$(GIT_BRANCH)"
 
-## build: Build the compliance-compiler binary
-build:
-	@echo "Building $(BINARY_NAME)..."
-	@mkdir -p $(GOBUILD)
-	go build $(LDFLAGS) -o $(GOBUILD)/$(BINARY_NAME) .
-	@echo "Binary built: $(GOBUILD)/$(BINARY_NAME)"
+# =============================================================================
+# Build Targets
+# =============================================================================
 
-## install: Install the compliance-compiler binary to GOPATH/bin
-install:
-	@echo "Installing $(BINARY_NAME)..."
-	go install $(LDFLAGS) .
-	@echo "$(BINARY_NAME) installed to $(shell go env GOPATH)/bin"
+build: deps ## Build the compliance compiler binary
+	@echo "Building compliance compiler..."
+	@mkdir -p $(BUILD_DIR)
+	$(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$(BINARY_NAME) $(MAIN_PACKAGE)
+	@echo "Build complete: $(BUILD_DIR)/$(BINARY_NAME)"
 
-## clean: Clean build artifacts
-clean:
-	@echo "Cleaning build artifacts..."
-	rm -rf $(GOBUILD)
-	rm -rf $(GOBIN)
-	go clean -cache
-	go clean -testcache
+build-all: deps ## Build cross-platform binaries for all supported platforms
+	@echo "Building cross-platform binaries..."
+	@mkdir -p $(BUILD_DIR)
+	@for platform in $(PLATFORMS); do \
+		OS=$$(echo $$platform | cut -d'/' -f1); \
+		ARCH=$$(echo $$platform | cut -d'/' -f2); \
+		OUTPUT_NAME=$(BINARY_NAME)-$$OS-$$ARCH; \
+		if [ "$$OS" = "windows" ]; then OUTPUT_NAME=$$OUTPUT_NAME.exe; fi; \
+		echo "Building for $$OS/$$ARCH..."; \
+		GOOS=$$OS GOARCH=$$ARCH $(GO) build $(LDFLAGS) -o $(BUILD_DIR)/$$OUTPUT_NAME $(MAIN_PACKAGE); \
+	done
+	@echo "Cross-platform build complete"
+	@ls -la $(BUILD_DIR)/
 
-## test: Run all tests
-test: test-unit vet lint
+build-release: clean deps ## Build optimized release binaries
+	@echo "Building optimized release binaries..."
+	@mkdir -p $(BUILD_DIR)
+	@for platform in $(PLATFORMS); do \
+		OS=$$(echo $$platform | cut -d'/' -f1); \
+		ARCH=$$(echo $$platform | cut -d'/' -f2); \
+		OUTPUT_NAME=$(BINARY_NAME)-$$OS-$$ARCH; \
+		if [ "$$OS" = "windows" ]; then OUTPUT_NAME=$$OUTPUT_NAME.exe; fi; \
+		echo "Building optimized binary for $$OS/$$ARCH..."; \
+		CGO_ENABLED=0 GOOS=$$OS GOARCH=$$ARCH $(GO) build \
+			-a -installsuffix cgo \
+			-ldflags "-s -w $(LDFLAGS)" \
+			-o $(BUILD_DIR)/$$OUTPUT_NAME $(MAIN_PACKAGE); \
+	done
+	@echo "Release build complete"
 
-## test-unit: Run unit tests
-test-unit:
+install: build ## Install the binary to $GOPATH/bin
+	@echo "Installing compliance compiler to $(GOPATH)/bin..."
+	$(GO) install $(LDFLAGS) $(MAIN_PACKAGE)
+	@echo "Installation complete"
+
+# =============================================================================
+# Testing Targets
+# =============================================================================
+
+test: deps ## Run unit tests with coverage
 	@echo "Running unit tests..."
-	go test -v ./...
+	$(GOTEST) -v -race -coverprofile=$(COVERAGE_FILE) ./...
+	@if [ -f $(COVERAGE_FILE) ]; then \
+		$(GO) tool cover -html=$(COVERAGE_FILE) -o $(COVERAGE_HTML); \
+		echo "Coverage report generated: $(COVERAGE_HTML)"; \
+		$(GO) tool cover -func=$(COVERAGE_FILE) | tail -1; \
+	fi
 
-## test-race: Run tests with race condition detection
-test-race:
+test-unit: deps ## Run unit tests only (no coverage)
+	@echo "Running unit tests..."
+	$(GOTEST) -v ./...
+
+test-race: deps ## Run tests with race condition detection
 	@echo "Running tests with race detection..."
-	go test -race -v ./...
+	$(GOTEST) -race ./...
 
-## test-cover: Run tests with coverage report
-test-cover:
-	@echo "Running tests with coverage..."
-	go test -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report generated: coverage.html"
+test-coverage: deps ## Generate detailed coverage report
+	@echo "Generating detailed coverage report..."
+	$(GOTEST) -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./...
+	$(GO) tool cover -html=$(COVERAGE_FILE) -o $(COVERAGE_HTML)
+	$(GO) tool cover -func=$(COVERAGE_FILE)
+	@echo "Coverage report: $(COVERAGE_HTML)"
 
-## bench: Run benchmark tests
-bench:
-	@echo "Running benchmark tests..."
-	go test -bench=. -benchmem ./...
+bench: deps ## Run performance benchmarks
+	@echo "Running performance benchmarks..."
+	$(GOTEST) -bench=. -benchmem -run=^$$ ./internal/compiler
+	$(GOTEST) -bench=. -benchmem -run=^$$ ./internal/parser
+	@echo "Benchmark complete"
 
-## lint: Run golangci-lint
-lint:
-	@echo "Running linter..."
-	@if command -v golangci-lint >/dev/null 2>&1; then \
-		golangci-lint run; \
+integration-test: build ## Run integration tests
+	@echo "Running integration tests..."
+	@if [ -f ./scripts/run-integration-tests.sh ]; then \
+		chmod +x ./scripts/run-integration-tests.sh; \
+		./scripts/run-integration-tests.sh; \
 	else \
-		echo "golangci-lint not found. Install with: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0"; \
+		echo "Integration test script not found, creating..."; \
+		mkdir -p scripts; \
+		echo "#!/bin/bash" > ./scripts/run-integration-tests.sh; \
+		echo "# Integration tests for compliance compiler" >> ./scripts/run-integration-tests.sh; \
+		echo "echo 'Running integration tests...'" >> ./scripts/run-integration-tests.sh; \
+		echo "./$(BUILD_DIR)/$(BINARY_NAME) validate ./examples/" >> ./scripts/run-integration-tests.sh; \
+		echo "./$(BUILD_DIR)/$(BINARY_NAME) test ./examples/test-data/" >> ./scripts/run-integration-tests.sh; \
+		chmod +x ./scripts/run-integration-tests.sh; \
+		./scripts/run-integration-tests.sh; \
 	fi
 
-## fmt: Format Go code
-fmt:
+validate-examples: build ## Validate all example policies
+	@echo "Validating example policies..."
+	@if [ -d ./examples ]; then \
+		./$(BUILD_DIR)/$(BINARY_NAME) validate ./examples/ --recursive --format=detailed; \
+	else \
+		echo "Examples directory not found"; \
+	fi
+
+# =============================================================================
+# Code Quality Targets
+# =============================================================================
+
+fmt: ## Format Go source code
 	@echo "Formatting Go code..."
-	go fmt ./...
-	@if command -v goimports >/dev/null 2>&1; then \
-		goimports -w .; \
-	fi
+	$(GOFMT) -s -w .
+	@echo "Code formatting complete"
 
-## fmt-check: Check if code is formatted
-fmt-check:
+fmt-check: ## Check if code is properly formatted
 	@echo "Checking code formatting..."
-	@if [ -n "$$(go fmt ./...)" ]; then \
-		echo "Code is not formatted. Run 'make fmt' to fix."; \
+	@if [ -n "$$($(GOFMT) -l .)" ]; then \
+		echo "Code is not properly formatted:"; \
+		$(GOFMT) -l .; \
 		exit 1; \
 	fi
-	@echo "Code is properly formatted."
+	@echo "Code formatting is correct"
 
-## vet: Run go vet
-vet:
+vet: ## Run go vet
 	@echo "Running go vet..."
-	go vet ./...
+	$(GOVET) ./...
+	@echo "Vet analysis complete"
 
-## deps: Download and tidy dependencies
-deps:
-	@echo "Downloading dependencies..."
-	go mod download
-	go mod tidy
-
-## example-policies: Generate example policies
-example-policies:
-	@echo "Generating example policies..."
-	@mkdir -p examples/generated
-	$(GOBUILD)/$(BINARY_NAME) generate --type basic --output examples/generated/basic_example.yaml
-	$(GOBUILD)/$(BINARY_NAME) generate --type regional --region US --output examples/generated/us_regional_example.yaml
-	$(GOBUILD)/$(BINARY_NAME) generate --type asset --asset-type loan --output examples/generated/loan_asset_example.yaml
-
-## validate-examples: Validate all example policies
-validate-examples: build
-	@echo "Validating example policies..."
-	$(GOBUILD)/$(BINARY_NAME) validate -r examples/policies
-
-## compile-examples: Compile all example policies
-compile-examples: build
-	@echo "Compiling example policies..."
-	@mkdir -p examples/compiled
-	@for policy in examples/policies/*.yaml; do \
-		echo "Compiling $$policy..."; \
-		$(GOBUILD)/$(BINARY_NAME) compile --format json --overwrite -d examples/compiled $$policy; \
-	done
-
-## test-examples: Test example policies
-test-examples: build
-	@echo "Testing example policies..."
-	@for policy in examples/policies/*.yaml; do \
-		echo "Testing $$policy..."; \
-		$(GOBUILD)/$(BINARY_NAME) test -t examples/test-data/sample_transactions.json $$policy || true; \
-	done
-
-## docs: Generate documentation
-docs:
-	@echo "Generating documentation..."
-	@mkdir -p docs/generated
-	$(GOBUILD)/$(BINARY_NAME) --help > docs/generated/cli-help.txt
-	$(GOBUILD)/$(BINARY_NAME) compile --help > docs/generated/compile-help.txt
-	$(GOBUILD)/$(BINARY_NAME) validate --help > docs/generated/validate-help.txt
-	$(GOBUILD)/$(BINARY_NAME) test --help > docs/generated/test-help.txt
-	$(GOBUILD)/$(BINARY_NAME) generate --help > docs/generated/generate-help.txt
-	$(GOBUILD)/$(BINARY_NAME) generate --list-types > docs/generated/template-types.txt
-
-## dev-setup: Set up development environment
-dev-setup: deps
-	@echo "Setting up development environment..."
-	@if ! command -v golangci-lint >/dev/null 2>&1; then \
-		echo "Installing golangci-lint..."; \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.61.0; \
-	fi
-	@if ! command -v goimports >/dev/null 2>&1; then \
-		echo "Installing goimports..."; \
-		go install golang.org/x/tools/cmd/goimports@latest; \
-	fi
-
-## release-build: Build binaries for multiple platforms
-release-build: clean
-	@echo "Building release binaries..."
-	@mkdir -p $(GOBUILD)/release
-
-	# Linux AMD64
-	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(GOBUILD)/release/$(BINARY_NAME)-linux-amd64 .
-
-	# Linux ARM64
-	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o $(GOBUILD)/release/$(BINARY_NAME)-linux-arm64 .
-
-	# macOS AMD64
-	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o $(GOBUILD)/release/$(BINARY_NAME)-darwin-amd64 .
-
-	# macOS ARM64
-	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o $(GOBUILD)/release/$(BINARY_NAME)-darwin-arm64 .
-
-	# Windows AMD64
-	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $(GOBUILD)/release/$(BINARY_NAME)-windows-amd64.exe .
-
-	@echo "Release binaries built in $(GOBUILD)/release/"
-
-## docker-build: Build Docker image
-docker-build:
-	@echo "Building Docker image..."
-	docker build -t arda-os/compliance-compiler:$(VERSION) .
-	docker tag arda-os/compliance-compiler:$(VERSION) arda-os/compliance-compiler:latest
-
-## docker-run: Run compliance-compiler in Docker
-docker-run:
-	docker run --rm -v $(PWD)/examples:/examples arda-os/compliance-compiler:latest --help
-
-## integration-test: Run integration tests
-integration-test: build validate-examples compile-examples
-	@echo "Running integration tests..."
-	@echo "✓ Build completed successfully"
-	@echo "✓ Example validation completed"
-	@echo "✓ Example compilation completed"
-	@echo "Integration tests passed!"
-
-## ci: Run continuous integration checks
-ci: deps fmt-check vet lint test test-race
-	@echo "All CI checks passed!"
-
-## security-scan: Run security scanning
-security-scan:
-	@echo "Running security scan..."
-	@if command -v gosec >/dev/null 2>&1; then \
-		gosec ./...; \
+lint: deps ## Run golangci-lint
+	@echo "Running linter..."
+	@if command -v $(GOLINT) >/dev/null 2>&1; then \
+		$(GOLINT) run ./...; \
 	else \
-		echo "gosec not found. Install with: go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest"; \
+		echo "golangci-lint not found, installing..."; \
+		$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+		$(GOLINT) run ./...; \
+	fi
+	@echo "Linting complete"
+
+lint-fix: deps ## Run golangci-lint with auto-fix
+	@echo "Running linter with auto-fix..."
+	@if command -v $(GOLINT) >/dev/null 2>&1; then \
+		$(GOLINT) run --fix ./...; \
+	else \
+		echo "golangci-lint not found, installing..."; \
+		$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+		$(GOLINT) run --fix ./...; \
+	fi
+	@echo "Linting with fixes complete"
+
+check: fmt-check vet lint test ## Run all code quality checks
+
+# =============================================================================
+# Protocol Buffer Targets
+# =============================================================================
+
+proto: proto-deps ## Generate Go code from protocol buffer definitions
+	@echo "Generating protobuf code..."
+	@if [ -d ../../proto ]; then \
+		cd ../../proto && $(BUF) generate; \
+	else \
+		echo "Proto directory not found at ../../proto"; \
+	fi
+	@echo "Protobuf generation complete"
+
+proto-deps: ## Install protobuf dependencies
+	@echo "Installing protobuf dependencies..."
+	@if ! command -v $(BUF) >/dev/null 2>&1; then \
+		echo "Installing buf..."; \
+		$(GO) install github.com/bufbuild/buf/cmd/buf@latest; \
+	fi
+	@if ! command -v $(PROTOC_GEN_GO) >/dev/null 2>&1; then \
+		echo "Installing protoc-gen-go..."; \
+		$(GO) install google.golang.org/protobuf/cmd/protoc-gen-go@latest; \
+	fi
+	@echo "Protobuf dependencies installed"
+
+proto-lint: proto-deps ## Lint protocol buffer files
+	@echo "Linting protobuf files..."
+	@if [ -d ../../proto ]; then \
+		cd ../../proto && $(BUF) lint; \
+	else \
+		echo "Proto directory not found at ../../proto"; \
 	fi
 
-## performance-test: Run performance tests
-performance-test: build
-	@echo "Running performance tests..."
-	@mkdir -p examples/performance
-	@echo "Testing compilation performance..."
-	time $(GOBUILD)/$(BINARY_NAME) compile examples/policies/us_regional.yaml -o examples/performance/perf_test.pb
-	@echo "Testing validation performance..."
-	time $(GOBUILD)/$(BINARY_NAME) validate -r examples/policies
-	@echo "Performance tests completed"
+# =============================================================================
+# Dependency Management
+# =============================================================================
 
-## all: Run all common development tasks
-all: clean dev-setup build test lint integration-test docs
-	@echo "All development tasks completed successfully!"
+deps: ## Download and verify dependencies
+	@echo "Downloading dependencies..."
+	$(GO) mod download
+	$(GO) mod verify
+	@echo "Dependencies ready"
 
-# Default target
-.DEFAULT_GOAL := help
+deps-update: ## Update all dependencies
+	@echo "Updating dependencies..."
+	$(GO) get -u ./...
+	$(GO) mod tidy
+	@echo "Dependencies updated"
 
-# Variables for tracking build info
-BUILD_INFO_FILE := build_info.txt
+deps-clean: ## Clean module cache
+	@echo "Cleaning module cache..."
+	$(GO) clean -modcache
+	@echo "Module cache cleaned"
 
-## build-info: Display build information
-build-info:
-	@echo "Compliance Compiler Build Information"
-	@echo "====================================="
-	@echo "Binary Name: $(BINARY_NAME)"
+# =============================================================================
+# Docker Targets
+# =============================================================================
+
+docker: ## Build Docker image
+	@echo "Building Docker image..."
+	docker build -t $(DOCKER_IMAGE):$(DOCKER_TAG) .
+	docker tag $(DOCKER_IMAGE):$(DOCKER_TAG) $(DOCKER_IMAGE):latest
+	@echo "Docker image built: $(DOCKER_IMAGE):$(DOCKER_TAG)"
+
+docker-push: docker ## Build and push Docker image
+	@echo "Pushing Docker image..."
+	docker push $(DOCKER_IMAGE):$(DOCKER_TAG)
+	docker push $(DOCKER_IMAGE):latest
+	@echo "Docker image pushed"
+
+docker-run: docker ## Run Docker container
+	@echo "Running Docker container..."
+	docker run --rm -v $(PWD)/examples:/examples $(DOCKER_IMAGE):$(DOCKER_TAG) validate /examples
+
+# =============================================================================
+# Release Targets
+# =============================================================================
+
+release: clean build-release ## Create release artifacts
+	@echo "Creating release artifacts..."
+	@mkdir -p dist
+	@for file in $(BUILD_DIR)/$(BINARY_NAME)-*; do \
+		if [ -f "$$file" ]; then \
+			basename=$$(basename $$file); \
+			echo "Creating archive for $$basename..."; \
+			if echo "$$basename" | grep -q "windows"; then \
+				zip "dist/$${basename%.exe}.zip" -j "$$file" README.md LICENSE; \
+			else \
+				tar -czf "dist/$$basename.tar.gz" -C $(BUILD_DIR) "$$(basename $$file)" -C .. README.md LICENSE; \
+			fi; \
+		fi; \
+	done
+	@echo "Release artifacts created in dist/"
+	@ls -la dist/
+
+checksums: release ## Generate checksums for release artifacts
+	@echo "Generating checksums..."
+	@cd dist && sha256sum * > SHA256SUMS
+	@echo "Checksums generated: dist/SHA256SUMS"
+
+# =============================================================================
+# Utility Targets
+# =============================================================================
+
+clean: ## Clean build artifacts
+	@echo "Cleaning build artifacts..."
+	@rm -rf $(BUILD_DIR)
+	@rm -rf dist
+	@rm -f $(COVERAGE_FILE) $(COVERAGE_HTML)
+	@echo "Clean complete"
+
+version: ## Display version information
 	@echo "Version: $(VERSION)"
-	@echo "Commit: $(COMMIT)"
-	@echo "Build Date: $(BUILD_DATE)"
-	@echo "Go Version: $(shell go version | cut -d' ' -f3-)"
-	@echo "Platform: $(shell go env GOOS)/$(shell go env GOARCH)"
+	@echo "Build Time: $(BUILD_TIME)"
+	@echo "Git Commit: $(GIT_COMMIT)"
+	@echo "Git Branch: $(GIT_BRANCH)"
 
-## version: Display version information
-version: build
-	$(GOBUILD)/$(BINARY_NAME) --version
+env: ## Display build environment
+	@echo "Build Environment:"
+	@echo "=================="
+	@echo "GO: $(shell $(GO) version)"
+	@echo "GOPATH: $(GOPATH)"
+	@echo "GOROOT: $(GOROOT)"
+	@echo "PWD: $(PWD)"
+	@echo "BUILD_DIR: $(BUILD_DIR)"
+	@echo "BINARY_NAME: $(BINARY_NAME)"
+
+update-schemas: ## Update policy schemas from regulatory sources
+	@echo "Updating policy schemas..."
+	@if [ -f ./scripts/update-schemas.sh ]; then \
+		chmod +x ./scripts/update-schemas.sh; \
+		./scripts/update-schemas.sh; \
+	else \
+		echo "Schema update script not found, creating placeholder..."; \
+		mkdir -p scripts; \
+		echo "#!/bin/bash" > ./scripts/update-schemas.sh; \
+		echo "# Update policy schemas from regulatory sources" >> ./scripts/update-schemas.sh; \
+		echo "echo 'Schema update placeholder - implement regulatory source updates'" >> ./scripts/update-schemas.sh; \
+		chmod +x ./scripts/update-schemas.sh; \
+	fi
+
+# =============================================================================
+# Development Targets
+# =============================================================================
+
+dev-setup: deps proto-deps ## Set up development environment
+	@echo "Setting up development environment..."
+	@if ! command -v $(GOLINT) >/dev/null 2>&1; then \
+		echo "Installing golangci-lint..."; \
+		$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+	fi
+	@echo "Development environment ready"
+
+dev-watch: ## Watch for changes and rebuild (requires fswatch)
+	@echo "Watching for changes..."
+	@if command -v fswatch >/dev/null 2>&1; then \
+		fswatch -o . | while read f; do make build; done; \
+	else \
+		echo "fswatch not found. Install with: brew install fswatch"; \
+	fi
+
+# =============================================================================
+# CI/CD Integration
+# =============================================================================
+
+ci-test: deps ## Run tests suitable for CI environment
+	@echo "Running CI tests..."
+	$(GOTEST) -v -race -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./...
+	@if [ -f $(COVERAGE_FILE) ]; then \
+		$(GO) tool cover -func=$(COVERAGE_FILE); \
+	fi
+
+ci-build: clean deps ## Build for CI environment
+	@echo "Running CI build..."
+	@make build-release
+	@make checksums
+
+ci-security: deps ## Run security checks for CI
+	@echo "Running security checks..."
+	@if command -v govulncheck >/dev/null 2>&1; then \
+		govulncheck ./...; \
+	else \
+		echo "Installing govulncheck..."; \
+		$(GO) install golang.org/x/vuln/cmd/govulncheck@latest; \
+		govulncheck ./...; \
+	fi
+
+# =============================================================================
+# Performance and Monitoring
+# =============================================================================
+
+profile-cpu: build ## Run CPU profiling
+	@echo "Running CPU profile..."
+	@mkdir -p profiles
+	./$(BUILD_DIR)/$(BINARY_NAME) compile ./examples/ --cpuprofile=profiles/cpu.prof
+	$(GO) tool pprof profiles/cpu.prof
+
+profile-mem: build ## Run memory profiling
+	@echo "Running memory profile..."
+	@mkdir -p profiles
+	./$(BUILD_DIR)/$(BINARY_NAME) compile ./examples/ --memprofile=profiles/mem.prof
+	$(GO) tool pprof profiles/mem.prof
+
+benchmark-regression: ## Run benchmark regression tests
+	@echo "Running benchmark regression tests..."
+	@if [ -f ./scripts/benchmark.sh ]; then \
+		chmod +x ./scripts/benchmark.sh; \
+		./scripts/benchmark.sh; \
+	else \
+		echo "Benchmark script not found, running basic benchmarks..."; \
+		make bench; \
+	fi

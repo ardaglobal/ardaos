@@ -1,0 +1,197 @@
+syntax = "proto3";
+package ardaos.compliance.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+import "ardaos/compliance/v1/predicates.proto";
+import "ardaos/compliance/v1/attestations.proto";
+import "ardaos/compliance/v1/enforcement.proto";
+
+option go_package = "github.com/ardaOS/ardaOS/api/ardaos/compliance/v1";
+
+// Main compliance policy container with version control and audit trail
+message CompliancePolicy {
+  // Core identification
+  string policy_id = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string version = 2; // Semantic versioning (e.g., "1.2.3")
+  string jurisdiction = 3; // ISO 3166-1 alpha-2 country code or custom jurisdiction
+  string asset_class = 4; // Asset class identifier
+
+  // Policy content
+  repeated PolicyRule rules = 5;
+  repeated AttestationRequirement attestations = 6;
+  EnforcementConfig enforcement = 7;
+
+  // References and dependencies
+  repeated string compliance_refs = 8; // References to regulatory frameworks
+  repeated string depends_on = 9; // Policy dependencies (other policy IDs)
+  repeated string supersedes = 10; // Previous policy versions this replaces
+
+  // Audit and lifecycle
+  google.protobuf.Timestamp created_at = 11 [(gogoproto.stdtime) = true, (gogoproto.nullable) = false];
+  string created_by = 12 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  google.protobuf.Timestamp effective_date = 13 [(gogoproto.stdtime) = true];
+  google.protobuf.Timestamp expiry_date = 14 [(gogoproto.stdtime) = true];
+
+  // Metadata and configuration
+  PolicyMetadata metadata = 15;
+  PolicyStatus status = 16;
+  VersionInfo version_info = 17;
+}
+
+// Individual policy rule definition with enhanced metadata
+message PolicyRule {
+  string name = 1; // Unique rule name within policy
+  string description = 2; // Human-readable description
+  Predicate predicate = 3; // Core evaluation logic
+  bool required = 4; // Whether this rule must pass for compliance
+  RuleMetadata metadata = 5;
+
+  // Advanced rule configuration
+  RulePriority priority = 6; // Execution priority
+  repeated string tags = 7; // Categorization tags
+  RuleExecutionConfig execution_config = 8; // Performance and retry settings
+  repeated RuleDependency dependencies = 9; // Dependencies on other rules
+}
+
+// Policy status enumeration
+enum PolicyStatus {
+  POLICY_STATUS_UNSPECIFIED = 0;
+  POLICY_STATUS_DRAFT = 1; // Being developed, not enforced
+  POLICY_STATUS_ACTIVE = 2; // Currently enforced
+  POLICY_STATUS_DEPRECATED = 3; // No longer used but kept for history
+  POLICY_STATUS_SUSPENDED = 4; // Temporarily disabled
+}
+
+// Rule execution priority
+enum RulePriority {
+  RULE_PRIORITY_UNSPECIFIED = 0;
+  RULE_PRIORITY_LOW = 1;
+  RULE_PRIORITY_NORMAL = 2;
+  RULE_PRIORITY_HIGH = 3;
+  RULE_PRIORITY_CRITICAL = 4;
+}
+
+// Rule execution configuration
+message RuleExecutionConfig {
+  int64 timeout_ms = 1; // Maximum execution time in milliseconds
+  int32 max_retries = 2; // Maximum retry attempts on failure
+  int64 retry_delay_ms = 3; // Delay between retries
+  bool fail_fast = 4; // Stop policy evaluation on first failure
+  CacheConfig cache_config = 5; // Caching configuration for this rule
+}
+
+// Caching configuration
+message CacheConfig {
+  bool enabled = 1;
+  int64 ttl_seconds = 2; // Time to live in seconds
+  string cache_key_template = 3; // Template for generating cache keys
+}
+
+// Rule dependency specification
+message RuleDependency {
+  string rule_name = 1; // Name of the dependent rule
+  DependencyType type = 2; // Type of dependency
+  string condition = 3; // Optional condition for dependency
+}
+
+enum DependencyType {
+  DEPENDENCY_TYPE_UNSPECIFIED = 0;
+  DEPENDENCY_TYPE_REQUIRES = 1; // This rule requires the other to pass
+  DEPENDENCY_TYPE_BLOCKS = 2; // This rule cannot run if the other fails
+  DEPENDENCY_TYPE_CONDITIONAL = 3; // Run only if condition is met
+}
+
+// Version information for policy tracking
+message VersionInfo {
+  string previous_version = 1; // Previous version this replaces
+  repeated string changelog = 2; // List of changes in this version
+  string migration_notes = 3; // Notes for migrating from previous versions
+  bool breaking_changes = 4; // Whether this version has breaking changes
+  repeated string deprecated_features = 5; // Features deprecated in this version
+}
+
+// Metadata for policies with enhanced tracking
+message PolicyMetadata {
+  string title = 1;
+  string description = 2;
+  repeated string tags = 3;
+  string category = 4;
+  int32 priority = 5;
+  string author = 6 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string organization = 7;
+  string contact_email = 8;
+  repeated string related_policies = 9; // Related policy IDs
+  map<string, string> custom_fields = 10;
+
+  // Regulatory and legal information
+  repeated string legal_references = 11; // Citations to laws, regulations
+  string regulatory_framework = 12; // Framework this policy implements
+  string risk_assessment = 13; // Risk level and assessment notes
+  repeated string stakeholders = 14; // Key stakeholders and their roles
+}
+
+// Metadata for individual rules with audit trail
+message RuleMetadata {
+  string category = 1;
+  int32 priority = 2;
+  repeated string tags = 3;
+  string documentation_url = 4;
+  string rationale = 5; // Business/regulatory rationale for this rule
+  map<string, string> custom_fields = 6;
+
+  // Audit and compliance tracking
+  string regulatory_citation = 7; // Specific law/regulation this implements
+  string last_reviewed = 8; // ISO 8601 timestamp of last review
+  string reviewed_by = 9 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  string compliance_officer = 10; // Responsible compliance officer
+  RiskLevel risk_level = 11; // Risk level of this specific rule
+}
+
+// Risk level classification
+enum RiskLevel {
+  RISK_LEVEL_UNSPECIFIED = 0;
+  RISK_LEVEL_LOW = 1;
+  RISK_LEVEL_MEDIUM = 2;
+  RISK_LEVEL_HIGH = 3;
+  RISK_LEVEL_CRITICAL = 4;
+}
+
+// Forward compatibility and extension support
+message PolicyExtensions {
+  repeated google.protobuf.Any custom_extensions = 1; // For future extensibility
+  string schema_version = 2; // Schema version for compatibility
+  map<string, string> feature_flags = 3; // Feature toggles for experimental features
+}
+
+// Policy validation result (kept in policy.proto for core validation)
+message PolicyValidationResult {
+  bool is_valid = 1;
+  repeated ValidationError errors = 2;
+  repeated ValidationWarning warnings = 3;
+  string policy_id = 4;
+  string version = 5;
+}
+
+message ValidationError {
+  string field_path = 1;
+  string error_code = 2;
+  string message = 3;
+  ErrorSeverity severity = 4;
+}
+
+message ValidationWarning {
+  string field_path = 1;
+  string warning_code = 2;
+  string message = 3;
+}
+
+enum ErrorSeverity {
+  ERROR_SEVERITY_UNSPECIFIED = 0;
+  ERROR_SEVERITY_INFO = 1;
+  ERROR_SEVERITY_WARNING = 2;
+  ERROR_SEVERITY_ERROR = 3;
+  ERROR_SEVERITY_CRITICAL = 4;
+}

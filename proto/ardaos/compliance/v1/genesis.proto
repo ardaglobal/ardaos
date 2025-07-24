@@ -1,0 +1,304 @@
+syntax = "proto3";
+package ardaos.compliance.v1;
+
+import "ardaos/compliance/v1/policy.proto";
+import "ardaos/compliance/v1/tx.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/ardaOS/ardaOS/api/ardaos/compliance/v1";
+
+// GenesisState defines the compliance module's genesis state
+message GenesisState {
+  // Module parameters
+  Params params = 1 [(gogoproto.nullable) = false];
+
+  // All compliance policies
+  repeated CompliancePolicy policies = 2;
+
+  // Policy activation status
+  repeated PolicyStatus policy_statuses = 3;
+
+  // All attestations
+  repeated AttestationRecord attestations = 4;
+
+  // Attestation verifications
+  repeated AttestationVerification attestation_verifications = 5;
+
+  // Policy exemptions
+  repeated PolicyExemption exemptions = 6;
+
+  // Compliance violations history
+  repeated ComplianceViolation violations = 7;
+
+  // Next available IDs for various entities
+  NextIds next_ids = 8 [(gogoproto.nullable) = false];
+
+  // Jurisdiction configurations
+  repeated JurisdictionConfig jurisdiction_configs = 9;
+
+  // Asset class configurations
+  repeated AssetClassConfig asset_class_configs = 10;
+
+  // Verifier configurations
+  repeated VerifierConfig verifier_configs = 11;
+
+  // Compliance metrics and statistics
+  ComplianceMetrics metrics = 12;
+}
+
+// NextIds tracks the next available IDs for various entities
+message NextIds {
+  uint64 policy_id = 1;
+  uint64 attestation_id = 2;
+  uint64 exemption_id = 3;
+  uint64 violation_id = 4;
+  uint64 verification_id = 5;
+}
+
+// AttestationRecord represents a stored attestation
+message AttestationRecord {
+  string id = 1;
+  string account_address = 2;
+  AttestationType type = 3;
+  bytes data = 4; // Encrypted or hashed attestation data
+  string data_hash = 5;
+  repeated string supporting_documents = 6;
+  string submitted_by = 7;
+  string submitted_at = 8; // ISO 8601 timestamp
+  string expires_at = 9; // ISO 8601 timestamp
+  AttestationRecordStatus status = 10;
+  map<string, string> metadata = 11;
+
+  // Verification information
+  bool verified = 12;
+  string verified_by = 13;
+  string verified_at = 14;
+  string verification_notes = 15;
+  string verification_valid_until = 16;
+}
+
+enum AttestationRecordStatus {
+  ATTESTATION_STATUS_UNSPECIFIED = 0;
+  ATTESTATION_STATUS_PENDING = 1;
+  ATTESTATION_STATUS_VERIFIED = 2;
+  ATTESTATION_STATUS_REJECTED = 3;
+  ATTESTATION_STATUS_EXPIRED = 4;
+  ATTESTATION_STATUS_REVOKED = 5;
+}
+
+// JurisdictionConfig defines configuration for a specific jurisdiction
+message JurisdictionConfig {
+  string jurisdiction = 1;
+  string display_name = 2;
+  string regulatory_authority = 3;
+  repeated string required_attestation_types = 4;
+  JurisdictionSettings settings = 5;
+  map<string, string> metadata = 6;
+  bool active = 7;
+}
+
+message JurisdictionSettings {
+  // Minimum enforcement level for this jurisdiction
+  EnforcementLevel min_enforcement_level = 1;
+
+  // Default attestation validity period in seconds
+  int64 default_attestation_validity_seconds = 2;
+
+  // Maximum exemption duration in seconds
+  int64 max_exemption_duration_seconds = 3;
+
+  // Require multi-signature approval for policy changes
+  bool require_multisig_approval = 4;
+
+  // Required approval threshold (number of signatures)
+  int32 approval_threshold = 5;
+
+  // Authorized policy creators for this jurisdiction
+  repeated string authorized_creators = 6;
+
+  // Cross-border transaction requirements
+  CrossBorderSettings cross_border = 7;
+
+  // Privacy and data protection settings
+  PrivacySettings privacy = 8;
+}
+
+message CrossBorderSettings {
+  bool allowed = 1;
+  repeated string allowed_counterpart_jurisdictions = 2;
+  bool require_additional_attestations = 3;
+  repeated AttestationType required_attestation_types = 4;
+  int64 max_transaction_amount = 5;
+  bool require_regulatory_approval = 6;
+}
+
+message PrivacySettings {
+  bool enable_zero_knowledge_proofs = 1;
+  bool require_data_residency = 2;
+  string data_residency_jurisdiction = 3;
+  bool enable_selective_disclosure = 4;
+  int64 data_retention_period_seconds = 5;
+}
+
+// AssetClassConfig defines configuration for a specific asset class
+message AssetClassConfig {
+  string asset_class = 1;
+  string display_name = 2;
+  string description = 3;
+  repeated string required_attestation_types = 4;
+  AssetClassSettings settings = 5;
+  map<string, string> metadata = 6;
+  bool active = 7;
+}
+
+message AssetClassSettings {
+  // Minimum transaction amount requiring compliance check
+  int64 min_compliance_amount = 1;
+
+  // Maximum transaction amount without additional approvals
+  int64 max_transaction_amount = 2;
+
+  // Risk level for this asset class
+  RiskLevel risk_level = 3;
+
+  // Required holding period in seconds
+  int64 min_holding_period_seconds = 4;
+
+  // Transfer restrictions
+  TransferRestrictions transfer_restrictions = 5;
+
+  // Collateral requirements
+  CollateralRequirements collateral_requirements = 6;
+}
+
+enum RiskLevel {
+  RISK_LEVEL_UNSPECIFIED = 0;
+  RISK_LEVEL_LOW = 1;
+  RISK_LEVEL_MEDIUM = 2;
+  RISK_LEVEL_HIGH = 3;
+  RISK_LEVEL_CRITICAL = 4;
+}
+
+message TransferRestrictions {
+  bool require_accredited_investor = 1;
+  bool require_institutional_counterparty = 2;
+  repeated string allowed_counterparty_types = 3;
+  int64 max_transfers_per_period = 4;
+  int64 transfer_period_seconds = 5;
+  bool require_cooling_off_period = 6;
+  int64 cooling_off_period_seconds = 7;
+}
+
+message CollateralRequirements {
+  bool required = 1;
+  double minimum_ratio = 2; // Minimum collateral to loan ratio
+  repeated string accepted_collateral_types = 3;
+  bool require_independent_valuation = 4;
+  int64 valuation_validity_seconds = 5;
+}
+
+// VerifierConfig defines configuration for attestation verifiers
+message VerifierConfig {
+  string verifier_address = 1;
+  string organization_name = 2;
+  repeated AttestationType authorized_types = 3;
+  repeated string authorized_jurisdictions = 4;
+  VerifierCredentials credentials = 5;
+  VerifierSettings settings = 6;
+  bool active = 7;
+  string registered_at = 8;
+  string registered_by = 9;
+}
+
+message VerifierCredentials {
+  string license_number = 1;
+  string issuing_authority = 2;
+  string valid_until = 3; // ISO 8601 timestamp
+  repeated string certifications = 4;
+  string contact_email = 5;
+  string contact_phone = 6;
+  string website = 7;
+}
+
+message VerifierSettings {
+  int64 max_verifications_per_day = 1;
+  int64 default_verification_validity_seconds = 2;
+  bool require_biometric_verification = 3;
+  bool enable_automated_verification = 4;
+  double automated_confidence_threshold = 5; // 0.0 to 1.0
+  int64 max_verification_time_seconds = 6;
+}
+
+// ComplianceMetrics contains aggregated compliance statistics
+message ComplianceMetrics {
+  int64 total_policies = 1;
+  int64 active_policies = 2;
+  int64 total_attestations = 3;
+  int64 verified_attestations = 4;
+  int64 total_violations = 5;
+  int64 resolved_violations = 6;
+  int64 active_exemptions = 7;
+
+  // Per-jurisdiction statistics
+  map<string, JurisdictionMetrics> jurisdiction_metrics = 8;
+
+  // Per-asset-class statistics
+  map<string, AssetClassMetrics> asset_class_metrics = 9;
+
+  // Performance metrics
+  PerformanceMetrics performance = 10;
+
+  // Last updated timestamp
+  string last_updated = 11;
+}
+
+message JurisdictionMetrics {
+  string jurisdiction = 1;
+  int64 active_policies = 2;
+  int64 total_accounts = 3;
+  int64 compliant_accounts = 4;
+  int64 violations_last_30_days = 5;
+  double compliance_rate = 6;
+}
+
+message AssetClassMetrics {
+  string asset_class = 1;
+  int64 active_policies = 2;
+  int64 total_transactions = 3;
+  int64 blocked_transactions = 4;
+  int64 violations_last_30_days = 5;
+  double compliance_rate = 6;
+}
+
+message PerformanceMetrics {
+  int64 avg_policy_evaluation_time_ms = 1;
+  int64 max_policy_evaluation_time_ms = 2;
+  int64 total_evaluations_last_24h = 3;
+  int64 cache_hit_rate_percent = 4;
+  int64 avg_attestation_verification_time_ms = 5;
+}
+
+// PolicyIndexEntry for efficient policy lookups
+message PolicyIndexEntry {
+  string policy_id = 1;
+  string version = 2;
+  string jurisdiction = 3;
+  string asset_class = 4;
+  repeated string tags = 5;
+  bool active = 6;
+  string created_at = 7;
+  string effective_date = 8;
+  string expiry_date = 9;
+}
+
+// ComplianceAuditLog for tracking all compliance-related operations
+message ComplianceAuditLog {
+  string id = 1;
+  string operation = 2; // create_policy, verify_attestation, etc.
+  string actor = 3; // Address of the actor performing the operation
+  string target = 4; // Target of the operation (policy_id, account_address, etc.)
+  string timestamp = 5; // ISO 8601 timestamp
+  map<string, string> details = 6; // Operation-specific details
+  string transaction_hash = 7;
+  int64 block_height = 8;
+}

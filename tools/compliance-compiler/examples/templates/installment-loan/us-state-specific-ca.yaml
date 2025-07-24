@@ -1,0 +1,404 @@
+# Template metadata
+template:
+  name: "California Installment Loan - State Compliance"
+  version: "1.0.0"
+  jurisdiction: "USA-CA"
+  asset_class: "InstallmentLoan"
+  description: "California state-specific compliance for installment loans"
+  author: "Arda Compliance Team"
+  regulatory_framework: ["CA Financial Code", "CA CFL License", "CA Consumer Protection"]
+  last_updated: "2024-01-15"
+
+# Configurable parameters
+parameters:
+  max_loan_amount_cfl:
+    type: "float"
+    default: 2500.00
+    min: 300.00
+    max: 2500.00
+    description: "Maximum loan amount under CFL (California Financing Law)"
+
+  max_loan_amount_unlicensed:
+    type: "float"
+    default: 10000.00
+    min: 2500.01
+    max: 10000.00
+    description: "Maximum for unlicensed lenders (above CFL threshold)"
+
+  max_apr_cfl:
+    type: "float"
+    default: 36.00
+    min: 10.00
+    max: 36.00
+    description: "Maximum APR for CFL-licensed loans"
+
+  max_finance_charge_rate:
+    type: "float"
+    default: 2.50
+    min: 1.00
+    max: 2.50
+    description: "Maximum finance charge rate per month (30% annually)"
+
+  min_term_days:
+    type: "int"
+    default: 60
+    min: 30
+    max: 90
+    description: "Minimum loan term in days"
+
+  max_term_months:
+    type: "int"
+    default: 60
+    min: 12
+    max: 60
+    description: "Maximum loan term in months"
+
+  cooling_off_period_hours:
+    type: "int"
+    default: 24
+    min: 24
+    max: 72
+    description: "Mandatory cooling-off period for online applications"
+
+# Policy implementation
+policy:
+  metadata:
+    version: "1.0.0"
+    name: "CA-InstallmentLoan-State-Compliance"
+    description: "California state-specific installment loan compliance"
+    tags: ["installment-loan", "california", "cfl", "state-compliance"]
+
+  rules:
+    # California Financing Law (CFL) Licensing
+    - id: "cfl_licensing_compliance"
+      name: "California Financing Law Licensing Requirements"
+      description: "Ensure compliance with CFL licensing requirements"
+      type: "regulatory"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "IF loan_amount <= ${max_loan_amount_cfl} THEN cfl_license_required == true"
+        - "IF cfl_license_required == true THEN cfl_license_valid == true"
+        - "IF cfl_license_required == true THEN license_number_disclosed == true"
+        - "branch_locations_properly_licensed == true"
+        - "surety_bond_current == true IF cfl_licensed"
+      actions:
+        - "verify_cfl_license_status"
+        - "disclose_license_information"
+        - "maintain_surety_bond"
+        - "comply_with_location_requirements"
+
+    # Interest Rate and Fee Limitations
+    - id: "rate_fee_limitations"
+      name: "California Interest Rate and Fee Limits"
+      description: "Comply with California interest rate and fee restrictions"
+      type: "regulatory"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "IF loan_amount <= ${max_loan_amount_cfl} THEN apr <= ${max_apr_cfl}"
+        - "monthly_finance_charge_rate <= ${max_finance_charge_rate}"
+        - "origination_fees_reasonable == true"
+        - "late_fees <= (5% of_installment_amount OR $15, whichever_is_less)"
+        - "usury_laws_complied_with == true"
+      actions:
+        - "calculate_compliant_interest_rates"
+        - "cap_fees_per_regulations"
+        - "ensure_usury_compliance"
+        - "document_rate_calculation"
+
+    # California Consumer Disclosures
+    - id: "ca_consumer_disclosures"
+      name: "California Consumer Protection Disclosures"
+      description: "Provide required California consumer disclosures"
+      type: "regulatory"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "california_disclosure_statement_provided == true"
+        - "spanish_translation_provided == true IF primarily_spanish_speaking"
+        - "borrower_rights_notice_provided == true"
+        - "complaint_process_disclosed == true"
+        - "dbo_contact_information_provided == true"
+      actions:
+        - "provide_california_specific_disclosures"
+        - "translate_documents_if_required"
+        - "explain_borrower_rights"
+        - "disclose_complaint_procedures"
+
+    # Online Lending Requirements
+    - id: "online_lending_requirements"
+      name: "California Online Lending Requirements"
+      description: "Comply with California online lending specific requirements"
+      type: "regulatory"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "IF online_application == true THEN cooling_off_period_implemented == true"
+        - "cooling_off_period_hours >= ${cooling_off_period_hours}"
+        - "electronic_signature_compliance == true"
+        - "website_disclosure_requirements_met == true"
+        - "geolocation_verification_california == true"
+      actions:
+        - "implement_cooling_off_period"
+        - "verify_california_residency"
+        - "comply_with_esign_requirements"
+        - "maintain_compliant_website_disclosures"
+
+    # Loan Term and Structure Requirements
+    - id: "loan_term_structure"
+      name: "California Loan Term and Structure Requirements"
+      description: "Ensure loan terms comply with California requirements"
+      type: "regulatory"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "loan_term_days >= ${min_term_days}"
+        - "loan_term_months <= ${max_term_months}"
+        - "repayment_schedule_reasonable == true"
+        - "balloon_payments_prohibited == true IF consumer_loan"
+        - "refinancing_restrictions_observed == true"
+      actions:
+        - "validate_loan_term_compliance"
+        - "structure_compliant_repayment"
+        - "avoid_prohibited_loan_features"
+        - "implement_refinancing_controls"
+
+    # California Privacy Requirements
+    - id: "ca_privacy_compliance"
+      name: "California Privacy Law Compliance"
+      description: "Comply with California Consumer Privacy Act (CCPA)"
+      type: "regulatory"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "ccpa_privacy_notice_provided == true"
+        - "consumer_rights_disclosed == true"
+        - "opt_out_mechanisms_available == true"
+        - "personal_info_handling_compliant == true"
+        - "third_party_sharing_disclosed == true"
+      actions:
+        - "provide_ccpa_privacy_notice"
+        - "implement_consumer_rights_mechanisms"
+        - "maintain_opt_out_processes"
+        - "ensure_compliant_data_handling"
+
+    # Military Personnel Protections
+    - id: "military_personnel_protections"
+      name: "Military Personnel Protection Requirements"
+      description: "Special protections for military service members"
+      type: "regulatory"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "IF military_borrower == true THEN mla_compliance_verified == true"
+        - "IF military_borrower == true THEN scra_protections_explained == true"
+        - "military_status_verification_completed == true"
+        - "enhanced_disclosures_provided == true IF military_borrower"
+      actions:
+        - "verify_military_status"
+        - "apply_mla_protections"
+        - "explain_scra_benefits"
+        - "provide_enhanced_military_disclosures"
+
+    # Collection and Default Procedures
+    - id: "ca_collection_procedures"
+      name: "California Collection and Default Procedures"
+      description: "Comply with California debt collection requirements"
+      type: "regulatory"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "collection_practices_compliant == true"
+        - "rosenthal_act_compliance == true"
+        - "default_procedures_proper == true"
+        - "wage_garnishment_limits_observed == true"
+        - "bankruptcy_procedures_compliant == true"
+      actions:
+        - "implement_compliant_collection_practices"
+        - "observe_rosenthal_act_requirements"
+        - "follow_proper_default_procedures"
+        - "comply_with_garnishment_limits"
+
+    # Record Keeping Requirements
+    - id: "ca_recordkeeping"
+      name: "California Record Keeping Requirements"
+      description: "Maintain records per California requirements"
+      type: "regulatory"
+      priority: "low"
+      enabled: true
+      conditions:
+        - "loan_records_maintained_3_years == true"
+        - "advertising_records_maintained == true"
+        - "complaint_records_maintained == true"
+        - "licensing_records_current == true"
+        - "examination_records_available == true"
+      actions:
+        - "maintain_required_loan_records"
+        - "preserve_advertising_materials"
+        - "document_consumer_complaints"
+        - "keep_licensing_documentation_current"
+
+  # Required attestations
+  attestations:
+    - id: "cfl_compliance_attestation"
+      name: "California Financing Law Compliance"
+      description: "CFL licensing and compliance attestation"
+      type: "regulatory"
+      required: true
+      condition: "loan_amount <= max_loan_amount_cfl"
+      fields:
+        - "cfl_license_number"
+        - "license_expiration_date"
+        - "surety_bond_status"
+        - "branch_locations_licensed"
+        - "compliance_officer_signature"
+        - "attestation_date"
+
+    - id: "rate_compliance_attestation"
+      name: "Interest Rate Compliance Documentation"
+      description: "California interest rate and fee compliance"
+      type: "regulatory"
+      required: true
+      fields:
+        - "apr_calculation_method"
+        - "interest_rate_applied"
+        - "fees_charged"
+        - "usury_compliance_confirmed"
+        - "rate_compliance_officer"
+        - "calculation_date"
+
+    - id: "disclosure_attestation"
+      name: "California Disclosure Compliance"
+      description: "California-specific disclosure requirements"
+      type: "regulatory"
+      required: true
+      fields:
+        - "disclosures_provided"
+        - "language_accommodation"
+        - "borrower_acknowledgment"
+        - "dbo_information_disclosed"
+        - "disclosure_officer"
+        - "disclosure_date"
+
+    - id: "online_compliance_attestation"
+      name: "Online Lending Compliance"
+      description: "California online lending requirements compliance"
+      type: "regulatory"
+      required: true
+      condition: "online_application == true"
+      fields:
+        - "cooling_off_period_implemented"
+        - "residency_verification_completed"
+        - "website_compliance_confirmed"
+        - "electronic_signature_valid"
+        - "online_compliance_officer"
+        - "compliance_timestamp"
+
+  # Configuration
+  config:
+    validation:
+      strict_mode: true
+      fail_on_warnings: true
+
+    execution:
+      timeout: "90s"
+      max_retries: 3
+
+    logging:
+      level: "info"
+      audit_enabled: true
+      ca_specific_logging: true
+      retention_days: 1095  # 3 years per CA requirements
+
+    reporting:
+      dbo_reporting_enabled: true
+      quarterly_reports: true
+      examination_readiness: true
+
+# California Specific Requirements
+ca_specific_requirements:
+  cfl_licensing:
+    license_types:
+      - "Consumer Finance Lender (CFL)"
+      - "Premium Finance Company"
+      - "Personal Property Broker"
+
+    application_requirements:
+      - "Completed CFL application"
+      - "Surety bond ($25,000-$150,000)"
+      - "Fingerprints and background check"
+      - "Financial statements"
+      - "Operating plan"
+
+  disclosure_requirements:
+    mandatory_disclosures:
+      - "California Financing Law disclosure"
+      - "Borrower's Bill of Rights"
+      - "DBO contact information"
+      - "Complaint procedures"
+      - "Translation rights notice"
+
+  fee_limitations:
+    origination_fees:
+      cfl_loans: "Reasonable and customary"
+      unlicensed_loans: "Subject to usury laws"
+
+    late_fees:
+      maximum: "Lesser of 5% of installment or $15"
+      frequency: "Once per late payment"
+
+    other_fees:
+      nsf_fees: "Reasonable"
+      prepayment_penalties: "Generally prohibited"
+
+# Usury Law Considerations
+usury_laws:
+  constitutional_rate: 10.0  # California Constitutional maximum
+  exceptions:
+    licensed_lenders: "Subject to licensing law limits"
+    commercial_loans: "May exceed usury limits"
+    broker_arranged: "Subject to specific exemptions"
+
+  calculation_method: "Simple interest or add-on"
+  penalties:
+    - "Forfeiture of interest"
+    - "Principal reduction"
+    - "Civil liability"
+
+# Online Lending Specific Requirements
+online_lending:
+  cooling_off_period:
+    duration: "24 hours minimum"
+    implementation: "Cannot fund loan during period"
+    exceptions: "Emergency situations with documentation"
+
+  website_requirements:
+    licensing_disclosure: "Prominent display of license status"
+    contact_information: "California address and phone"
+    complaint_process: "Link to DBO complaint portal"
+
+  verification_requirements:
+    residency: "California residency verification"
+    identity: "Enhanced identity verification"
+    geolocation: "IP address and device location"
+
+# Integration notes
+integration:
+  ardaos_modules:
+    - "tokenfactory: CA-compliant loan tokens with state-specific attributes"
+    - "compliance: Real-time California regulatory checking"
+    - "syndication: CA-compliant loan distribution"
+
+  external_systems:
+    - "California DBO licensing system"
+    - "NMLS (Nationwide Multistate Licensing System)"
+    - "California court systems (for collections)"
+    - "Military database verification (SCRA/MLA)"
+
+  compliance_automation:
+    - "Automated CFL compliance checking"
+    - "Real-time rate validation"
+    - "Cooling-off period enforcement"
+    - "California-specific disclosure generation"
+    - "DBO reporting automation"

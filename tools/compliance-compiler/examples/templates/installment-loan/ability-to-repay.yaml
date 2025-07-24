@@ -1,0 +1,375 @@
+# Template metadata
+template:
+  name: "Installment Loan Ability-to-Repay Assessment"
+  version: "1.0.0"
+  jurisdiction: "USA"
+  asset_class: "InstallmentLoan"
+  description: "Comprehensive ability-to-repay assessment for installment loans"
+  author: "Arda Compliance Team"
+  regulatory_framework: ["CFPB ATR Rule", "QM Standards", "UDAAP Guidelines"]
+  last_updated: "2024-01-15"
+
+# Configurable parameters
+parameters:
+  max_debt_to_income_ratio:
+    type: "float"
+    default: 0.43
+    min: 0.30
+    max: 0.50
+    description: "Maximum debt-to-income ratio for qualified mortgages guidance"
+
+  min_residual_income:
+    type: "float"
+    default: 1000.00
+    min: 500.00
+    max: 2500.00
+    description: "Minimum monthly residual income after debt payments"
+
+  income_verification_lookback_months:
+    type: "int"
+    default: 24
+    min: 12
+    max: 36
+    description: "Months of income history required for verification"
+
+  employment_stability_months:
+    type: "int"
+    default: 12
+    min: 6
+    max: 24
+    description: "Minimum employment stability period"
+
+  max_payment_shock_percent:
+    type: "float"
+    default: 0.20
+    min: 0.10
+    max: 0.30
+    description: "Maximum allowable payment shock for refinancing"
+
+  asset_reserve_months:
+    type: "int"
+    default: 2
+    min: 1
+    max: 6
+    description: "Required months of reserves for higher-risk loans"
+
+# Policy implementation
+policy:
+  metadata:
+    version: "1.0.0"
+    name: "InstallmentLoan-Ability-To-Repay"
+    description: "Comprehensive ability-to-repay assessment framework"
+    tags: ["installment-loan", "ability-to-repay", "atr", "qualified-mortgage"]
+
+  rules:
+    # Income Verification and Stability
+    - id: "income_verification"
+      name: "Income Verification Requirements"
+      description: "Verify borrower's current and reasonably expected income"
+      type: "verification"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "income_documentation_complete == true"
+        - "income_verification_method IN ['paystubs', 'tax_returns', 'bank_statements', 'employment_verification']"
+        - "income_history_months >= ${income_verification_lookback_months}"
+        - "income_trend != 'declining_significantly'"
+        - "seasonal_income_adjusted == true IF seasonal_employment"
+      actions:
+        - "collect_income_documentation"
+        - "verify_employment_status"
+        - "calculate_stable_monthly_income"
+        - "assess_income_continuity"
+        - "document_income_sources"
+
+    # Employment Stability Assessment
+    - id: "employment_stability"
+      name: "Employment Stability Evaluation"
+      description: "Assess stability and continuity of employment"
+      type: "assessment"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "current_employment_months >= ${employment_stability_months} OR job_gap_explanation_acceptable"
+        - "employment_type IN ['full_time', 'part_time_stable', 'self_employed', 'retired', 'disability']"
+        - "industry_stability_risk != 'high'"
+        - "probability_of_continued_employment >= 0.80"
+      actions:
+        - "verify_employment_history"
+        - "assess_industry_stability"
+        - "evaluate_job_continuity_risk"
+        - "document_employment_assessment"
+
+    # Debt-to-Income Calculation
+    - id: "debt_to_income_calculation"
+      name: "Debt-to-Income Ratio Assessment"
+      description: "Calculate and evaluate debt-to-income ratios"
+      type: "calculation"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "monthly_gross_income > 0"
+        - "current_monthly_debt_payments >= 0"
+        - "proposed_loan_payment > 0"
+        - "back_end_dti = (current_monthly_debt_payments + proposed_loan_payment) / monthly_gross_income"
+        - "back_end_dti <= ${max_debt_to_income_ratio}"
+      actions:
+        - "calculate_verified_monthly_income"
+        - "sum_current_debt_obligations"
+        - "calculate_proposed_payment"
+        - "compute_debt_to_income_ratios"
+        - "assess_dti_acceptability"
+
+    # Residual Income Analysis
+    - id: "residual_income_analysis"
+      name: "Residual Income Sufficiency"
+      description: "Ensure adequate residual income after debt payments"
+      type: "analysis"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "monthly_net_income > 0"
+        - "total_monthly_expenses > 0"
+        - "residual_income = monthly_net_income - total_monthly_expenses - proposed_loan_payment"
+        - "residual_income >= ${min_residual_income}"
+        - "residual_income_adequate_for_family_size == true"
+      actions:
+        - "calculate_net_monthly_income"
+        - "estimate_living_expenses"
+        - "compute_residual_income"
+        - "assess_family_size_adjustment"
+        - "evaluate_income_sufficiency"
+
+    # Credit History and Payment Capacity
+    - id: "credit_payment_history"
+      name: "Credit and Payment History Analysis"
+      description: "Analyze credit history and payment capacity indicators"
+      type: "analysis"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "credit_report_obtained == true"
+        - "credit_score >= 580 OR compensating_factors_present"
+        - "major_derogatory_items_explained == true IF major_derogatory_present"
+        - "payment_history_pattern != 'consistently_late'"
+        - "recent_credit_behavior_acceptable == true"
+      actions:
+        - "pull_comprehensive_credit_report"
+        - "analyze_payment_patterns"
+        - "assess_credit_utilization"
+        - "evaluate_recent_credit_activity"
+        - "document_credit_assessment"
+
+    # Assets and Reserves Verification
+    - id: "assets_reserves_verification"
+      name: "Assets and Reserves Assessment"
+      description: "Verify assets and evaluate reserve adequacy"
+      type: "verification"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "liquid_assets_verified == true"
+        - "asset_documentation_provided == true"
+        - "reserves_after_closing >= (monthly_payment * ${asset_reserve_months}) IF high_risk_factors_present"
+        - "down_payment_source_acceptable == true"
+      actions:
+        - "verify_liquid_assets"
+        - "document_asset_sources"
+        - "calculate_reserves_after_closing"
+        - "assess_reserve_adequacy"
+
+    # Payment Shock Analysis
+    - id: "payment_shock_analysis"
+      name: "Payment Shock Assessment"
+      description: "Assess borrower's ability to handle payment increases"
+      type: "analysis"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "IF refinance_transaction == true THEN payment_shock_calculated == true"
+        - "IF payment_shock_percent > ${max_payment_shock_percent} THEN compensating_factors_required == true"
+        - "borrower_experience_with_similar_payments == true OR payment_shock_acceptable"
+      actions:
+        - "calculate_payment_shock_percentage"
+        - "assess_borrower_payment_experience"
+        - "evaluate_compensating_factors"
+        - "document_payment_shock_rationale"
+
+    # Special Circumstances Evaluation
+    - id: "special_circumstances"
+      name: "Special Circumstances Assessment"
+      description: "Evaluate special borrower circumstances"
+      type: "assessment"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "IF self_employed == true THEN business_income_stability_verified == true"
+        - "IF variable_income == true THEN conservative_income_calculation_used == true"
+        - "IF non_traditional_credit == true THEN alternative_credit_data_considered == true"
+        - "IF first_time_borrower == true THEN counseling_considered == true"
+      actions:
+        - "assess_self_employment_income"
+        - "evaluate_variable_income_patterns"
+        - "consider_alternative_credit_data"
+        - "provide_borrower_education_if_needed"
+
+    # Comprehensive Ability Assessment
+    - id: "comprehensive_ability_assessment"
+      name: "Comprehensive Repayment Ability"
+      description: "Final comprehensive assessment of repayment ability"
+      type: "decision"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "income_adequacy_confirmed == true"
+        - "employment_stability_acceptable == true"
+        - "debt_ratios_within_guidelines == true"
+        - "credit_profile_acceptable == true"
+        - "compensating_factors_adequate == true IF risk_factors_present"
+      actions:
+        - "synthesize_all_assessment_factors"
+        - "weigh_positive_and_negative_factors"
+        - "make_final_ability_determination"
+        - "document_comprehensive_rationale"
+
+  # Required attestations
+  attestations:
+    - id: "ability_to_repay_attestation"
+      name: "Ability-to-Repay Documentation"
+      description: "Comprehensive ATR assessment attestation"
+      type: "regulatory"
+      required: true
+      fields:
+        - "borrower_id"
+        - "loan_application_number"
+        - "income_verification_completed"
+        - "debt_to_income_calculated"
+        - "residual_income_assessed"
+        - "ability_determination"
+        - "underwriter_signature"
+        - "assessment_date"
+
+    - id: "income_verification_attestation"
+      name: "Income Verification Documentation"
+      description: "Income verification process attestation"
+      type: "verification"
+      required: true
+      fields:
+        - "income_documentation_type"
+        - "verification_method_used"
+        - "income_stability_assessment"
+        - "employment_verification_completed"
+        - "income_calculation_method"
+        - "verifying_officer_signature"
+        - "verification_date"
+
+    - id: "compensating_factors_attestation"
+      name: "Compensating Factors Documentation"
+      description: "Documentation of compensating factors if applicable"
+      type: "analysis"
+      required: false
+      condition: "compensating_factors_considered == true"
+      fields:
+        - "risk_factors_identified"
+        - "compensating_factors_present"
+        - "factor_strength_assessment"
+        - "overall_risk_mitigation"
+        - "senior_underwriter_approval"
+        - "documentation_date"
+
+  # Configuration
+  config:
+    validation:
+      strict_mode: true
+      fail_on_warnings: false
+
+    execution:
+      timeout: "120s"
+      max_retries: 3
+
+    logging:
+      level: "info"
+      audit_enabled: true
+      decision_logging: true
+      retention_days: 2555  # 7 years for lending compliance
+
+    quality_control:
+      secondary_review_required: true
+      random_audit_percentage: 0.10
+      high_risk_loans_reviewed: true
+
+# ATR Assessment Framework
+assessment_framework:
+  income_analysis:
+    acceptable_documentation:
+      - "Recent pay stubs (30 days)"
+      - "Tax returns (2 years)"
+      - "Bank statements (2-3 months)"
+      - "Employment verification letter"
+      - "Profit & loss statements (self-employed)"
+
+  employment_categories:
+    stable_employment:
+      - "Full-time W-2 employment (2+ years same employer)"
+      - "Government employment"
+      - "Union employment with contract"
+      - "Professional employment (licensed)"
+
+    acceptable_with_verification:
+      - "Self-employed (2+ years tax returns)"
+      - "Commission-based (2+ years history)"
+      - "Part-time (stable 2+ years)"
+      - "Contract employment (stable history)"
+
+  risk_factors:
+    high_risk_indicators:
+      - "Recent job change without career progression"
+      - "Declining income trend"
+      - "High debt-to-income ratio"
+      - "Limited credit history"
+      - "Recent derogatory credit events"
+
+    compensating_factors:
+      - "Substantial liquid assets"
+      - "Conservative loan-to-value ratio"
+      - "Excellent credit history"
+      - "Professional stable employment"
+      - "Significant down payment"
+
+# Decision Matrix
+decision_matrix:
+  approve_conditions:
+    - "DTI <= 0.36 AND credit_score >= 680"
+    - "DTI <= 0.43 AND credit_score >= 620 AND compensating_factors_present"
+    - "Manual_underwriting_approved AND senior_underwriter_sign_off"
+
+  refer_conditions:
+    - "DTI > 0.43 OR credit_score < 620"
+    - "Significant_risk_factors_present"
+    - "Compensating_factors_marginal"
+
+  decline_conditions:
+    - "DTI > 0.50"
+    - "Insufficient_income_documentation"
+    - "Recent_bankruptcy_without_extenuating_circumstances"
+
+# Integration notes
+integration:
+  ardaos_modules:
+    - "tokenfactory: ATR-compliant loan token creation"
+    - "compliance: Automated ATR verification"
+    - "syndication: Risk-assessed loan distribution"
+
+  external_systems:
+    - "Income verification services (The Work Number, etc.)"
+    - "Credit bureaus (real-time monitoring)"
+    - "Bank account verification services"
+    - "Employment verification databases"
+    - "Tax transcript services (4506-T)"
+
+  automation_capabilities:
+    - "Automated income calculation"
+    - "Real-time DTI computation"
+    - "Credit report integration"
+    - "Decision support algorithms"
+    - "Documentation workflow management"
