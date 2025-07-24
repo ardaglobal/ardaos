@@ -397,7 +397,7 @@ dev-watch:
 # =============================================================================
 
 ## ci-test: Run tests suitable for CI environment.
-ci-test: deps
+ci-test: deps proto
 	@echo "Running CI tests..."
 	$(GOTEST) -v -race -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./...
 	@if [ -f $(COVERAGE_FILE) ]; then \
