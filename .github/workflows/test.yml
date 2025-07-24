@@ -32,3 +32,40 @@ jobs:
 
       - name: Run tests
         run: make test
+
+  test-compliance-compiler:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: tools/compliance-compiler/go.mod
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-compliance-${{ hashFiles('tools/compliance-compiler/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-compliance-
+            ${{ runner.os }}-go-
+
+      - name: Download compliance-compiler dependencies
+        run: |
+          cd tools/compliance-compiler
+          go mod download
+
+      - name: Run compliance-compiler tests
+        run: |
+          cd tools/compliance-compiler
+          make ci-test
+
+      - name: Upload compliance-compiler coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: tools/compliance-compiler/coverage.out
+          flags: compliance-compiler
+          name: compliance-compiler-coverage
