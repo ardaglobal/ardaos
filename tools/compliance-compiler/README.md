@@ -31,7 +31,6 @@ YAML Policy → JSON Schema Validation → Protobuf Conversion → Blockchain Ou
 
 2. **🔧 Buf CLI Integration**
    - Modern protobuf management with `buf.yaml` configuration
-   - Generated Go types in `gen/compliance/v1/` package
    - Linting, breaking change detection, and dependency management
    - Clean separation between schema definition and code generation
 
