@@ -6,7 +6,7 @@
 
 # Build configuration
 BINARY_NAME := compliance-compiler
-MAIN_PACKAGE := .
+MAIN_PACKAGE := ./cmd/compliance-compiler
 BUILD_DIR := bin
 COVERAGE_FILE := coverage.out
 COVERAGE_HTML := coverage.html
