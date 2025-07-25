@@ -1,0 +1,189 @@
+# US Regional Compliance Policy
+# Compliance policy for US financial regulations including BSA, AML, and OFAC requirements
+
+metadata:
+  name: "us_regional_compliance"
+  version: "2.1.0"
+  description: "US regional compliance policy with BSA, AML, and OFAC requirements"
+  region: "US"
+  asset_type: "loan"
+  created_at: "2024-01-15T10:00:00Z"
+  labels:
+    jurisdiction: "US"
+    regulations: "BSA,AML,OFAC"
+    category: "regional"
+
+spec:
+  rules:
+    - id: "bsa_reporting"
+      name: "Bank Secrecy Act Reporting"
+      description: "CTR filing requirement for transactions over $10,000"
+      type: "requirement"
+      condition: "amount >= 10000"
+      action: "require"
+      priority: 10
+      enabled: true
+      parameters:
+        - name: "ctr_threshold"
+          type: "float"
+          value: 10000.00
+          required: true
+          description: "BSA Currency Transaction Report threshold"
+
+    - id: "ofac_screening"
+      name: "OFAC Sanctions Screening"
+      description: "Screen against OFAC sanctions lists"
+      type: "restriction"
+      condition: "sender_ofac_status == 'clear' && recipient_ofac_status == 'clear'"
+      action: "allow"
+      priority: 5
+      enabled: true
+
+    - id: "patriot_act_compliance"
+      name: "USA PATRIOT Act CIP"
+      description: "Customer Identification Program requirements"
+      type: "requirement"
+      condition: "sender_cip_verified == true && recipient_cip_verified == true"
+      action: "require"
+      priority: 15
+      enabled: true
+
+    - id: "sar_threshold"
+      name: "Suspicious Activity Reporting"
+      description: "SAR filing for suspicious transactions"
+      type: "notification"
+      condition: "suspicious_score >= 0.7 || amount >= 5000 && pattern_suspicious == true"
+      action: "notify"
+      priority: 20
+      enabled: true
+      parameters:
+        - name: "sar_threshold"
+          type: "float"
+          value: 5000.00
+          required: true
+        - name: "suspicious_threshold"
+          type: "float"
+          value: 0.7
+          required: true
+
+    - id: "structuring_detection"
+      name: "Structuring Detection"
+      description: "Detect potential structuring activities"
+      type: "validation"
+      condition: "daily_transaction_count <= 3 || (amount < 10000 && daily_amount < 10000)"
+      action: "allow"
+      priority: 25
+      enabled: true
+
+    - id: "high_risk_geography"
+      name: "High-Risk Geography Check"
+      description: "Enhanced due diligence for high-risk countries"
+      type: "requirement"
+      condition: "sender_country_risk <= 3 && recipient_country_risk <= 3"
+      action: "require"
+      priority: 30
+      enabled: true
+
+  conditions:
+    - id: "business_day"
+      name: "US Business Day"
+      expression: "day_of_week >= 1 && day_of_week <= 5 && is_federal_holiday == false"
+      parameters:
+        timezone: "America/New_York"
+
+    - id: "fed_wire_hours"
+      name: "Federal Wire Transfer Hours"
+      expression: "hour >= 9 && hour <= 18 && is_business_day == true"
+      parameters:
+        timezone: "America/New_York"
+
+  actions:
+    - id: "ctr_filing"
+      name: "CTR Filing Action"
+      type: "notify"
+      handler: "fincen_ctr"
+      parameters:
+        endpoint: "https://bsaefiling.fincen.treas.gov/api/ctr"
+        format: "xml"
+
+    - id: "sar_filing"
+      name: "SAR Filing Action"
+      type: "notify"
+      handler: "fincen_sar"
+      parameters:
+        endpoint: "https://bsaefiling.fincen.treas.gov/api/sar"
+        format: "xml"
+
+    - id: "compliance_alert"
+      name: "Compliance Team Alert"
+      type: "notify"
+      handler: "email"
+      parameters:
+        recipients: "compliance@bank.example.com,aml@bank.example.com"
+        priority: "high"
+
+  limits:
+    # BSA thresholds
+    ctr_threshold:
+      type: "amount"
+      value: 10000
+      currency: "USD"
+
+    # Daily aggregate limits
+    daily_cash_limit:
+      type: "amount"
+      value: 10000
+      period: "1d"
+      currency: "USD"
+
+    # Wire transfer limits
+    daily_wire_limit:
+      type: "amount"
+      value: 100000
+      period: "1d"
+      currency: "USD"
+
+    # International transfer limits
+    intl_transfer_limit:
+      type: "amount"
+      value: 50000
+      period: "1d"
+      currency: "USD"
+
+  constraints:
+    # OFAC compliance
+    prohibited_countries: "CU,IR,KP,SY"
+
+    # Correspondent banking restrictions
+    high_risk_jurisdictions: "AF,BY,MM,NI,PK,UG,VU,YE"
+
+    # Currency restrictions
+    prohibited_currencies: "BTC,ETH"  # Crypto restrictions
+
+    # Transaction types
+    allowed_wire_types: "domestic,international"
+
+    # Documentation requirements
+    required_documentation: "government_id,proof_of_address"
+
+  settings:
+    default_action: "deny"
+    strict_mode: true
+    continue_on_error: false
+    log_level: "info"
+
+    notification_urls:
+      - "https://compliance.bank.example.com/us/notifications"
+      - "https://aml.bank.example.com/alerts"
+
+    timeouts:
+      ofac_screening: "10s"
+      cip_verification: "30s"
+      sar_evaluation: "60s"
+      ctr_processing: "2m"
+
+    # US-specific settings
+    reporting:
+      ctr_auto_file: true
+      sar_auto_file: false  # Requires manual review
+      quarterly_reports: true

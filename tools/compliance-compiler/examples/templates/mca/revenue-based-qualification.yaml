@@ -1,0 +1,451 @@
+# Template metadata
+template:
+  name: "Merchant Cash Advance - Revenue-Based Qualification"
+  version: "1.0.0"
+  jurisdiction: "GLOBAL"
+  asset_class: "MerchantCashAdvance"
+  description: "Revenue-based qualification framework for MCA products"
+  author: "Arda Compliance Team"
+  regulatory_framework: ["UCC Article 9", "State Licensing", "UDAAP Guidelines"]
+  last_updated: "2024-01-15"
+
+# Configurable parameters
+parameters:
+  min_monthly_revenue:
+    type: "float"
+    default: 15000.00
+    min: 5000.00
+    max: 50000.00
+    description: "Minimum monthly revenue requirement"
+
+  min_time_in_business_months:
+    type: "int"
+    default: 12
+    min: 6
+    max: 24
+    description: "Minimum time in business (months)"
+
+  max_factor_rate:
+    type: "float"
+    default: 1.45
+    min: 1.10
+    max: 1.60
+    description: "Maximum factor rate (total payback multiple)"
+
+  max_daily_debit_percentage:
+    type: "float"
+    default: 0.20
+    min: 0.05
+    max: 0.25
+    description: "Maximum daily debit as percentage of average daily revenue"
+
+  min_credit_score:
+    type: "int"
+    default: 500
+    min: 450
+    max: 650
+    description: "Minimum personal credit score"
+
+  max_advance_amount:
+    type: "float"
+    default: 500000.00
+    min: 10000.00
+    max: 2000000.00
+    description: "Maximum advance amount"
+
+  revenue_stability_coefficient:
+    type: "float"
+    default: 0.30
+    min: 0.20
+    max: 0.50
+    description: "Maximum acceptable revenue variability coefficient"
+
+# Policy implementation
+policy:
+  metadata:
+    version: "1.0.0"
+    name: "MCA-Revenue-Based-Qualification"
+    description: "Merchant cash advance revenue-based qualification"
+    tags: ["mca", "merchant-cash-advance", "revenue-based", "qualification"]
+
+  rules:
+    # Business Revenue Verification
+    - id: "revenue_verification"
+      name: "Business Revenue Verification and Analysis"
+      description: "Verify and analyze business revenue patterns"
+      type: "verification"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "bank_statements_provided >= 6_months"
+        - "average_monthly_revenue >= ${min_monthly_revenue}"
+        - "revenue_verification_method IN ['bank_statements', 'payment_processor', 'pos_system']"
+        - "revenue_trend != 'declining_significantly'"
+        - "seasonal_adjustments_applied == true IF seasonal_business"
+      actions:
+        - "analyze_bank_statement_deposits"
+        - "calculate_average_monthly_revenue"
+        - "assess_revenue_trends"
+        - "identify_seasonal_patterns"
+        - "validate_revenue_sources"
+
+    # Revenue Stability Assessment
+    - id: "revenue_stability_assessment"
+      name: "Revenue Stability and Predictability Analysis"
+      description: "Assess revenue stability and predictability"
+      type: "analysis"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "revenue_variability_coefficient <= ${revenue_stability_coefficient}"
+        - "consistent_deposit_patterns == true"
+        - "revenue_concentration_risk != 'high'"
+        - "customer_diversification_adequate == true"
+        - "recurring_revenue_percentage >= 0.30 IF service_business"
+      actions:
+        - "calculate_revenue_variability"
+        - "analyze_deposit_consistency"
+        - "assess_revenue_concentration"
+        - "evaluate_customer_base_stability"
+        - "identify_recurring_revenue_streams"
+
+    # Business Operating History
+    - id: "operating_history_verification"
+      name: "Business Operating History Verification"
+      description: "Verify business operating history and continuity"
+      type: "verification"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "months_in_operation >= ${min_time_in_business_months}"
+        - "business_registration_verified == true"
+        - "continuous_operations_demonstrated == true"
+        - "management_stability_acceptable == true"
+        - "location_stability_verified == true IF physical_location"
+      actions:
+        - "verify_business_start_date"
+        - "confirm_business_registration"
+        - "assess_operational_continuity"
+        - "evaluate_management_tenure"
+        - "validate_business_location"
+
+    # Daily Payment Capacity Calculation
+    - id: "daily_payment_capacity"
+      name: "Daily Payment Capacity Assessment"
+      description: "Calculate sustainable daily payment amount"
+      type: "calculation"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "average_daily_revenue > 0"
+        - "proposed_daily_debit <= (average_daily_revenue * ${max_daily_debit_percentage})"
+        - "payment_capacity_stress_tested == true"
+        - "cash_flow_adequacy_confirmed == true"
+        - "working_capital_preserved == true"
+      actions:
+        - "calculate_average_daily_revenue"
+        - "determine_sustainable_daily_debit"
+        - "stress_test_payment_capacity"
+        - "assess_cash_flow_impact"
+        - "preserve_working_capital_requirements"
+
+    # Factor Rate and Term Structure
+    - id: "factor_rate_structure"
+      name: "Factor Rate and Term Structure Validation"
+      description: "Validate factor rate and repayment terms"
+      type: "validation"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "factor_rate <= ${max_factor_rate}"
+        - "payback_amount = advance_amount * factor_rate"
+        - "estimated_term_reasonable == true"
+        - "daily_payment_amount_sustainable == true"
+        - "total_cost_disclosed == true"
+      actions:
+        - "validate_factor_rate_reasonableness"
+        - "calculate_total_payback_amount"
+        - "estimate_repayment_term"
+        - "assess_payment_sustainability"
+        - "disclose_total_cost_of_advance"
+
+    # Credit and Risk Assessment
+    - id: "credit_risk_assessment"
+      name: "Credit and Business Risk Assessment"
+      description: "Assess creditworthiness and business risk factors"
+      type: "assessment"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "personal_credit_score >= ${min_credit_score} OR strong_business_factors_present"
+        - "business_credit_profile_acceptable == true"
+        - "no_recent_bankruptcies == true OR bankruptcy_explained"
+        - "tax_lien_status_acceptable == true"
+        - "litigation_risk_manageable == true"
+      actions:
+        - "pull_personal_credit_reports"
+        - "obtain_business_credit_information"
+        - "check_bankruptcy_records"
+        - "verify_tax_compliance"
+        - "assess_litigation_exposure"
+
+    # Industry and Business Model Analysis
+    - id: "industry_business_analysis"
+      name: "Industry and Business Model Analysis"
+      description: "Analyze industry risks and business model viability"
+      type: "analysis"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "industry_classification_acceptable == true"
+        - "business_model_sustainable == true"
+        - "competitive_position_adequate == true"
+        - "regulatory_risks_manageable == true"
+        - "technology_disruption_risk != 'high'"
+      actions:
+        - "classify_business_industry"
+        - "assess_business_model_viability"
+        - "evaluate_competitive_landscape"
+        - "identify_regulatory_risks"
+        - "assess_technology_disruption_risk"
+
+    # Cash Flow Seasonality Analysis
+    - id: "seasonality_analysis"
+      name: "Cash Flow Seasonality Analysis"
+      description: "Analyze seasonal cash flow patterns and adjustments"
+      type: "analysis"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "seasonal_patterns_identified == true IF seasonal_business"
+        - "seasonal_adjustments_calculated == true IF seasonal_business"
+        - "off_season_survival_capacity_verified == true IF seasonal_business"
+        - "peak_season_payment_capacity_optimized == true IF seasonal_business"
+      actions:
+        - "identify_seasonal_revenue_patterns"
+        - "calculate_seasonal_adjustments"
+        - "assess_off_season_survival_capacity"
+        - "optimize_payment_structure_for_seasonality"
+
+    # Advance Amount Determination
+    - id: "advance_amount_determination"
+      name: "Advance Amount and Structure Determination"
+      description: "Determine appropriate advance amount and structure"
+      type: "determination"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "advance_amount <= ${max_advance_amount}"
+        - "advance_to_revenue_ratio_reasonable == true"
+        - "repayment_capacity_adequate == true"
+        - "risk_adjusted_advance_amount == true"
+        - "portfolio_diversification_maintained == true"
+      actions:
+        - "calculate_appropriate_advance_amount"
+        - "assess_advance_to_revenue_ratio"
+        - "verify_repayment_capacity"
+        - "apply_risk_adjustments"
+        - "maintain_portfolio_diversification"
+
+  # Required attestations
+  attestations:
+    - id: "revenue_verification_attestation"
+      name: "Revenue Verification Documentation"
+      description: "Business revenue verification attestation"
+      type: "verification"
+      required: true
+      fields:
+        - "verification_method_used"
+        - "revenue_calculation_methodology"
+        - "bank_statements_analyzed"
+        - "seasonal_adjustments_applied"
+        - "revenue_analyst_signature"
+        - "verification_date"
+
+    - id: "payment_capacity_attestation"
+      name: "Payment Capacity Assessment"
+      description: "Daily payment capacity analysis attestation"
+      type: "analysis"
+      required: true
+      fields:
+        - "average_daily_revenue"
+        - "proposed_daily_debit"
+        - "payment_capacity_percentage"
+        - "stress_test_results"
+        - "capacity_analyst_signature"
+        - "assessment_date"
+
+    - id: "risk_assessment_attestation"
+      name: "Business Risk Assessment"
+      description: "Comprehensive business risk assessment"
+      type: "risk"
+      required: true
+      fields:
+        - "industry_risk_rating"
+        - "credit_risk_factors"
+        - "operational_risk_assessment"
+        - "overall_risk_rating"
+        - "risk_officer_approval"
+        - "assessment_date"
+
+    - id: "advance_structure_attestation"
+      name: "Advance Structure Documentation"
+      description: "Advance amount and terms documentation"
+      type: "structure"
+      required: true
+      fields:
+        - "advance_amount_approved"
+        - "factor_rate_applied"
+        - "daily_debit_amount"
+        - "estimated_term"
+        - "pricing_rationale"
+        - "underwriter_signature"
+        - "approval_date"
+
+  # Configuration
+  config:
+    validation:
+      strict_mode: true
+      fail_on_warnings: false
+
+    execution:
+      timeout: "120s"
+      max_retries: 3
+
+    logging:
+      level: "info"
+      audit_enabled: true
+      revenue_analysis_logging: true
+      retention_days: 2190  # 6 years for business records
+
+    risk_management:
+      portfolio_concentration_limits: true
+      industry_exposure_monitoring: true
+      geographic_diversification: true
+
+# Revenue Verification Methods
+revenue_verification:
+  bank_statements:
+    requirements:
+      - "6-12 months of business bank statements"
+      - "All business accounts included"
+      - "Deposits categorized and analyzed"
+      - "Irregular deposits explained"
+
+    analysis_methods:
+      - "Average monthly deposit calculation"
+      - "Trend analysis (6-month and 12-month)"
+      - "Seasonality identification"
+      - "Revenue source diversification"
+
+  payment_processor_data:
+    acceptable_processors:
+      - "Square"
+      - "PayPal"
+      - "Stripe"
+      - "First Data"
+      - "Merchant Services"
+
+    data_requirements:
+      - "6-12 months of processing statements"
+      - "Transaction volume and value"
+      - "Chargeback and refund rates"
+      - "Processing consistency"
+
+# Industry Classifications
+industry_classifications:
+  preferred_industries:
+    risk_level: "Low"
+    examples:
+      - "Professional Services"
+      - "Healthcare Services"
+      - "Auto Repair"
+      - "Beauty Salons"
+      - "Retail (established)"
+    characteristics:
+      - "Stable revenue patterns"
+      - "Low seasonal volatility"
+      - "Established customer base"
+
+  acceptable_industries:
+    risk_level: "Medium"
+    examples:
+      - "Restaurants"
+      - "Construction"
+      - "Trucking"
+      - "Manufacturing"
+    characteristics:
+      - "Moderate revenue volatility"
+      - "Some seasonal patterns"
+      - "Industry-specific risks"
+
+  restricted_industries:
+    risk_level: "High"
+    examples:
+      - "Adult entertainment"
+      - "Gambling"
+      - "Multi-level marketing"
+      - "High-risk online businesses"
+    characteristics:
+      - "High regulatory risk"
+      - "Reputational concerns"
+      - "Volatile cash flows"
+
+# Payment Structure Guidelines
+payment_structures:
+  standard_structure:
+    daily_debit_percentage: "10-20% of average daily revenue"
+    collection_method: "ACH debit"
+    collection_frequency: "Daily (business days)"
+    holdback_reserve: "0-10% of advance amount"
+
+  seasonal_adjustments:
+    off_season_reduction: "Up to 50% payment reduction"
+    peak_season_increase: "Up to 150% payment increase"
+    adjustment_triggers: "Revenue variance >30%"
+
+  split_funding:
+    multiple_advances: "Allowed with adequate capacity"
+    subordination_rules: "First advance has priority"
+    combined_payment_limits: "Total payments <25% of revenue"
+
+# Risk Mitigation Strategies
+risk_mitigation:
+  revenue_volatility:
+    - "Seasonal payment adjustments"
+    - "Revenue monitoring and alerts"
+    - "Conservative payment percentages"
+    - "Holdback reserves"
+
+  credit_risk:
+    - "Personal guarantees"
+    - "UCC lien filings"
+    - "Regular monitoring"
+    - "Early intervention protocols"
+
+  industry_risk:
+    - "Industry expertise requirements"
+    - "Portfolio diversification limits"
+    - "Enhanced monitoring"
+    - "Industry-specific covenants"
+
+# Integration notes
+integration:
+  ardaos_modules:
+    - "tokenfactory: MCA-specific tokens with revenue-based attributes"
+    - "compliance: Real-time compliance monitoring"
+    - "syndication: Risk-based MCA distribution"
+
+  external_systems:
+    - "Bank account verification services"
+    - "Payment processor API integrations"
+    - "Business credit bureaus"
+    - "UCC filing systems"
+    - "Bank statement analysis platforms"
+
+  automation_features:
+    - "Automated bank statement analysis"
+    - "Real-time revenue monitoring"
+    - "Dynamic payment adjustments"
+    - "Risk score calculation"
+    - "Portfolio concentration monitoring"

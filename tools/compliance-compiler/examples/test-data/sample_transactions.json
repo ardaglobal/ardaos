@@ -1,0 +1,333 @@
+{
+  "test_cases": [
+    {
+      "name": "valid_small_transaction",
+      "description": "Small transaction that should pass all compliance checks",
+      "input": {
+        "amount": 5000.00,
+        "sender": "alice_verified_001",
+        "recipient": "bob_verified_002",
+        "asset_type": "loan",
+        "region": "US",
+        "sender_verified": true,
+        "recipient_verified": true,
+        "sender_ofac_status": "clear",
+        "recipient_ofac_status": "clear",
+        "sender_cip_verified": true,
+        "recipient_cip_verified": true,
+        "suspicious_score": 0.1,
+        "pattern_suspicious": false,
+        "daily_transaction_count": 1,
+        "daily_amount": 5000.00,
+        "sender_country_risk": 1,
+        "recipient_country_risk": 1,
+        "transaction_type": "loan_disbursement",
+        "timestamp": "2024-01-15T14:30:00Z"
+      },
+      "expected": {
+        "pass": true,
+        "reason": "Transaction meets all compliance requirements"
+      }
+    },
+    {
+      "name": "high_amount_ctr_required",
+      "description": "Transaction over $10k requiring CTR filing",
+      "input": {
+        "amount": 15000.00,
+        "sender": "charlie_verified_003",
+        "recipient": "dave_verified_004",
+        "asset_type": "loan",
+        "region": "US",
+        "sender_verified": true,
+        "recipient_verified": true,
+        "sender_ofac_status": "clear",
+        "recipient_ofac_status": "clear",
+        "sender_cip_verified": true,
+        "recipient_cip_verified": true,
+        "suspicious_score": 0.2,
+        "pattern_suspicious": false,
+        "daily_transaction_count": 1,
+        "daily_amount": 15000.00,
+        "sender_country_risk": 1,
+        "recipient_country_risk": 1,
+        "transaction_type": "loan_disbursement",
+        "timestamp": "2024-01-15T10:15:00Z"
+      },
+      "expected": {
+        "pass": true,
+        "reason": "Transaction passes but requires CTR filing"
+      }
+    },
+    {
+      "name": "ofac_sanctions_violation",
+      "description": "Transaction involving OFAC sanctioned entity",
+      "input": {
+        "amount": 3000.00,
+        "sender": "eve_verified_005",
+        "recipient": "sanctioned_entity_001",
+        "asset_type": "loan",
+        "region": "US",
+        "sender_verified": true,
+        "recipient_verified": false,
+        "sender_ofac_status": "clear",
+        "recipient_ofac_status": "blocked",
+        "sender_cip_verified": true,
+        "recipient_cip_verified": false,
+        "suspicious_score": 0.9,
+        "pattern_suspicious": true,
+        "daily_transaction_count": 1,
+        "daily_amount": 3000.00,
+        "sender_country_risk": 1,
+        "recipient_country_risk": 5,
+        "transaction_type": "loan_disbursement",
+        "timestamp": "2024-01-15T16:45:00Z"
+      },
+      "expected": {
+        "pass": false,
+        "reason": "OFAC sanctions violation - recipient is blocked"
+      }
+    },
+    {
+      "name": "suspicious_activity_alert",
+      "description": "Transaction triggering suspicious activity monitoring",
+      "input": {
+        "amount": 7500.00,
+        "sender": "frank_verified_006",
+        "recipient": "grace_verified_007",
+        "asset_type": "loan",
+        "region": "US",
+        "sender_verified": true,
+        "recipient_verified": true,
+        "sender_ofac_status": "clear",
+        "recipient_ofac_status": "clear",
+        "sender_cip_verified": true,
+        "recipient_cip_verified": true,
+        "suspicious_score": 0.8,
+        "pattern_suspicious": true,
+        "daily_transaction_count": 5,
+        "daily_amount": 35000.00,
+        "sender_country_risk": 1,
+        "recipient_country_risk": 1,
+        "transaction_type": "loan_disbursement",
+        "timestamp": "2024-01-15T18:20:00Z"
+      },
+      "expected": {
+        "pass": true,
+        "reason": "Transaction allowed but flagged for SAR consideration"
+      }
+    },
+    {
+      "name": "structuring_pattern_detected",
+      "description": "Multiple transactions suggesting structuring",
+      "input": {
+        "amount": 9500.00,
+        "sender": "henry_verified_008",
+        "recipient": "iris_verified_009",
+        "asset_type": "loan",
+        "region": "US",
+        "sender_verified": true,
+        "recipient_verified": true,
+        "sender_ofac_status": "clear",
+        "recipient_ofac_status": "clear",
+        "sender_cip_verified": true,
+        "recipient_cip_verified": true,
+        "suspicious_score": 0.6,
+        "pattern_suspicious": true,
+        "daily_transaction_count": 4,
+        "daily_amount": 38000.00,
+        "sender_country_risk": 1,
+        "recipient_country_risk": 1,
+        "transaction_type": "loan_disbursement",
+        "timestamp": "2024-01-15T20:10:00Z"
+      },
+      "expected": {
+        "pass": false,
+        "reason": "Potential structuring detected - exceeds daily count and amount thresholds"
+      }
+    },
+    {
+      "name": "high_risk_geography",
+      "description": "Transaction involving high-risk jurisdiction",
+      "input": {
+        "amount": 4000.00,
+        "sender": "jack_verified_010",
+        "recipient": "kim_verified_011",
+        "asset_type": "loan",
+        "region": "US",
+        "sender_verified": true,
+        "recipient_verified": true,
+        "sender_ofac_status": "clear",
+        "recipient_ofac_status": "clear",
+        "sender_cip_verified": true,
+        "recipient_cip_verified": true,
+        "suspicious_score": 0.3,
+        "pattern_suspicious": false,
+        "daily_transaction_count": 1,
+        "daily_amount": 4000.00,
+        "sender_country_risk": 1,
+        "recipient_country_risk": 4,
+        "transaction_type": "loan_disbursement",
+        "timestamp": "2024-01-15T12:30:00Z"
+      },
+      "expected": {
+        "pass": false,
+        "reason": "High-risk geography - recipient country risk level exceeds policy limit"
+      }
+    },
+    {
+      "name": "loan_ltv_compliant",
+      "description": "Loan with acceptable loan-to-value ratio",
+      "input": {
+        "amount": 200000.00,
+        "loan_amount": 200000.00,
+        "collateral_value": 250000.00,
+        "ltv_ratio": 0.80,
+        "credit_score": 720,
+        "debt_to_income_ratio": 0.35,
+        "income_verified": true,
+        "income_documentation_complete": true,
+        "collateral_appraised": true,
+        "appraisal_date_valid": true,
+        "tila_disclosures_provided": true,
+        "apr_calculated": true,
+        "protected_class_bias_score": 0.05,
+        "min_loan_amount": 1000.00,
+        "max_loan_amount": 500000.00,
+        "loan_term_months": 360,
+        "interest_rate": 0.065,
+        "asset_type": "loan",
+        "region": "US",
+        "transaction_type": "loan_origination",
+        "timestamp": "2024-01-15T09:00:00Z"
+      },
+      "expected": {
+        "pass": true,
+        "reason": "Loan meets all underwriting and compliance requirements"
+      }
+    },
+    {
+      "name": "loan_ltv_violation",
+      "description": "Loan exceeding maximum loan-to-value ratio",
+      "input": {
+        "amount": 220000.00,
+        "loan_amount": 220000.00,
+        "collateral_value": 250000.00,
+        "ltv_ratio": 0.88,
+        "credit_score": 680,
+        "debt_to_income_ratio": 0.40,
+        "income_verified": true,
+        "income_documentation_complete": true,
+        "collateral_appraised": true,
+        "appraisal_date_valid": true,
+        "tila_disclosures_provided": true,
+        "apr_calculated": true,
+        "protected_class_bias_score": 0.03,
+        "min_loan_amount": 1000.00,
+        "max_loan_amount": 500000.00,
+        "loan_term_months": 360,
+        "interest_rate": 0.07,
+        "asset_type": "loan",
+        "region": "US",
+        "transaction_type": "loan_origination",
+        "timestamp": "2024-01-15T11:30:00Z"
+      },
+      "expected": {
+        "pass": false,
+        "reason": "LTV ratio of 88% exceeds maximum allowed ratio of 85%"
+      }
+    },
+    {
+      "name": "credit_score_insufficient",
+      "description": "Loan applicant with insufficient credit score",
+      "input": {
+        "amount": 150000.00,
+        "loan_amount": 150000.00,
+        "collateral_value": 200000.00,
+        "ltv_ratio": 0.75,
+        "credit_score": 620,
+        "debt_to_income_ratio": 0.38,
+        "income_verified": true,
+        "income_documentation_complete": true,
+        "collateral_appraised": true,
+        "appraisal_date_valid": true,
+        "tila_disclosures_provided": true,
+        "apr_calculated": true,
+        "protected_class_bias_score": 0.02,
+        "min_loan_amount": 1000.00,
+        "max_loan_amount": 500000.00,
+        "loan_term_months": 300,
+        "interest_rate": 0.075,
+        "asset_type": "loan",
+        "region": "US",
+        "transaction_type": "loan_origination",
+        "timestamp": "2024-01-15T13:45:00Z"
+      },
+      "expected": {
+        "pass": false,
+        "reason": "Credit score of 620 is below minimum requirement of 650"
+      }
+    },
+    {
+      "name": "excessive_debt_to_income",
+      "description": "Loan with debt-to-income ratio exceeding policy limits",
+      "input": {
+        "amount": 180000.00,
+        "loan_amount": 180000.00,
+        "collateral_value": 220000.00,
+        "ltv_ratio": 0.82,
+        "credit_score": 700,
+        "debt_to_income_ratio": 0.50,
+        "income_verified": true,
+        "income_documentation_complete": true,
+        "collateral_appraised": true,
+        "appraisal_date_valid": true,
+        "tila_disclosures_provided": true,
+        "apr_calculated": true,
+        "protected_class_bias_score": 0.04,
+        "min_loan_amount": 1000.00,
+        "max_loan_amount": 500000.00,
+        "loan_term_months": 360,
+        "interest_rate": 0.068,
+        "asset_type": "loan",
+        "region": "US",
+        "transaction_type": "loan_origination",
+        "timestamp": "2024-01-15T15:15:00Z"
+      },
+      "expected": {
+        "pass": false,
+        "reason": "Debt-to-income ratio of 50% exceeds maximum allowed ratio of 43%"
+      }
+    },
+    {
+      "name": "usury_rate_violation",
+      "description": "Loan with interest rate exceeding legal limits",
+      "input": {
+        "amount": 50000.00,
+        "loan_amount": 50000.00,
+        "collateral_value": 65000.00,
+        "ltv_ratio": 0.77,
+        "credit_score": 660,
+        "debt_to_income_ratio": 0.41,
+        "income_verified": true,
+        "income_documentation_complete": true,
+        "collateral_appraised": true,
+        "appraisal_date_valid": true,
+        "tila_disclosures_provided": true,
+        "apr_calculated": true,
+        "protected_class_bias_score": 0.06,
+        "min_loan_amount": 1000.00,
+        "max_loan_amount": 500000.00,
+        "loan_term_months": 240,
+        "interest_rate": 0.40,
+        "asset_type": "loan",
+        "region": "US",
+        "transaction_type": "loan_origination",
+        "timestamp": "2024-01-15T17:00:00Z"
+      },
+      "expected": {
+        "pass": false,
+        "reason": "Interest rate of 40% exceeds maximum allowed rate of 36%"
+      }
+    }
+  ]
+}

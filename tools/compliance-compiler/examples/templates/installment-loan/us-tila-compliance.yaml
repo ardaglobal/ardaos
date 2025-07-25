@@ -1,0 +1,348 @@
+# Template metadata
+template:
+  name: "US Installment Loan - Truth in Lending Act Compliance"
+  version: "1.0.0"
+  jurisdiction: "USA"
+  asset_class: "InstallmentLoan"
+  description: "Federal TILA compliance for installment loans"
+  author: "Arda Compliance Team"
+  regulatory_framework: ["TILA", "Regulation Z", "CFPB Guidelines", "FCRA"]
+  last_updated: "2024-01-15"
+
+# Configurable parameters
+parameters:
+  max_loan_amount:
+    type: "float"
+    default: 100000.00
+    min: 1000.00
+    max: 500000.00
+    description: "Maximum loan amount"
+
+  min_loan_amount:
+    type: "float"
+    default: 2500.00
+    min: 500.00
+    max: 10000.00
+    description: "Minimum loan amount"
+
+  max_apr:
+    type: "float"
+    default: 35.99
+    min: 5.00
+    max: 36.00
+    description: "Maximum annual percentage rate"
+
+  max_term_months:
+    type: "int"
+    default: 84
+    min: 6
+    max: 120
+    description: "Maximum loan term in months"
+
+  min_term_months:
+    type: "int"
+    default: 12
+    min: 6
+    max: 24
+    description: "Minimum loan term in months"
+
+  max_origination_fee_percent:
+    type: "float"
+    default: 0.08
+    min: 0.0
+    max: 0.10
+    description: "Maximum origination fee as percentage of loan amount"
+
+  rescission_period_days:
+    type: "int"
+    default: 3
+    min: 3
+    max: 3
+    description: "Right of rescission period (fixed by TILA)"
+
+# Policy implementation
+policy:
+  metadata:
+    version: "1.0.0"
+    name: "US-InstallmentLoan-TILA-Compliance"
+    description: "Truth in Lending Act compliance for installment loans"
+    tags: ["installment-loan", "tila", "regulation-z", "usa", "disclosure"]
+
+  rules:
+    # TILA Disclosure Requirements
+    - id: "tila_disclosures"
+      name: "TILA Disclosure Requirements"
+      description: "Provide required TILA disclosures before consummation"
+      type: "regulatory"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "loan_amount >= ${min_loan_amount} AND loan_amount <= ${max_loan_amount}"
+        - "apr_disclosed == true"
+        - "finance_charge_disclosed == true"
+        - "total_of_payments_disclosed == true"
+        - "payment_schedule_disclosed == true"
+        - "disclosures_provided_before_consummation == true"
+      actions:
+        - "calculate_apr_using_actuarial_method"
+        - "calculate_total_finance_charge"
+        - "generate_payment_schedule"
+        - "provide_tila_disclosure_statement"
+
+    # APR Calculation and Disclosure
+    - id: "apr_calculation"
+      name: "APR Calculation and Disclosure"
+      description: "Accurate APR calculation per Regulation Z"
+      type: "regulatory"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "apr_calculation_method == 'actuarial'"
+        - "all_finance_charges_included == true"
+        - "prepaid_finance_charges_included == true"
+        - "apr_accuracy_tolerance <= 0.125"
+        - "apr <= ${max_apr}"
+      actions:
+        - "include_all_finance_charges"
+        - "calculate_actuarial_apr"
+        - "verify_apr_accuracy"
+        - "disclose_apr_prominently"
+
+    # Finance Charge Calculation
+    - id: "finance_charge_calculation"
+      name: "Finance Charge Calculation"
+      description: "Proper calculation and disclosure of finance charges"
+      type: "regulatory"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "interest_charges_included == true"
+        - "origination_fees_included == true IF origination_fee > 0"
+        - "processing_fees_included == true IF processing_fee > 0"
+        - "insurance_premiums_included == true IF insurance_required"
+        - "excluded_charges_properly_excluded == true"
+      actions:
+        - "calculate_total_interest"
+        - "include_applicable_fees"
+        - "exclude_non_finance_charges"
+        - "verify_finance_charge_total"
+
+    # Payment Schedule Requirements
+    - id: "payment_schedule_disclosure"
+      name: "Payment Schedule Disclosure"
+      description: "Detailed payment schedule disclosure requirements"
+      type: "regulatory"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "payment_amounts_disclosed == true"
+        - "payment_due_dates_disclosed == true"
+        - "number_of_payments_disclosed == true"
+        - "irregular_payments_explained == true IF irregular_payments_exist"
+        - "balloon_payment_disclosed == true IF balloon_payment_exists"
+      actions:
+        - "generate_detailed_payment_schedule"
+        - "identify_irregular_payments"
+        - "highlight_balloon_payments"
+        - "provide_payment_calendar"
+
+    # Right of Rescission (if applicable)
+    - id: "right_of_rescission"
+      name: "Right of Rescission Requirements"
+      description: "Right of rescission for loans secured by principal dwelling"
+      type: "regulatory"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "IF security_interest_in_principal_dwelling == true THEN rescission_rights_provided == true"
+        - "IF rescission_applicable == true THEN rescission_period_days == ${rescission_period_days}"
+        - "IF rescission_applicable == true THEN rescission_notice_provided == true"
+        - "IF rescission_applicable == true THEN funds_not_disbursed_until_rescission_expires == true"
+      actions:
+        - "determine_rescission_applicability"
+        - "provide_rescission_notice"
+        - "implement_rescission_waiting_period"
+        - "process_rescission_if_exercised"
+
+    # Loan Amount and Term Validation
+    - id: "loan_terms_validation"
+      name: "Loan Amount and Term Validation"
+      description: "Validate loan amount and term within acceptable ranges"
+      type: "business"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "loan_amount >= ${min_loan_amount}"
+        - "loan_amount <= ${max_loan_amount}"
+        - "loan_term_months >= ${min_term_months}"
+        - "loan_term_months <= ${max_term_months}"
+        - "payment_amount_affordable == true"
+      actions:
+        - "validate_loan_amount_range"
+        - "verify_term_appropriateness"
+        - "assess_payment_affordability"
+        - "document_term_rationale"
+
+    # Fee Structure Compliance
+    - id: "fee_structure_compliance"
+      name: "Fee Structure Compliance"
+      description: "Ensure fee structure complies with regulations"
+      type: "regulatory"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "origination_fee <= (loan_amount * ${max_origination_fee_percent})"
+        - "prepayment_penalty_disclosed == true IF prepayment_penalty_applicable"
+        - "late_fees_reasonable == true"
+        - "returned_payment_fees_reasonable == true"
+      actions:
+        - "validate_origination_fee"
+        - "disclose_prepayment_terms"
+        - "set_reasonable_late_fees"
+        - "document_fee_rationale"
+
+    # Advertising Compliance
+    - id: "advertising_compliance"
+      name: "TILA Advertising Compliance"
+      description: "Ensure advertising complies with TILA requirements"
+      type: "regulatory"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "IF rate_advertised == true THEN apr_disclosed_prominently == true"
+        - "IF payment_amount_advertised == true THEN all_payment_terms_disclosed == true"
+        - "misleading_terms_avoided == true"
+        - "trigger_terms_properly_handled == true"
+      actions:
+        - "review_advertising_content"
+        - "ensure_prominent_apr_disclosure"
+        - "verify_complete_term_disclosure"
+        - "validate_trigger_term_compliance"
+
+  # Required attestations
+  attestations:
+    - id: "tila_disclosure_attestation"
+      name: "TILA Disclosure Compliance"
+      description: "Attestation that all TILA disclosures were properly provided"
+      type: "regulatory"
+      required: true
+      fields:
+        - "loan_number"
+        - "disclosure_date"
+        - "apr_disclosed"
+        - "finance_charge_disclosed"
+        - "payment_schedule_provided"
+        - "compliance_officer_signature"
+
+    - id: "apr_calculation_attestation"
+      name: "APR Calculation Verification"
+      description: "Verification of proper APR calculation methodology"
+      type: "technical"
+      required: true
+      fields:
+        - "calculation_method_used"
+        - "all_charges_included"
+        - "accuracy_verification"
+        - "calculation_software_version"
+        - "loan_officer_signature"
+        - "calculation_date"
+
+    - id: "rescission_compliance_attestation"
+      name: "Right of Rescission Compliance"
+      description: "Compliance with right of rescission requirements"
+      type: "regulatory"
+      required: true
+      condition: "security_interest_in_principal_dwelling == true"
+      fields:
+        - "rescission_notice_provided"
+        - "waiting_period_observed"
+        - "rescission_exercised"
+        - "compliance_date"
+        - "legal_counsel_review"
+
+  # Configuration
+  config:
+    validation:
+      strict_mode: true
+      fail_on_warnings: true
+
+    execution:
+      timeout: "90s"
+      max_retries: 3
+
+    logging:
+      level: "info"
+      audit_enabled: true
+      disclosure_logging: true
+      retention_days: 1825  # 5 years minimum per TILA
+
+    reporting:
+      cfpb_reporting_enabled: true
+      hmda_reporting_if_applicable: true
+      quarterly_compliance_reports: true
+
+# TILA Disclosure Templates
+disclosure_templates:
+  standard_disclosure:
+    sections:
+      - "Annual Percentage Rate (APR)"
+      - "Finance Charge"
+      - "Amount Financed"
+      - "Total of Payments"
+      - "Payment Schedule"
+      - "Demand Feature (if applicable)"
+      - "Variable Rate (if applicable)"
+      - "Credit Life/Disability Insurance (if applicable)"
+      - "Property Insurance (if applicable)"
+      - "Late Payment Penalty"
+      - "Prepayment Penalty"
+      - "Security Interest"
+
+  rescission_notice:
+    required_content:
+      - "Right to cancel transaction"
+      - "How to exercise right"
+      - "Effects of rescission"
+      - "Deadline for rescission"
+
+# APR Calculation Guidelines
+apr_calculation:
+  method: "actuarial"
+
+  included_charges:
+    - "Interest on unpaid principal"
+    - "Origination fees"
+    - "Processing fees"
+    - "Required insurance premiums"
+    - "Finder's fees"
+
+  excluded_charges:
+    - "Taxes"
+    - "License fees"
+    - "Optional insurance"
+    - "Real estate appraisal fees"
+    - "Notarial fees"
+
+  accuracy_tolerance:
+    regular_transactions: 0.125
+    irregular_transactions: 0.25
+
+# Integration notes
+integration:
+  ardaos_modules:
+    - "tokenfactory: Installment loan token creation"
+    - "compliance: Automated TILA compliance checking"
+    - "syndication: Loan portfolio management"
+
+  external_systems:
+    - "APR calculation engines"
+    - "Disclosure generation systems"
+    - "Document management systems"
+    - "Customer communication platforms"
+    - "Regulatory reporting systems"
+
+  compliance_automation:
+    - "Automated disclosure generation"
+    - "APR calculation validation"
+    - "Rescission period tracking"
+    - "Compliance audit trails"

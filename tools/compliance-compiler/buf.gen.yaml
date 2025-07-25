@@ -1,0 +1,26 @@
+version: v2
+# Buf code generation configuration for compliance-compiler
+# Generates Go code with proper module paths and options
+
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/arda-org/arda-os/tools/compliance-compiler/gen
+
+plugins:
+  # Generate Go structs and methods
+  - remote: buf.build/protocolbuffers/go
+    out: gen
+    opt:
+      - paths=source_relative
+
+  # Generate gRPC service code (if needed in future)
+  - remote: buf.build/grpc/go
+    out: gen
+    opt:
+      - paths=source_relative
+      - require_unimplemented_servers=false
+
+inputs:
+  - directory: proto

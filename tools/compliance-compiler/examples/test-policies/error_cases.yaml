@@ -1,0 +1,166 @@
+# This file contains various error cases for testing parser validation
+
+# Missing required fields
+policy_id: "error-test-policy"
+# version: "1.0.0"  # MISSING - should cause validation error
+# jurisdiction: "US"  # MISSING - should cause validation error
+asset_class: "test_asset"
+
+rules:
+  - name: "test_rule_1"
+    # predicate: missing - should cause validation error
+
+  - name: "test_rule_2"
+    predicate:
+      # Invalid logical operator
+      invalid_operator:
+        - field: "test.field"
+          op: "equals"
+          value: "test"
+
+  - # Missing name - should cause validation error
+    predicate:
+      field: "test.field"
+      op: "equals"
+      value: "test"
+
+  - name: "circular_reference_test"
+    predicate:
+      and:
+        - field: "loan.amount"
+          op: "gte"
+          value_expr: "loan.amount * 1.1"  # Potential circular reference
+        - field: "self.validation"
+          op: "equals"
+          value_expr: "self.validation"  # Circular reference
+
+  - name: "invalid_operator_test"
+    predicate:
+      field: "test.field"
+      op: "invalid_operator"  # Invalid operator
+      value: "test"
+
+  - name: "invalid_field_path_test"
+    predicate:
+      field: "invalid..field..path"  # Invalid field path syntax
+      op: "equals"
+      value: "test"
+
+  - name: "unmatched_brackets_test"
+    predicate:
+      field: "array[index"  # Unmatched bracket
+      op: "equals"
+      value: "test"
+
+  - name: "invalid_expression_test"
+    predicate:
+      expression: "loan.amount * * 1.2"  # Invalid expression syntax
+      language: "cel"
+
+  - name: "unknown_expression_language_test"
+    predicate:
+      expression: "loan.amount > 1000"
+      language: "unknown_language"  # Invalid expression language
+
+  - name: "invalid_time_operator_test"
+    predicate:
+      field: "loan.created_date"
+      time:
+        op: "invalid_time_op"  # Invalid time operator
+        duration: "30 days"
+
+  - name: "invalid_regex_test"
+    predicate:
+      field: "borrower.ssn"
+      regex: "[invalid regex pattern"  # Invalid regex pattern
+
+  - name: "type_mismatch_test"
+    predicate:
+      field: "loan.amount"
+      op: "gte"
+      value: "not_a_number"  # Type mismatch - comparing number field to string
+
+# Invalid attestations
+attestations:
+  - name: "missing_type_attestation"
+    # type: missing - should cause validation error
+    required: true
+
+  - name: "invalid_type_attestation"
+    type: "invalid_attestation_type"  # Invalid attestation type
+    required: true
+
+  - # Missing name - should cause validation error
+    type: "kyc"
+    required: true
+
+# Invalid enforcement configuration
+enforcement:
+  level: "invalid_level"  # Invalid enforcement level
+  actions:
+    - "invalid_action"  # Invalid enforcement action
+    - "log"
+  alerts:
+    enabled: "not_a_boolean"  # Type error - should be boolean
+    severity: "invalid_severity"  # Invalid severity level
+
+# Performance warning cases
+performance_test_policy:
+  policy_id: "performance-warning-policy"
+  version: "1.0.0"
+  jurisdiction: "US"
+  asset_class: "test"
+
+  rules:
+    # This rule has excessive nesting depth
+    - name: "deeply_nested_rule"
+      predicate:
+        and:
+          - or:
+              - and:
+                  - or:
+                      - and:
+                          - or:
+                              - and:
+                                  - field: "level1.field"
+                                    op: "equals"
+                                    value: "test"
+                                  - field: "level2.field"
+                                    op: "equals"
+                                    value: "test"
+                              - field: "level3.field"
+                                op: "equals"
+                                value: "test"
+                          - field: "level4.field"
+                            op: "equals"
+                            value: "test"
+                      - field: "level5.field"
+                        op: "equals"
+                        value: "test"
+                  - field: "level6.field"
+                    op: "equals"
+                    value: "test"
+              - field: "level7.field"
+                op: "equals"
+                value: "test"
+          - field: "level8.field"
+            op: "equals"
+            value: "test"
+
+# YAML syntax errors (these would be caught by YAML parser)
+syntax_error_cases: |
+  policy_id: "syntax-error-policy
+  # Missing closing quote above
+
+  invalid_yaml_structure:
+    - item1
+      - nested_item_wrong_indent
+
+  unmatched_brackets: [
+    item1,
+    item2
+  # Missing closing bracket
+
+  invalid_mapping:
+    key_without_value:
+    : value_without_key

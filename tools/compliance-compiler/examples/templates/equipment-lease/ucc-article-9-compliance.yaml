@@ -1,0 +1,457 @@
+# Template metadata
+template:
+  name: "Equipment Lease UCC Article 9 Compliance"
+  version: "1.0.0"
+  jurisdiction: "USA"
+  asset_class: "EquipmentLease"
+  description: "UCC Article 9 compliance framework for equipment leasing"
+  author: "Arda Compliance Team"
+  regulatory_framework: ["UCC Article 9", "State Filing Requirements", "Perfection Rules"]
+  last_updated: "2024-01-15"
+
+# Configurable parameters
+parameters:
+  min_equipment_value:
+    type: "float"
+    default: 10000.00
+    min: 5000.00
+    max: 50000.00
+    description: "Minimum equipment value requiring UCC filing"
+
+  max_lease_amount:
+    type: "float"
+    default: 5000000.00
+    min: 100000.00
+    max: 10000000.00
+    description: "Maximum equipment lease amount"
+
+  ucc_filing_renewal_months:
+    type: "int"
+    default: 60
+    min: 48
+    max: 60
+    description: "Months before UCC filing expiration to renew"
+
+  collateral_coverage_ratio:
+    type: "float"
+    default: 1.20
+    min: 1.10
+    max: 1.50
+    description: "Required collateral coverage ratio"
+
+  personal_guarantee_threshold:
+    type: "float"
+    default: 100000.00
+    min: 50000.00
+    max: 500000.00
+    description: "Lease amount threshold requiring personal guarantees"
+
+  insurance_coverage_percentage:
+    type: "float"
+    default: 1.10
+    min: 1.00
+    max: 1.25
+    description: "Required insurance coverage as multiple of equipment value"
+
+# Policy implementation
+policy:
+  metadata:
+    version: "1.0.0"
+    name: "EquipmentLease-UCC-Article-9-Compliance"
+    description: "UCC Article 9 compliance for equipment leasing transactions"
+    tags: ["equipment-lease", "ucc-article-9", "security-interest", "perfection"]
+
+  rules:
+    # Security Interest Creation
+    - id: "security_interest_creation"
+      name: "Security Interest Creation Requirements"
+      description: "Ensure proper creation of security interest in equipment"
+      type: "legal"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "lease_agreement_signed == true"
+        - "security_agreement_executed == true OR lease_creates_security_interest == true"
+        - "collateral_description_sufficient == true"
+        - "debtor_authorization_obtained == true"
+        - "value_given == true"
+      actions:
+        - "execute_security_agreement"
+        - "describe_collateral_sufficiently"
+        - "obtain_debtor_authorization"
+        - "provide_consideration_value"
+        - "document_security_interest_creation"
+
+    # UCC Filing Requirements
+    - id: "ucc_filing_requirements"
+      name: "UCC Financing Statement Filing"
+      description: "File UCC-1 financing statements to perfect security interest"
+      type: "filing"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "equipment_value >= ${min_equipment_value}"
+        - "ucc1_financing_statement_filed == true"
+        - "debtor_information_accurate == true"
+        - "secured_party_information_complete == true"
+        - "collateral_description_adequate == true"
+        - "filing_jurisdiction_correct == true"
+      actions:
+        - "prepare_ucc1_financing_statement"
+        - "verify_debtor_legal_name"
+        - "provide_secured_party_details"
+        - "describe_equipment_collateral"
+        - "file_in_correct_jurisdiction"
+
+    # Perfection Maintenance
+    - id: "perfection_maintenance"
+      name: "Security Interest Perfection Maintenance"
+      description: "Maintain perfected security interest throughout lease term"
+      type: "maintenance"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "ucc_filing_current == true"
+        - "continuation_statements_filed_timely == true"
+        - "debtor_name_changes_tracked == true"
+        - "collateral_location_changes_monitored == true"
+        - "lien_priority_maintained == true"
+      actions:
+        - "monitor_ucc_filing_expiration"
+        - "file_continuation_statements"
+        - "track_debtor_name_changes"
+        - "monitor_collateral_relocations"
+        - "maintain_priority_position"
+
+    # Collateral Description and Identification
+    - id: "collateral_identification"
+      name: "Equipment Collateral Description and Identification"
+      description: "Properly describe and identify equipment collateral"
+      type: "identification"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "equipment_description_detailed == true"
+        - "serial_numbers_recorded == true"
+        - "model_numbers_documented == true"
+        - "manufacturer_information_complete == true"
+        - "equipment_location_specified == true"
+      actions:
+        - "obtain_detailed_equipment_specifications"
+        - "record_all_serial_numbers"
+        - "document_model_and_part_numbers"
+        - "identify_equipment_manufacturer"
+        - "specify_equipment_location"
+
+    # Priority and Lien Position
+    - id: "lien_priority_management"
+      name: "Lien Priority and Position Management"
+      description: "Establish and maintain optimal lien priority position"
+      type: "priority"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "lien_search_completed == true"
+        - "existing_liens_identified == true"
+        - "priority_position_determined == true"
+        - "subordination_agreements_obtained == true IF subordination_required"
+        - "purchase_money_security_interest_claimed == true IF applicable"
+      actions:
+        - "conduct_comprehensive_lien_search"
+        - "identify_competing_security_interests"
+        - "determine_priority_under_ucc"
+        - "negotiate_subordination_agreements"
+        - "claim_pmsi_super_priority_if_applicable"
+
+    # Insurance and Risk Management
+    - id: "insurance_risk_management"
+      name: "Equipment Insurance and Risk Management"
+      description: "Ensure adequate insurance coverage and risk protection"
+      type: "insurance"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "equipment_insurance_required == true"
+        - "insurance_coverage_amount >= (equipment_value * ${insurance_coverage_percentage})"
+        - "lessor_named_as_loss_payee == true"
+        - "insurance_certificates_obtained == true"
+        - "coverage_continuity_monitored == true"
+      actions:
+        - "require_comprehensive_equipment_insurance"
+        - "verify_adequate_coverage_amounts"
+        - "obtain_loss_payee_designation"
+        - "collect_insurance_certificates"
+        - "monitor_coverage_continuity"
+
+    # Default and Enforcement Rights
+    - id: "default_enforcement_rights"
+      name: "Default and Enforcement Rights Protection"
+      description: "Establish and protect default and enforcement rights"
+      type: "enforcement"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "default_events_defined == true"
+        - "self_help_remedies_available == true"
+        - "judicial_remedies_preserved == true"
+        - "commercially_reasonable_standards_met == true"
+        - "notice_requirements_complied_with == true"
+      actions:
+        - "define_default_events_clearly"
+        - "preserve_self_help_remedies"
+        - "maintain_judicial_remedy_options"
+        - "ensure_commercially_reasonable_actions"
+        - "comply_with_notice_requirements"
+
+    # Personal Guarantees
+    - id: "personal_guarantee_requirements"
+      name: "Personal Guarantee Requirements"
+      description: "Obtain and maintain personal guarantees when required"
+      type: "guarantee"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "IF lease_amount >= ${personal_guarantee_threshold} THEN personal_guarantee_required == true"
+        - "IF personal_guarantee_required == true THEN guarantee_executed == true"
+        - "guarantor_financial_capacity_verified == true"
+        - "guarantee_terms_enforceable == true"
+        - "guarantee_perfection_completed == true IF applicable"
+      actions:
+        - "determine_guarantee_requirement"
+        - "execute_personal_guarantee_agreements"
+        - "verify_guarantor_financial_capacity"
+        - "ensure_guarantee_enforceability"
+        - "perfect_guarantee_security_interests"
+
+    # Documentation and Record Keeping
+    - id: "documentation_recordkeeping"
+      name: "UCC Documentation and Record Keeping"
+      description: "Maintain comprehensive UCC-related documentation"
+      type: "documentation"
+      priority: "low"
+      enabled: true
+      conditions:
+        - "original_documents_preserved == true"
+        - "filing_receipts_maintained == true"
+        - "search_reports_retained == true"
+        - "correspondence_documented == true"
+        - "renewal_tracking_system_active == true"
+      actions:
+        - "preserve_original_executed_documents"
+        - "maintain_all_filing_receipts"
+        - "retain_lien_search_reports"
+        - "document_all_correspondence"
+        - "implement_renewal_tracking_system"
+
+  # Required attestations
+  attestations:
+    - id: "security_interest_attestation"
+      name: "Security Interest Creation and Perfection"
+      description: "Security interest creation and perfection attestation"
+      type: "legal"
+      required: true
+      fields:
+        - "security_agreement_executed"
+        - "ucc_filing_completed"
+        - "perfection_method_used"
+        - "priority_position_established"
+        - "legal_counsel_review"
+        - "creation_date"
+
+    - id: "ucc_filing_attestation"
+      name: "UCC Filing Compliance"
+      description: "UCC financing statement filing compliance"
+      type: "filing"
+      required: true
+      fields:
+        - "filing_jurisdiction"
+        - "debtor_name_verified"
+        - "collateral_description_adequate"
+        - "filing_receipt_obtained"
+        - "filing_officer_signature"
+        - "filing_date"
+
+    - id: "collateral_identification_attestation"
+      name: "Equipment Collateral Identification"
+      description: "Equipment collateral identification and description"
+      type: "identification"
+      required: true
+      fields:
+        - "equipment_specifications"
+        - "serial_numbers_recorded"
+        - "equipment_location"
+        - "valuation_completed"
+        - "identification_officer"
+        - "identification_date"
+
+    - id: "priority_attestation"
+      name: "Lien Priority Assessment"
+      description: "Lien priority position assessment and maintenance"
+      type: "priority"
+      required: true
+      fields:
+        - "lien_search_completed"
+        - "priority_position_determined"
+        - "competing_interests_identified"
+        - "subordination_arrangements"
+        - "priority_officer_signature"
+        - "assessment_date"
+
+  # Configuration
+  config:
+    validation:
+      strict_mode: true
+      fail_on_warnings: false
+
+    execution:
+      timeout: "120s"
+      max_retries: 3
+
+    logging:
+      level: "info"
+      audit_enabled: true
+      ucc_activity_logging: true
+      retention_days: 2555  # 7 years for UCC records
+
+    monitoring:
+      filing_expiration_monitoring: true
+      renewal_alert_system: true
+      priority_position_tracking: true
+
+    integration:
+      ucc_filing_systems: true
+      lien_search_services: true
+      document_management: true
+
+# UCC Article 9 Compliance Framework
+ucc_compliance_framework:
+  attachment_requirements:
+    - "Security agreement execution"
+    - "Value given by secured party"
+    - "Debtor has rights in collateral"
+
+  perfection_methods:
+    - "Filing UCC-1 financing statement"
+    - "Possession of collateral (if applicable)"
+    - "Control of collateral (if applicable)"
+    - "Automatic perfection (limited circumstances)"
+
+  priority_rules:
+    - "First to file or perfect generally wins"
+    - "Purchase money security interest super-priority"
+    - "Perfected vs unperfected interests"
+    - "Knowledge and notice considerations"
+
+# Equipment Collateral Categories
+equipment_categories:
+  manufacturing_equipment:
+    description: "Production machinery and industrial equipment"
+    considerations:
+      - "High value and specialized use"
+      - "Location-specific installations"
+      - "Technical maintenance requirements"
+      - "Potential environmental issues"
+
+  office_equipment:
+    description: "Computers, furniture, and office machinery"
+    considerations:
+      - "Rapid depreciation rates"
+      - "High portability"
+      - "Technology obsolescence"
+      - "Lower individual values"
+
+  transportation_equipment:
+    description: "Vehicles, trucks, and mobile equipment"
+    considerations:
+      - "Title certificate requirements"
+      - "Dual filing requirements (UCC and DMV)"
+      - "Insurance and maintenance issues"
+      - "Cross-jurisdictional movement"
+
+  medical_equipment:
+    description: "Healthcare and diagnostic equipment"
+    considerations:
+      - "FDA regulatory compliance"
+      - "Specialized maintenance requirements"
+      - "High technology content"
+      - "Professional licensing issues"
+
+# Filing Jurisdiction Requirements
+filing_jurisdictions:
+  registered_organization_debtor:
+    jurisdiction: "State of incorporation/organization"
+    filing_office: "Secretary of State"
+    requirements: "Exact legal name from organizational documents"
+
+  individual_debtor:
+    jurisdiction: "State of principal residence"
+    filing_office: "Secretary of State or designated office"
+    requirements: "Individual name as it appears on driver's license"
+
+  multi_state_operations:
+    considerations:
+      - "Principal place of business analysis"
+      - "Equipment location considerations"
+      - "Interstate movement protocols"
+      - "Conflict of laws resolution"
+
+# Renewal and Continuation Procedures
+renewal_procedures:
+  timing_requirements:
+    - "File continuation within 6 months before expiration"
+    - "Monitor filing dates continuously"
+    - "Set up automated renewal reminders"
+    - "Plan for name or address changes"
+
+  continuation_statement_content:
+    - "Reference to original financing statement"
+    - "Filing number and date"
+    - "Updated secured party information"
+    - "Collateral description confirmation"
+
+  renewal_best_practices:
+    - "File renewals 90 days before expiration"
+    - "Verify current debtor information"
+    - "Update collateral descriptions if needed"
+    - "Maintain continuous perfection"
+
+# Default and Enforcement Procedures
+enforcement_procedures:
+  pre_default_monitoring:
+    - "Payment performance tracking"
+    - "Equipment condition monitoring"
+    - "Insurance compliance verification"
+    - "Location change notifications"
+
+  default_remedies:
+    - "Acceleration of obligations"
+    - "Equipment repossession rights"
+    - "Sale of collateral"
+    - "Deficiency claim rights"
+
+  commercially_reasonable_standards:
+    - "Proper notice to debtor"
+    - "Market-based disposition methods"
+    - "Reasonable time and manner"
+    - "Good faith dealing requirements"
+
+# Integration notes
+integration:
+  ardaos_modules:
+    - "tokenfactory: UCC-perfected equipment lease tokens"
+    - "compliance: Automated UCC compliance monitoring"
+    - "syndication: Secured equipment lease distribution"
+
+  external_systems:
+    - "UCC filing systems (Secretary of State offices)"
+    - "Lien search and monitoring services"
+    - "Equipment appraisal services"
+    - "Insurance verification platforms"
+    - "Document management systems"
+
+  automation_capabilities:
+    - "Automated UCC filing preparation"
+    - "Filing expiration monitoring"
+    - "Renewal reminder systems"
+    - "Priority position tracking"
+    - "Collateral monitoring alerts"

@@ -1,0 +1,360 @@
+# Template metadata
+template:
+  name: "New York MCA State Regulatory Compliance"
+  version: "1.0.0"
+  jurisdiction: "USA-NY"
+  asset_class: "MerchantCashAdvance"
+  description: "New York state regulatory compliance for merchant cash advances"
+  author: "Arda Compliance Team"
+  regulatory_framework: ["NY Commercial Financing Disclosure Law", "NY DFS Regulations", "Truth in Commercial Financing"]
+  last_updated: "2024-01-15"
+
+# Configurable parameters
+parameters:
+  max_advance_amount:
+    type: "float"
+    default: 500000.00
+    min: 50000.00
+    max: 2500000.00
+    description: "Maximum advance amount subject to NY disclosure requirements"
+
+  disclosure_trigger_amount:
+    type: "float"
+    default: 500000.00
+    min: 50000.00
+    max: 500000.00
+    description: "Advance amount that triggers NY disclosure requirements"
+
+  max_annualized_rate:
+    type: "float"
+    default: 2.00
+    min: 0.50
+    max: 5.00
+    description: "Maximum annualized rate for disclosure calculation"
+
+  disclosure_delivery_days:
+    type: "int"
+    default: 1
+    min: 1
+    max: 3
+    description: "Days to deliver disclosure before funding"
+
+  broker_registration_required:
+    type: "boolean"
+    default: true
+    description: "Whether broker registration is required in NY"
+
+# Policy implementation
+policy:
+  metadata:
+    version: "1.0.0"
+    name: "NY-MCA-State-Regulatory-Compliance"
+    description: "New York state MCA regulatory compliance"
+    tags: ["mca", "new-york", "commercial-financing", "disclosure", "dfs"]
+
+  rules:
+    # NY Commercial Financing Disclosure Requirements
+    - id: "ny_disclosure_requirements"
+      name: "NY Commercial Financing Disclosure Law Compliance"
+      description: "Comply with NY commercial financing disclosure requirements"
+      type: "regulatory"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "advance_amount <= ${disclosure_trigger_amount}"
+        - "ny_disclosure_form_provided == true"
+        - "disclosure_provided_before_consummation == true"
+        - "annualized_rate_calculated == true"
+        - "total_payment_amount_disclosed == true"
+        - "term_disclosed == true"
+      actions:
+        - "calculate_annualized_rate"
+        - "prepare_ny_disclosure_form"
+        - "provide_disclosure_before_consummation"
+        - "document_disclosure_delivery"
+        - "obtain_merchant_acknowledgment"
+
+    # Truth in Commercial Financing Compliance
+    - id: "truth_in_commercial_financing"
+      name: "Truth in Commercial Financing Act Compliance"
+      description: "Comply with NY Truth in Commercial Financing requirements"
+      type: "regulatory"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "factor_rate_disclosed == true"
+        - "payment_amount_disclosed == true"
+        - "payment_frequency_disclosed == true"
+        - "prepayment_terms_disclosed == true"
+        - "collateral_requirements_disclosed == true"
+      actions:
+        - "disclose_all_required_terms"
+        - "explain_payment_calculation"
+        - "clarify_prepayment_options"
+        - "detail_collateral_requirements"
+        - "provide_comprehensive_cost_disclosure"
+
+    # Broker Registration Requirements
+    - id: "broker_registration_compliance"
+      name: "Commercial Finance Broker Registration"
+      description: "Ensure compliance with NY broker registration requirements"
+      type: "regulatory"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "IF broker_services_provided == true THEN broker_registration_current == true"
+        - "IF broker_registration_required == ${broker_registration_required} THEN dfs_registration_valid == true"
+        - "broker_disclosure_provided == true IF broker_involved"
+        - "broker_compensation_disclosed == true IF broker_involved"
+      actions:
+        - "verify_broker_registration_status"
+        - "provide_broker_disclosures"
+        - "disclose_broker_compensation"
+        - "maintain_registration_compliance"
+
+    # Rate and Fee Disclosure Calculations
+    - id: "rate_fee_calculations"
+      name: "NY Rate and Fee Calculation Requirements"
+      description: "Calculate and disclose rates and fees per NY requirements"
+      type: "calculation"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "annualized_rate <= ${max_annualized_rate} OR disclosed_as_high_cost"
+        - "total_cost_of_capital_calculated == true"
+        - "estimated_annual_percentage_rate_calculated == true"
+        - "all_fees_included_in_calculations == true"
+        - "calculation_methodology_documented == true"
+      actions:
+        - "calculate_annualized_rate_using_ny_method"
+        - "compute_total_cost_of_capital"
+        - "estimate_annual_percentage_rate"
+        - "include_all_applicable_fees"
+        - "document_calculation_methodology"
+
+    # Consumer Protection Provisions
+    - id: "consumer_protection_provisions"
+      name: "NY Consumer Protection Compliance"
+      description: "Implement NY consumer protection provisions"
+      type: "regulatory"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "unfair_practices_avoided == true"
+        - "deceptive_practices_avoided == true"
+        - "abusive_practices_avoided == true"
+        - "merchant_rights_protected == true"
+        - "complaint_procedures_established == true"
+      actions:
+        - "avoid_unfair_deceptive_practices"
+        - "protect_merchant_rights"
+        - "establish_complaint_procedures"
+        - "provide_consumer_education"
+        - "maintain_ethical_business_practices"
+
+    # Record Keeping and Reporting
+    - id: "ny_recordkeeping_requirements"
+      name: "NY Record Keeping and Reporting Requirements"
+      description: "Maintain records per NY DFS requirements"
+      type: "compliance"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "disclosure_records_maintained_5_years == true"
+        - "transaction_records_complete == true"
+        - "broker_activity_records_maintained == true IF broker_services"
+        - "complaint_records_documented == true"
+        - "examination_records_available == true"
+      actions:
+        - "maintain_5_year_disclosure_records"
+        - "document_all_transactions"
+        - "preserve_broker_activity_records"
+        - "log_consumer_complaints"
+        - "prepare_examination_documentation"
+
+    # DFS Examination Compliance
+    - id: "dfs_examination_compliance"
+      name: "NY DFS Examination Readiness"
+      description: "Maintain compliance for DFS examinations"
+      type: "regulatory"
+      priority: "low"
+      enabled: true
+      conditions:
+        - "examination_procedures_documented == true"
+        - "compliance_officer_designated == true"
+        - "policies_procedures_current == true"
+        - "staff_training_documented == true"
+        - "audit_trail_complete == true"
+      actions:
+        - "document_examination_procedures"
+        - "designate_compliance_officer"
+        - "maintain_current_policies"
+        - "train_staff_on_compliance"
+        - "ensure_complete_audit_trails"
+
+  # Required attestations
+  attestations:
+    - id: "ny_disclosure_attestation"
+      name: "NY Disclosure Law Compliance"
+      description: "New York disclosure law compliance attestation"
+      type: "regulatory"
+      required: true
+      fields:
+        - "disclosure_form_provided"
+        - "annualized_rate_calculated"
+        - "merchant_acknowledgment_received"
+        - "disclosure_timing_compliant"
+        - "compliance_officer_signature"
+        - "disclosure_date"
+
+    - id: "truth_in_financing_attestation"
+      name: "Truth in Commercial Financing Compliance"
+      description: "Truth in commercial financing compliance attestation"
+      type: "regulatory"
+      required: true
+      fields:
+        - "all_required_disclosures_provided"
+        - "cost_calculation_methodology"
+        - "merchant_understanding_confirmed"
+        - "disclosure_accuracy_verified"
+        - "underwriter_signature"
+        - "compliance_date"
+
+    - id: "broker_compliance_attestation"
+      name: "Broker Registration Compliance"
+      description: "Commercial finance broker compliance attestation"
+      type: "regulatory"
+      required: true
+      condition: "broker_services_provided == true"
+      fields:
+        - "broker_registration_verified"
+        - "broker_disclosures_provided"
+        - "compensation_disclosed"
+        - "registration_current"
+        - "broker_compliance_officer"
+        - "verification_date"
+
+  # Configuration
+  config:
+    validation:
+      strict_mode: true
+      fail_on_warnings: true
+
+    execution:
+      timeout: "90s"
+      max_retries: 3
+
+    logging:
+      level: "info"
+      audit_enabled: true
+      ny_specific_logging: true
+      retention_days: 1825  # 5 years per NY requirements
+
+    compliance:
+      dfs_reporting_enabled: true
+      examination_readiness: true
+      consumer_complaint_tracking: true
+
+# NY-Specific Disclosure Form Requirements
+ny_disclosure_form:
+  required_elements:
+    - "Total amount provided to recipient"
+    - "Total amount to be paid"
+    - "Estimated term or description of payment schedule"
+    - "Method, frequency, and amount of payments"
+    - "A description of prepayment policies"
+    - "Total cost of the commercial financing expressed as an annualized rate"
+    - "If the commercial financing has a fixed maturity date, the annualized rate shall be calculated using the term of the commercial financing, assuming all payments are made as scheduled"
+
+  calculation_methods:
+    annualized_rate_formula: "((Total Amount Paid / Amount Financed) - 1) / Term in Years"
+    estimated_term_calculation: "Based on historical payment patterns or agreed schedule"
+    total_cost_calculation: "All fees, charges, and finance costs included"
+
+# Truth in Commercial Financing Requirements
+truth_in_financing_requirements:
+  disclosure_timing: "Before consummation of commercial financing"
+  delivery_methods:
+    - "In person with signed acknowledgment"
+    - "Electronic delivery with confirmed receipt"
+    - "Certified mail with return receipt"
+
+  mandatory_disclosures:
+    - "Factor rate or interest rate"
+    - "Annual percentage rate (if applicable)"
+    - "Payment amount and frequency"
+    - "Total amount to be repaid"
+    - "Estimated term"
+    - "Prepayment terms and penalties"
+    - "Collateral requirements"
+    - "Personal guarantee requirements"
+
+# Broker Registration Requirements
+broker_registration:
+  registration_requirements:
+    - "Register with NY DFS as commercial finance broker"
+    - "Pay required registration fees"
+    - "Designate compliance officer"
+    - "Maintain surety bond or net worth requirements"
+    - "Submit to periodic examinations"
+
+  ongoing_obligations:
+    - "Annual registration renewal"
+    - "Notification of material changes"
+    - "Compliance with advertising restrictions"
+    - "Maintenance of books and records"
+    - "Consumer complaint procedures"
+
+# Consumer Protection Standards
+consumer_protection:
+  prohibited_practices:
+    - "Misrepresenting terms or costs"
+    - "Failing to provide required disclosures"
+    - "Charging undisclosed fees"
+    - "Using deceptive advertising"
+    - "Unfair collection practices"
+
+  required_protections:
+    - "Clear and conspicuous disclosures"
+    - "Right to receive copy of signed agreement"
+    - "Reasonable time to review terms"
+    - "Protection against unfair practices"
+    - "Access to complaint procedures"
+
+# DFS Examination Considerations
+dfs_examination:
+  examination_frequency: "Risk-based and periodic"
+
+  examination_scope:
+    - "Compliance with disclosure requirements"
+    - "Accuracy of rate calculations"
+    - "Broker registration compliance"
+    - "Consumer complaint handling"
+    - "Books and records maintenance"
+
+  common_findings:
+    - "Inadequate disclosure procedures"
+    - "Incorrect rate calculations"
+    - "Missing broker registrations"
+    - "Poor complaint handling"
+    - "Incomplete record keeping"
+
+# Integration notes
+integration:
+  ardaos_modules:
+    - "tokenfactory: NY-compliant MCA tokens with state attributes"
+    - "compliance: Automated NY regulatory checking"
+    - "syndication: NY-compliant distribution mechanisms"
+
+  external_systems:
+    - "NY DFS licensing and registration systems"
+    - "Document delivery and tracking systems"
+    - "Rate calculation engines"
+    - "Consumer complaint management systems"
+
+  compliance_automation:
+    - "Automated NY disclosure generation"
+    - "Real-time rate calculation validation"
+    - "Broker registration verification"
+    - "DFS reporting automation"
+    - "Consumer protection monitoring"

@@ -1,0 +1,366 @@
+# Template metadata
+template:
+  name: "Credit Card Risk-Based Underwriting"
+  version: "1.0.0"
+  jurisdiction: "GLOBAL"
+  asset_class: "CreditCard"
+  description: "Advanced risk-based underwriting model for credit cards"
+  author: "Arda Compliance Team"
+  regulatory_framework: ["Basel III", "Risk Management Guidelines", "Fair Lending"]
+  last_updated: "2024-01-15"
+
+# Configurable parameters
+parameters:
+  risk_score_threshold:
+    type: "float"
+    default: 0.65
+    min: 0.0
+    max: 1.0
+    description: "Minimum risk score for approval (0 = highest risk, 1 = lowest risk)"
+
+  debt_service_coverage_min:
+    type: "float"
+    default: 1.25
+    min: 1.0
+    max: 3.0
+    description: "Minimum debt service coverage ratio"
+
+  max_utilization_ratio:
+    type: "float"
+    default: 0.30
+    min: 0.1
+    max: 0.90
+    description: "Maximum credit utilization ratio across all accounts"
+
+  income_stability_months:
+    type: "int"
+    default: 24
+    min: 6
+    max: 60
+    description: "Required months of stable income history"
+
+  max_accounts_opened_12m:
+    type: "int"
+    default: 4
+    min: 1
+    max: 10
+    description: "Maximum new credit accounts opened in last 12 months"
+
+  fraud_score_threshold:
+    type: "float"
+    default: 0.80
+    min: 0.0
+    max: 1.0
+    description: "Maximum acceptable fraud risk score"
+
+  portfolio_concentration_limit:
+    type: "float"
+    default: 0.05
+    min: 0.01
+    max: 0.20
+    description: "Maximum exposure to single risk segment"
+
+# Policy implementation
+policy:
+  metadata:
+    version: "1.0.0"
+    name: "CreditCard-Risk-Based-Underwriting"
+    description: "Comprehensive risk-based underwriting for credit cards"
+    tags: ["credit-card", "risk-management", "underwriting", "machine-learning"]
+
+  rules:
+    # Multi-Factor Risk Assessment
+    - id: "composite_risk_scoring"
+      name: "Composite Risk Score Calculation"
+      description: "Calculate comprehensive risk score using multiple factors"
+      type: "risk"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "credit_score_normalized >= 0.0 AND credit_score_normalized <= 1.0"
+        - "debt_to_income_score >= 0.0 AND debt_to_income_score <= 1.0"
+        - "income_stability_score >= 0.0 AND income_stability_score <= 1.0"
+        - "payment_history_score >= 0.0 AND payment_history_score <= 1.0"
+        - "composite_risk_score = (credit_score_normalized * 0.35 + debt_to_income_score * 0.25 + income_stability_score * 0.20 + payment_history_score * 0.20)"
+        - "composite_risk_score >= ${risk_score_threshold}"
+      actions:
+        - "calculate_risk_components"
+        - "compute_weighted_risk_score"
+        - "document_risk_factors"
+        - "determine_preliminary_approval"
+
+    # Income and Employment Verification
+    - id: "income_stability_verification"
+      name: "Income Stability Assessment"
+      description: "Verify income stability and employment history"
+      type: "validation"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "employment_history_months >= ${income_stability_months}"
+        - "income_variance_coefficient <= 0.25"
+        - "employment_type IN ['full_time', 'part_time', 'self_employed_verified', 'retired_pension']"
+        - "income_source_diversification_score >= 0.6 IF self_employed"
+      actions:
+        - "verify_employment_history"
+        - "calculate_income_stability"
+        - "assess_income_predictability"
+        - "validate_income_sources"
+
+    # Debt Service Coverage Analysis
+    - id: "debt_service_coverage"
+      name: "Debt Service Coverage Analysis"
+      description: "Ensure adequate debt service coverage ratio"
+      type: "financial"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "monthly_income > 0"
+        - "total_monthly_debt_payments >= 0"
+        - "debt_service_ratio = (total_monthly_debt_payments + estimated_new_payment) / monthly_income"
+        - "debt_service_coverage = monthly_income / (total_monthly_debt_payments + estimated_new_payment)"
+        - "debt_service_coverage >= ${debt_service_coverage_min}"
+      actions:
+        - "calculate_total_debt_obligations"
+        - "estimate_new_payment_burden"
+        - "assess_payment_capacity"
+        - "determine_sustainable_credit_limit"
+
+    # Credit Utilization Analysis
+    - id: "credit_utilization_assessment"
+      name: "Credit Utilization Risk Assessment"
+      description: "Analyze current and projected credit utilization"
+      type: "risk"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "current_utilization_ratio <= ${max_utilization_ratio}"
+        - "projected_utilization_with_new_limit <= 0.80"
+        - "utilization_trend_12m != 'increasing_rapidly'"
+        - "revolving_balance_stability_score >= 0.5"
+      actions:
+        - "calculate_current_utilization"
+        - "project_utilization_scenarios"
+        - "analyze_utilization_trends"
+        - "assess_balance_management_behavior"
+
+    # Fraud and Identity Verification
+    - id: "fraud_risk_assessment"
+      name: "Fraud Risk Assessment"
+      description: "Comprehensive fraud risk evaluation"
+      type: "security"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "identity_verification_score >= 0.85"
+        - "fraud_score <= ${fraud_score_threshold}"
+        - "device_fingerprint_risk_level != 'high'"
+        - "geolocation_risk_level != 'high'"
+        - "synthetic_identity_probability <= 0.20"
+      actions:
+        - "perform_identity_verification"
+        - "calculate_fraud_risk_score"
+        - "analyze_application_patterns"
+        - "verify_contact_information"
+
+    # Credit Inquiry Analysis
+    - id: "credit_inquiry_velocity"
+      name: "Credit Inquiry Velocity Check"
+      description: "Analyze recent credit inquiry patterns"
+      type: "risk"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "hard_inquiries_6m <= 3"
+        - "hard_inquiries_12m <= ${max_accounts_opened_12m}"
+        - "inquiry_velocity_score >= 0.6"
+        - "credit_seeking_behavior != 'desperate'"
+      actions:
+        - "count_recent_inquiries"
+        - "analyze_inquiry_patterns"
+        - "assess_credit_seeking_behavior"
+        - "calculate_inquiry_impact"
+
+    # Portfolio Concentration Risk
+    - id: "portfolio_concentration_check"
+      name: "Portfolio Concentration Risk Management"
+      description: "Ensure diversification and concentration limits"
+      type: "portfolio"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "risk_segment_concentration <= ${portfolio_concentration_limit}"
+        - "geographic_concentration_acceptable == true"
+        - "industry_concentration_acceptable == true"
+        - "income_band_concentration_acceptable == true"
+      actions:
+        - "calculate_risk_segment_exposure"
+        - "assess_portfolio_concentration"
+        - "apply_concentration_limits"
+        - "diversification_adjustment"
+
+    # Behavioral Scoring
+    - id: "behavioral_risk_analysis"
+      name: "Behavioral Risk Pattern Analysis"
+      description: "Analyze behavioral patterns and risk indicators"
+      type: "behavioral"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "payment_behavior_score >= 0.65"
+        - "spending_pattern_risk_level != 'high'"
+        - "financial_stress_indicators <= 2"
+        - "relationship_tenure_score >= 0.5 IF existing_customer"
+      actions:
+        - "analyze_payment_patterns"
+        - "assess_spending_behavior"
+        - "identify_stress_indicators"
+        - "evaluate_customer_relationship"
+
+  # Machine Learning Model Integration
+  ml_models:
+    - id: "credit_risk_model"
+      name: "Credit Risk ML Model"
+      version: "2.1.0"
+      type: "gradient_boosting"
+      features: ["credit_score", "debt_to_income", "payment_history", "utilization", "inquiries"]
+      target: "default_probability_12m"
+      threshold: 0.05
+
+    - id: "fraud_detection_model"
+      name: "Fraud Detection Neural Network"
+      version: "1.3.0"
+      type: "neural_network"
+      features: ["device_fingerprint", "geolocation", "behavioral_biometrics", "application_velocity"]
+      target: "fraud_probability"
+      threshold: 0.15
+
+  # Required attestations
+  attestations:
+    - id: "risk_assessment_attestation"
+      name: "Risk Assessment Documentation"
+      description: "Comprehensive risk assessment attestation"
+      type: "risk"
+      required: true
+      fields:
+        - "composite_risk_score"
+        - "risk_factors_considered"
+        - "model_versions_used"
+        - "override_reasons_if_any"
+        - "risk_officer_approval"
+        - "assessment_timestamp"
+
+    - id: "model_performance_attestation"
+      name: "Model Performance Validation"
+      description: "ML model performance and validation attestation"
+      type: "technical"
+      required: true
+      fields:
+        - "model_accuracy_metrics"
+        - "validation_dataset_results"
+        - "bias_testing_results"
+        - "model_drift_analysis"
+        - "data_scientist_approval"
+        - "validation_date"
+
+    - id: "fair_lending_attestation"
+      name: "Fair Lending Compliance"
+      description: "Fair lending and non-discrimination attestation"
+      type: "regulatory"
+      required: true
+      fields:
+        - "disparate_impact_analysis"
+        - "protected_class_analysis"
+        - "model_bias_assessment"
+        - "fair_lending_officer"
+        - "compliance_date"
+
+  # Configuration
+  config:
+    validation:
+      strict_mode: true
+      fail_on_warnings: false
+
+    execution:
+      timeout: "120s"
+      max_retries: 2
+      parallel_processing: true
+
+    logging:
+      level: "debug"
+      audit_enabled: true
+      model_decisions_logged: true
+      retention_days: 2555
+
+    model_management:
+      champion_challenger_enabled: true
+      a_b_testing_ratio: 0.10
+      model_monitoring_enabled: true
+      drift_detection_threshold: 0.05
+
+    performance:
+      cache_enabled: true
+      batch_processing_enabled: true
+      real_time_scoring: true
+
+# Risk segments and pricing
+risk_segments:
+  prime:
+    risk_score_min: 0.85
+    apr_range: [12.99, 18.99]
+    credit_limit_max: 50000
+
+  near_prime:
+    risk_score_min: 0.70
+    apr_range: [18.99, 24.99]
+    credit_limit_max: 25000
+
+  subprime:
+    risk_score_min: 0.55
+    apr_range: [24.99, 29.99]
+    credit_limit_max: 10000
+
+  deep_subprime:
+    risk_score_min: 0.45
+    apr_range: [29.99, 35.99]
+    credit_limit_max: 2500
+
+# Model governance
+model_governance:
+  approval_workflow:
+    - "Data science team validation"
+    - "Risk management review"
+    - "Compliance approval"
+    - "Model risk management sign-off"
+
+  monitoring_requirements:
+    - "Monthly performance reports"
+    - "Quarterly bias assessments"
+    - "Annual model validation"
+    - "Continuous drift monitoring"
+
+  documentation_requirements:
+    - "Model development documentation"
+    - "Validation test results"
+    - "Business justification"
+    - "Regulatory compliance assessment"
+
+# Integration notes
+integration:
+  ardaos_modules:
+    - "tokenfactory: Risk-based credit limit tokens"
+    - "compliance: Automated compliance checking"
+    - "syndication: Risk-based portfolio allocation"
+
+  external_data_sources:
+    - "Credit bureaus (real-time scores)"
+    - "Income verification services"
+    - "Fraud detection services"
+    - "Identity verification providers"
+    - "Alternative data providers"
+
+  machine_learning_platform:
+    - "Model training infrastructure"
+    - "Real-time inference engines"
+    - "Feature stores"
+    - "Model monitoring systems"

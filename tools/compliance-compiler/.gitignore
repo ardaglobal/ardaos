@@ -1,0 +1,58 @@
+# Build outputs
+bin/
+build/
+dist/
+
+# Coverage reports
+coverage.out
+coverage.html
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Generated files
+gen/
+
+# Temporary files
+*.tmp
+*.temp
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Profiles
+profiles/
+*.prof
+
+# Test outputs
+*.test
+*.out
+
+# Protobuf compiled outputs (keep source .proto files)
+*.pb
+
+# Log files
+*.log
+
+# Debug files
+debug.go
+debug_*
+
+# Disabled/backup files
+*.disabled
+*.orig
+
+# Binary executables (except specific ones)
+compliance-compiler
+
+# Go mod cache
+go.sum.bak

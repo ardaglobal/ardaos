@@ -1,0 +1,378 @@
+# GoReleaser configuration for ArdaOS Compliance Compiler
+# Automated release management and distribution
+
+version: 1
+
+project_name: compliance-compiler
+
+# Build configuration
+builds:
+  - id: compliance-compiler
+    binary: compliance-compiler
+    main: ./cmd/compliance-compiler
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.buildTime={{.Date}}
+      - -X main.gitCommit={{.FullCommit}}
+      - -X main.gitBranch={{.Branch}}
+    env:
+      - CGO_ENABLED=0
+
+# Archive configuration
+archives:
+  - id: compliance-compiler
+    name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+      - examples/**/*
+      - scripts/install.sh
+
+# Checksum configuration
+checksum:
+  name_template: "{{ .ProjectName }}-{{ .Version }}-checksums.txt"
+  algorithm: sha256
+
+# Snapshot configuration
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+# Changelog configuration
+changelog:
+  use: github
+  sort: asc
+  abbrev: 0
+  groups:
+    - title: "🚀 New Features"
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: "🏦 Regulatory Updates"
+      regexp: "^.*regulatory[(\\w)]*:+.*$"
+      order: 1
+    - title: "🐛 Bug Fixes"
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 2
+    - title: "📝 Documentation"
+      regexp: "^.*docs[(\\w)]*:+.*$"
+      order: 3
+    - title: "🔧 Other Changes"
+      order: 999
+  filters:
+    exclude:
+      - "^test:"
+      - "^chore:"
+      - "^style:"
+      - merge conflict
+      - Merge pull request
+
+# GitHub Release configuration
+release:
+  github:
+    owner: ardaos
+    name: arda-os
+  name_template: "Compliance Compiler v{{ .Version }}"
+  header: |
+    ## ArdaOS Compliance Compiler {{ .Version }}
+
+    This release includes policy templates for all major small business finance verticals with comprehensive regulatory compliance coverage.
+
+    ## Installation
+
+    ### Quick Install (Linux/macOS)
+    ```bash
+    curl -fsSL https://raw.githubusercontent.com/ardaos/arda-os/main/tools/compliance-compiler/scripts/install.sh | bash
+    ```
+
+    ### Manual Installation
+    Download the appropriate binary for your platform below, extract it, and place it in your PATH.
+
+    ### Docker
+    ```bash
+    docker pull ardaos/compliance-compiler:{{ .Version }}
+    ```
+
+    ## What's New
+
+  footer: |
+    ## Verification
+
+    All release artifacts are signed and can be verified using the checksums file.
+
+    ```bash
+    # Verify checksums
+    sha256sum -c compliance-compiler-{{ .Version }}-checksums.txt
+    ```
+
+    ## Documentation
+
+    - [Getting Started Guide](https://docs.ardaos.com/compliance-compiler/getting-started)
+    - [Policy Template Reference](https://docs.ardaos.com/compliance-compiler/templates)
+    - [API Documentation](https://docs.ardaos.com/compliance-compiler/api)
+
+    ## Support
+
+    - 📧 Email: support@ardaos.com
+    - 💬 Discord: [ArdaOS Community](https://discord.gg/ardaos)
+    - 🐛 Issues: [GitHub Issues](https://github.com/ardaos/arda-os/issues)
+
+    ---
+
+    **Full Changelog**: https://github.com/ardaos/arda-os/compare/{{ .PreviousTag }}...{{ .Tag }}
+  draft: false
+  prerelease: auto
+  mode: replace
+
+# Docker image configuration
+dockers:
+  - image_templates:
+      - "ardaos/compliance-compiler:{{ .Version }}-amd64"
+      - "ardaos/compliance-compiler:latest-amd64"
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.description=ArdaOS Compliance Compiler"
+      - "--label=org.opencontainers.image.url=https://github.com/ardaos/arda-os"
+      - "--label=org.opencontainers.image.source=https://github.com/ardaos/arda-os"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.licenses=Apache-2.0"
+    extra_files:
+      - examples/
+      - scripts/
+  - image_templates:
+      - "ardaos/compliance-compiler:{{ .Version }}-arm64"
+      - "ardaos/compliance-compiler:latest-arm64"
+    dockerfile: Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.description=ArdaOS Compliance Compiler"
+      - "--label=org.opencontainers.image.url=https://github.com/ardaos/arda-os"
+      - "--label=org.opencontainers.image.source=https://github.com/ardaos/arda-os"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.licenses=Apache-2.0"
+    extra_files:
+      - examples/
+      - scripts/
+    goarch: arm64
+
+# Docker manifest configuration
+docker_manifests:
+  - name_template: "ardaos/compliance-compiler:{{ .Version }}"
+    image_templates:
+      - "ardaos/compliance-compiler:{{ .Version }}-amd64"
+      - "ardaos/compliance-compiler:{{ .Version }}-arm64"
+  - name_template: "ardaos/compliance-compiler:latest"
+    image_templates:
+      - "ardaos/compliance-compiler:latest-amd64"
+      - "ardaos/compliance-compiler:latest-arm64"
+
+# Sign configuration (if signing is enabled)
+signs:
+  - cmd: gpg
+    args:
+      - "--batch"
+      - "--local-user"
+      - "{{ .Env.GPG_FINGERPRINT }}"
+      - "--output"
+      - "${signature}"
+      - "--detach-sign"
+      - "${artifact}"
+    artifacts: checksum
+    output: true
+
+# Package managers
+brews:
+  - name: compliance-compiler
+    repository:
+      owner: ardaos
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    folder: Formula
+    homepage: https://github.com/ardaos/arda-os/tree/main/tools/compliance-compiler
+    description: "Policy compilation and validation tool for ArdaOS blockchain compliance engine"
+    license: Apache-2.0
+    test: |
+      system "#{bin}/compliance-compiler --version"
+    install: |
+      bin.install "compliance-compiler"
+      (share/"compliance-compiler").install Dir["examples/*"]
+      (share/"compliance-compiler").install "scripts/install.sh"
+
+# Snapcraft (Ubuntu Store)
+snapcrafts:
+  - name: compliance-compiler
+    summary: ArdaOS Compliance Compiler
+    description: |
+      Policy compilation and validation tool for ArdaOS blockchain compliance engine.
+      Supports all major small business finance verticals with multi-jurisdictional
+      regulatory compliance.
+    grade: stable
+    confinement: strict
+    publish: true
+    license: Apache-2.0
+    base: core20
+    apps:
+      compliance-compiler:
+        command: compliance-compiler
+        plugs: ["home", "network"]
+
+# Scoop (Windows Package Manager)
+scoops:
+  - name: compliance-compiler
+    repository:
+      owner: ardaos
+      name: scoop-bucket
+      token: "{{ .Env.SCOOP_BUCKET_GITHUB_TOKEN }}"
+    folder: bucket
+    homepage: https://github.com/ardaos/arda-os/tree/main/tools/compliance-compiler
+    description: "Policy compilation and validation tool for ArdaOS blockchain compliance engine"
+    license: Apache-2.0
+
+# AUR (Arch User Repository)
+aurs:
+  - name: compliance-compiler-bin
+    homepage: https://github.com/ardaos/arda-os/tree/main/tools/compliance-compiler
+    description: "Policy compilation and validation tool for ArdaOS blockchain compliance engine"
+    maintainers:
+      - "ArdaOS Team <maintainers@ardaos.com>"
+    license: Apache-2.0
+    private_key: "{{ .Env.AUR_KEY }}"
+    git_url: "ssh://aur@aur.archlinux.org/compliance-compiler-bin.git"
+    package: |-
+      # bin
+      install -Dm755 "./compliance-compiler" "${pkgdir}/usr/bin/compliance-compiler"
+
+      # license
+      install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/compliance-compiler/LICENSE"
+
+      # documentation
+      install -Dm644 "./README.md" "${pkgdir}/usr/share/doc/compliance-compiler/README.md"
+      install -Dm644 "./CHANGELOG.md" "${pkgdir}/usr/share/doc/compliance-compiler/CHANGELOG.md"
+
+      # examples
+      mkdir -p "${pkgdir}/usr/share/compliance-compiler"
+      cp -r "./examples" "${pkgdir}/usr/share/compliance-compiler/"
+
+# Nix package
+nix:
+  - name: compliance-compiler
+    repository:
+      owner: ardaos
+      name: nixpkgs
+      token: "{{ .Env.NIX_GITHUB_TOKEN }}"
+    homepage: https://github.com/ardaos/arda-os/tree/main/tools/compliance-compiler
+    description: "Policy compilation and validation tool for ArdaOS blockchain compliance engine"
+    license: apache2
+    dependencies:
+      - name: glibc
+
+# Announcements
+announce:
+  discord:
+    enabled: true
+    message_template: |
+      🎉 **ArdaOS Compliance Compiler {{ .Tag }} is now available!**
+
+      This release includes comprehensive policy templates for all major small business finance verticals.
+
+      **Quick Install:**
+      ```bash
+      curl -fsSL https://raw.githubusercontent.com/ardaos/arda-os/main/tools/compliance-compiler/scripts/install.sh | bash
+      ```
+
+      **What's New:**
+      {{ range .ChangeLogs }}{{ .Title }}{{ end }}
+
+      **Download:** {{ .ReleaseURL }}
+      **Documentation:** https://docs.ardaos.com/compliance-compiler
+
+      #ardaos #compliance #blockchain #finance
+
+  slack:
+    enabled: true
+    message_template: |
+      :rocket: *ArdaOS Compliance Compiler {{ .Tag }} Released*
+
+      New version of the compliance compiler is now available with enhanced policy templates and regulatory coverage.
+
+      *Installation:*
+      ```
+      curl -fsSL https://raw.githubusercontent.com/ardaos/arda-os/main/tools/compliance-compiler/scripts/install.sh | bash
+      ```
+
+      *Release Notes:* {{ .ReleaseURL }}
+      *Documentation:* https://docs.ardaos.com/compliance-compiler
+
+  twitter:
+    enabled: true
+    message_template: |
+      🎉 ArdaOS Compliance Compiler {{ .Tag }} is live!
+
+      ✅ Multi-jurisdictional compliance
+      ✅ 5 finance verticals supported
+      ✅ Automated policy validation
+      ✅ Cross-platform binaries
+
+      Quick install: curl -fsSL https://bit.ly/ardaos-compiler | bash
+
+      {{ .ReleaseURL }}
+
+      #blockchain #compliance #fintech #opensource
+
+# Upload to various package repositories
+uploads:
+  - name: fury.io
+    target: https://push.fury.io/ardaos/
+    username: "{{ .Env.FURY_TOKEN }}"
+    mode: archive
+
+  - name: github-packages
+    target: https://nuget.pkg.github.com/ardaos/index.json
+    username: "{{ .Env.GITHUB_ACTOR }}"
+    password: "{{ .Env.GITHUB_TOKEN }}"
+
+# Environment variables required for release
+env:
+  - GITHUB_TOKEN
+  - DOCKER_REGISTRY_TOKEN
+  - GPG_FINGERPRINT
+  - HOMEBREW_TAP_GITHUB_TOKEN
+  - SCOOP_BUCKET_GITHUB_TOKEN
+  - AUR_KEY
+  - NIX_GITHUB_TOKEN
+  - FURY_TOKEN
+  - DISCORD_WEBHOOK_URL
+  - SLACK_WEBHOOK_URL
+  - TWITTER_CONSUMER_KEY
+  - TWITTER_CONSUMER_SECRET
+  - TWITTER_ACCESS_TOKEN
+  - TWITTER_ACCESS_TOKEN_SECRET
+
+# Metadata
+metadata:
+  mod_timestamp: "{{ .CommitTimestamp }}"

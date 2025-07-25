@@ -1,0 +1,259 @@
+{
+  "metadata": {
+    "original_name": "us_regional_compliance",
+    "compiler_version": "1.0.0",
+    "compiled_at": "2025-07-23T17:31:55Z",
+    "hash": "c93d0965b2ee05b3",
+    "optimizations": [
+      "dead_code_elimination",
+      "constant_folding"
+    ],
+    "metadata": {
+      "asset_type": "loan",
+      "region": "US"
+    }
+  },
+  "compiled_rules": [
+    {
+      "id": "bsa_reporting",
+      "type": "requirement",
+      "priority": 10,
+      "condition": {
+        "expression": "amount \u003e= 10000",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 1,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "require",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "parameters": {
+        "ctr_threshold": 10000
+      },
+      "optimized": true
+    },
+    {
+      "id": "ofac_screening",
+      "type": "restriction",
+      "priority": 5,
+      "condition": {
+        "expression": "sender_ofac_status == 'clear' \u0026\u0026 recipient_ofac_status == 'clear'",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 6,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "allow",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "optimized": true
+    },
+    {
+      "id": "patriot_act_compliance",
+      "type": "requirement",
+      "priority": 15,
+      "condition": {
+        "expression": "sender_cip_verified == true \u0026\u0026 recipient_cip_verified == true",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 6,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "require",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "optimized": true
+    },
+    {
+      "id": "sar_threshold",
+      "type": "notification",
+      "priority": 20,
+      "condition": {
+        "expression": "suspicious_score \u003e= 0.7 || amount \u003e= 5000 \u0026\u0026 pattern_suspicious == true",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 7,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "notify",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "parameters": {
+        "sar_threshold": 5000,
+        "suspicious_threshold": 0.7
+      },
+      "optimized": true
+    },
+    {
+      "id": "structuring_detection",
+      "type": "validation",
+      "priority": 25,
+      "condition": {
+        "expression": "daily_transaction_count \u003c= 3 || (amount \u003c 10000 \u0026\u0026 daily_amount \u003c 10000)",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 7,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "allow",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "optimized": true
+    },
+    {
+      "id": "high_risk_geography",
+      "type": "requirement",
+      "priority": 30,
+      "condition": {
+        "expression": "sender_country_risk \u003c= 3 \u0026\u0026 recipient_country_risk \u003c= 3",
+        "variables": [
+          "amount",
+          "sender",
+          "recipient",
+          "asset_type",
+          "region"
+        ],
+        "functions": [
+          "max",
+          "min",
+          "sum",
+          "count",
+          "contains"
+        ],
+        "metadata": {
+          "complexity": 5,
+          "optimized": true
+        }
+      },
+      "action": {
+        "type": "require",
+        "handler": "",
+        "parameters": {
+          "compiled": true
+        },
+        "metadata": {
+          "optimized": true
+        }
+      },
+      "optimized": true
+    }
+  ],
+  "runtime_settings": {
+    "continue_on_error": "false",
+    "default_action": "deny",
+    "log_level": "info",
+    "strict_mode": "true",
+    "timeout_cip_verification": "30s",
+    "timeout_ctr_processing": "2m",
+    "timeout_ofac_screening": "10s",
+    "timeout_sar_evaluation": "60s"
+  },
+  "version": "2.1.0",
+  "compiler_version": "1.0.0"
+}

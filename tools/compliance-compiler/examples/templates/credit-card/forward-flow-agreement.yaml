@@ -1,0 +1,366 @@
+# Template metadata
+template:
+  name: "Credit Card Forward Flow Agreement"
+  version: "1.0.0"
+  jurisdiction: "GLOBAL"
+  asset_class: "CreditCard"
+  description: "Forward flow agreement template for credit card receivables"
+  author: "Arda Compliance Team"
+  regulatory_framework: ["Securitization Rules", "Capital Requirements", "True Sale Accounting"]
+  last_updated: "2024-01-15"
+
+# Configurable parameters
+parameters:
+  minimum_portfolio_size:
+    type: "float"
+    default: 10000000.00
+    min: 1000000.00
+    max: 100000000.00
+    description: "Minimum portfolio size for forward flow agreement"
+
+  seasoning_period_months:
+    type: "int"
+    default: 6
+    min: 3
+    max: 24
+    description: "Minimum seasoning period for receivables"
+
+  max_delinquency_rate:
+    type: "float"
+    default: 0.05
+    min: 0.01
+    max: 0.15
+    description: "Maximum allowable delinquency rate in portfolio"
+
+  min_weighted_avg_score:
+    type: "int"
+    default: 680
+    min: 600
+    max: 800
+    description: "Minimum weighted average credit score"
+
+  max_single_obligor_concentration:
+    type: "float"
+    default: 0.02
+    min: 0.005
+    max: 0.10
+    description: "Maximum single obligor concentration"
+
+  retention_rate:
+    type: "float"
+    default: 0.05
+    min: 0.02
+    max: 0.15
+    description: "Seller retention rate (first loss)"
+
+  advance_rate:
+    type: "float"
+    default: 0.90
+    min: 0.70
+    max: 0.95
+    description: "Advance rate on portfolio value"
+
+# Policy implementation
+policy:
+  metadata:
+    version: "1.0.0"
+    name: "CreditCard-Forward-Flow-Agreement"
+    description: "Forward flow agreement compliance for credit card receivables"
+    tags: ["credit-card", "forward-flow", "securitization", "portfolio-sale"]
+
+  rules:
+    # Portfolio Eligibility Criteria
+    - id: "portfolio_eligibility"
+      name: "Portfolio Eligibility Assessment"
+      description: "Verify portfolio meets forward flow eligibility criteria"
+      type: "eligibility"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "portfolio_principal_balance >= ${minimum_portfolio_size}"
+        - "weighted_average_seasoning >= ${seasoning_period_months}"
+        - "current_delinquency_rate <= ${max_delinquency_rate}"
+        - "weighted_average_credit_score >= ${min_weighted_avg_score}"
+        - "geographic_diversification_adequate == true"
+      actions:
+        - "validate_portfolio_size"
+        - "verify_seasoning_requirements"
+        - "assess_credit_quality"
+        - "confirm_diversification"
+
+    # Concentration Limits
+    - id: "concentration_limits"
+      name: "Portfolio Concentration Compliance"
+      description: "Ensure portfolio meets concentration limits"
+      type: "risk"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "single_obligor_concentration <= ${max_single_obligor_concentration}"
+        - "top_10_obligor_concentration <= 0.15"
+        - "state_concentration_max <= 0.25"
+        - "industry_concentration_max <= 0.30"
+        - "fico_band_concentration_adequate == true"
+      actions:
+        - "calculate_obligor_concentrations"
+        - "verify_geographic_limits"
+        - "assess_industry_diversification"
+        - "validate_credit_score_distribution"
+
+    # Receivables Quality Standards
+    - id: "receivables_quality"
+      name: "Receivables Quality Standards"
+      description: "Verify individual receivables meet quality standards"
+      type: "quality"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "account_status == 'current' OR days_delinquent <= 30"
+        - "account_fraud_flag == false"
+        - "charge_off_flag == false"
+        - "bankruptcy_flag == false"
+        - "disputed_balance_flag == false"
+        - "original_terms_unmodified == true"
+      actions:
+        - "screen_account_status"
+        - "verify_no_fraud_indicators"
+        - "confirm_payment_status"
+        - "validate_original_terms"
+
+    # True Sale Requirements
+    - id: "true_sale_compliance"
+      name: "True Sale Legal Requirements"
+      description: "Ensure transfer qualifies as true sale"
+      type: "legal"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "transfer_absolute_assignment == true"
+        - "seller_control_relinquished == true"
+        - "bankruptcy_remote_structure == true"
+        - "consideration_adequate == true"
+        - "seller_recourse_limited == true"
+      actions:
+        - "verify_absolute_transfer"
+        - "confirm_control_transfer"
+        - "validate_bankruptcy_remoteness"
+        - "assess_consideration_adequacy"
+
+    # Credit Enhancement Structure
+    - id: "credit_enhancement"
+      name: "Credit Enhancement Requirements"
+      description: "Validate credit enhancement structure"
+      type: "structure"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "seller_retention_rate >= ${retention_rate}"
+        - "excess_spread_available >= 0.02"
+        - "reserve_account_funded == true"
+        - "third_party_guarantee_valid == true IF guarantee_provided"
+        - "subordination_structure_adequate == true"
+      actions:
+        - "calculate_seller_retention"
+        - "verify_excess_spread"
+        - "confirm_reserve_funding"
+        - "validate_subordination"
+
+    # Servicing Requirements
+    - id: "servicing_standards"
+      name: "Servicing Standards Compliance"
+      description: "Ensure servicing meets forward flow standards"
+      type: "operational"
+      priority: "medium"
+      enabled: true
+      conditions:
+        - "servicer_rating >= 'BBB'"
+        - "servicing_agreement_executed == true"
+        - "backup_servicer_identified == true"
+        - "servicing_systems_adequate == true"
+        - "reporting_capabilities_verified == true"
+      actions:
+        - "verify_servicer_qualifications"
+        - "confirm_servicing_agreements"
+        - "validate_backup_arrangements"
+        - "test_reporting_systems"
+
+    # Representations and Warranties
+    - id: "representations_warranties"
+      name: "Representations and Warranties"
+      description: "Validate seller representations and warranties"
+      type: "legal"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "ownership_clear_title == true"
+        - "origination_compliance_certified == true"
+        - "no_material_adverse_changes == true"
+        - "financial_statements_accurate == true"
+        - "regulatory_compliance_current == true"
+      actions:
+        - "verify_clear_title"
+        - "confirm_origination_compliance"
+        - "assess_material_changes"
+        - "validate_financial_accuracy"
+
+    # Purchase Price Calculation
+    - id: "purchase_price_calculation"
+      name: "Purchase Price Calculation"
+      description: "Calculate and validate purchase price"
+      type: "pricing"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "discount_rate_market_based == true"
+        - "advance_rate <= ${advance_rate}"
+        - "holdback_amount_adequate == true"
+        - "pricing_methodology_documented == true"
+        - "fair_value_assessment_completed == true"
+      actions:
+        - "calculate_portfolio_value"
+        - "apply_market_discount"
+        - "determine_advance_amount"
+        - "establish_holdback_reserve"
+
+  # Required attestations
+  attestations:
+    - id: "portfolio_eligibility_attestation"
+      name: "Portfolio Eligibility Certification"
+      description: "Certification that portfolio meets all eligibility criteria"
+      type: "operational"
+      required: true
+      fields:
+        - "portfolio_id"
+        - "total_portfolio_balance"
+        - "number_of_accounts"
+        - "eligibility_criteria_met"
+        - "portfolio_manager_signature"
+        - "certification_date"
+
+    - id: "true_sale_opinion"
+      name: "True Sale Legal Opinion"
+      description: "Legal opinion on true sale treatment"
+      type: "legal"
+      required: true
+      fields:
+        - "legal_counsel_firm"
+        - "true_sale_opinion_issued"
+        - "bankruptcy_remoteness_confirmed"
+        - "non_consolidation_opinion"
+        - "opinion_date"
+        - "counsel_signature"
+
+    - id: "credit_enhancement_attestation"
+      name: "Credit Enhancement Validation"
+      description: "Attestation of credit enhancement adequacy"
+      type: "risk"
+      required: true
+      fields:
+        - "enhancement_level"
+        - "subordination_amount"
+        - "reserve_account_balance"
+        - "third_party_guarantees"
+        - "risk_officer_approval"
+        - "enhancement_date"
+
+    - id: "accounting_treatment_attestation"
+      name: "Accounting Treatment Confirmation"
+      description: "Confirmation of proper accounting treatment"
+      type: "accounting"
+      required: true
+      fields:
+        - "sale_accounting_treatment"
+        - "derecognition_criteria_met"
+        - "gain_loss_calculation"
+        - "ongoing_involvement_assessment"
+        - "chief_accounting_officer"
+        - "accounting_date"
+
+  # Configuration
+  config:
+    validation:
+      strict_mode: true
+      fail_on_warnings: true
+
+    execution:
+      timeout: "180s"
+      max_retries: 2
+
+    logging:
+      level: "info"
+      audit_enabled: true
+      transaction_logging: true
+      retention_days: 3650  # 10 years for securitization records
+
+    reporting:
+      monthly_performance_reports: true
+      quarterly_credit_reports: true
+      annual_compliance_certification: true
+      investor_reporting_enabled: true
+
+# Forward Flow Terms Structure
+forward_flow_terms:
+  commitment_structure:
+    minimum_monthly_flow: 50000000.00
+    maximum_monthly_flow: 200000000.00
+    commitment_period_months: 24
+    optional_extension_months: 12
+
+  pricing_mechanism:
+    base_discount_rate: 0.08
+    credit_quality_adjustments:
+      prime: -0.005
+      near_prime: 0.000
+      subprime: +0.015
+    seasoning_adjustments:
+      - months_3_6: +0.002
+      - months_6_12: 0.000
+      - months_12_plus: -0.001
+
+  settlement_terms:
+    settlement_period_days: 3
+    cutoff_date: "last_business_day_of_month"
+    payment_date: "5th_business_day_following_month"
+    wire_transfer_required: true
+
+# Ongoing Compliance Requirements
+ongoing_requirements:
+  monthly_deliverables:
+    - "Portfolio performance report"
+    - "Delinquency and loss report"
+    - "Concentration analysis"
+    - "Servicer performance metrics"
+
+  quarterly_deliverables:
+    - "Comprehensive credit analysis"
+    - "Regulatory compliance certification"
+    - "Financial statement updates"
+    - "Material adverse change notifications"
+
+  annual_requirements:
+    - "Independent audit of servicing"
+    - "Credit enhancement adequacy review"
+    - "Legal opinion updates"
+    - "Accounting treatment reassessment"
+
+# Integration notes
+integration:
+  ardaos_modules:
+    - "tokenfactory: Asset-backed token creation"
+    - "syndication: Multi-investor distribution"
+    - "escrow: Settlement fund management"
+    - "compliance: Ongoing compliance monitoring"
+
+  external_systems:
+    - "Servicer reporting systems"
+    - "Rating agency interfaces"
+    - "Trustee reporting platforms"
+    - "Investor portal systems"
+    - "Settlement and custody systems"
+
+  workflow_automation:
+    - "Monthly cutoff processing"
+    - "Portfolio eligibility screening"
+    - "Settlement calculations"
+    - "Investor distributions"
+    - "Performance reporting"

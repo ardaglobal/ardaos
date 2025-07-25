@@ -1,0 +1,231 @@
+# Example compliance policy demonstrating complex predicate structures
+policy_id: "debt-to-income-compliance-v1"
+version: "1.0.0"
+jurisdiction: "US"
+asset_class: "consumer_loans"
+
+metadata:
+  title: "Debt-to-Income Ratio Compliance Policy"
+  description: "Ensures borrowers meet debt-to-income ratio requirements for consumer loans"
+  tags: ["lending", "consumer_protection", "debt_ratios"]
+  category: "loan_origination"
+  priority: 1
+  author: "compliance-team@ardaos.org"
+  organization: "ArdaOS Compliance"
+  regulatory_framework: "Consumer Financial Protection Bureau (CFPB)"
+  legal_references: ["12 CFR 1026", "Regulation Z"]
+
+rules:
+  - name: "debt_to_income_check"
+    description: "Verify borrower's debt-to-income ratio meets regulatory requirements"
+    required: true
+    predicate:
+      and:
+        - field: "loan.debt_to_income_ratio"
+          op: "lte"
+          value: 0.43
+        - field: "borrower.credit_score"
+          op: "gte"
+          value: 620
+        - or:
+            - field: "borrower.employment_status"
+              op: "equals"
+              value: "employed"
+            - and:
+                - field: "borrower.employment_status"
+                  op: "equals"
+                  value: "self_employed"
+                - field: "borrower.years_self_employed"
+                  op: "gte"
+                  value: 2
+
+  - name: "collateral_coverage_check"
+    description: "Ensure collateral value adequately covers loan principal"
+    required: true
+    predicate:
+      field: "loan.collateral_value"
+      op: "gte"
+      value_expr: "loan.principal * 1.2"
+
+  - name: "income_verification_check"
+    description: "Verify borrower income documentation is current and sufficient"
+    required: true
+    predicate:
+      and:
+        - exists: "borrower.annual_income"
+          should_exist: true
+        - field: "borrower.income_verification_date"
+          op: "newer_than"
+          value: "90 days"
+        - field: "borrower.annual_income"
+          op: "gte"
+          value_expr: "loan.monthly_payment * 12 * 2.5"
+
+  - name: "high_risk_loan_additional_checks"
+    description: "Additional requirements for high-risk loans"
+    required: false
+    predicate:
+      and:
+        - field: "loan.risk_category"
+          op: "equals"
+          value: "high_risk"
+        - or:
+            - field: "borrower.liquid_assets"
+              op: "gte"
+              value_expr: "loan.principal * 0.1"
+            - field: "loan.guarantor_present"
+              op: "equals"
+              value: true
+
+  - name: "regulatory_exemption_check"
+    description: "Check for valid regulatory exemptions"
+    required: false
+    predicate:
+      or:
+        - field: "loan.exemption_type"
+          op: "in"
+          value: ["qualified_mortgage", "small_creditor", "rural_underserved"]
+        - and:
+            - field: "borrower.first_time_buyer"
+              op: "equals"
+              value: true
+            - field: "loan.principal"
+              op: "lte"
+              value: 100000
+
+  - name: "complex_expression_validation"
+    description: "Complex mathematical expression for risk scoring"
+    required: true
+    predicate:
+      expression: >
+        (borrower.credit_score * 0.4 +
+         (1000 - loan.debt_to_income_ratio * 1000) * 0.3 +
+         borrower.years_credit_history * 10 * 0.2 +
+         borrower.employment_stability_score * 0.1) >= 700
+      language: "cel"
+      variables:
+        min_score: 700
+        weight_credit: 0.4
+        weight_dti: 0.3
+
+  - name: "array_operations_check"
+    description: "Check previous loan performance across loan portfolio"
+    required: false
+    predicate:
+      and:
+        - field: "borrower.previous_loans"
+          array_op: "length"
+          op: "gte"
+          value: 1
+        - field: "borrower.previous_loans[status='closed']"
+          array_op: "all_match"
+          predicate:
+            field: "payment_history.delinquency_days"
+            op: "lte"
+            value: 30
+
+  - name: "time_based_restrictions"
+    description: "Time-based lending restrictions and cooling off periods"
+    required: true
+    predicate:
+      and:
+        - not:
+            field: "borrower.last_loan_date"
+            time:
+              op: "within"
+              duration: "6 months"
+        - field: "application.submission_time"
+          time:
+            op: "business_hour"
+            timezone: "America/New_York"
+
+attestations:
+  - name: "income_verification"
+    description: "Verified income documentation"
+    type: "income_verification"
+    required: true
+    required_fields: ["annual_income", "employment_status", "verification_date"]
+    metadata:
+      validity_duration_seconds: 7776000  # 90 days
+      renewable: true
+      required_documents: ["pay_stub", "tax_return", "bank_statement"]
+
+  - name: "credit_report"
+    description: "Current credit report from authorized bureau"
+    type: "credit_rating"
+    required: true
+    required_fields: ["credit_score", "credit_history", "trade_lines"]
+    metadata:
+      validity_duration_seconds: 2592000  # 30 days
+      renewable: false
+      required_documents: ["credit_report"]
+
+  - name: "kyc_verification"
+    description: "Know Your Customer verification"
+    type: "kyc"
+    required: true
+    required_fields: ["identity_verified", "address_verified"]
+    metadata:
+      validity_duration_seconds: 31536000  # 1 year
+      renewable: true
+      required_documents: ["government_id", "utility_bill"]
+
+enforcement:
+  level: "blocking"
+  actions:
+    - "log"
+    - "block_transaction"
+    - "alert"
+    - "audit_log"
+  alerts:
+    enabled: true
+    channels:
+      - name: "compliance_team_email"
+        type: "email"
+        recipients: ["compliance@ardaos.org", "risk@ardaos.org"]
+        enabled: true
+        min_severity: "medium"
+      - name: "slack_alerts"
+        type: "slack"
+        recipients: ["#compliance-alerts"]
+        enabled: true
+        min_severity: "high"
+    severity: "high"
+    cooldown_seconds: 300
+    deduplicate: true
+    max_alerts_per_hour: 10
+  auto_remediation: false
+  grace_period_seconds: 86400  # 24 hours
+
+# Advanced features demonstration
+advanced_features:
+  field_schemas:
+    "loan.debt_to_income_ratio":
+      type: "number"
+      min_value: 0.0
+      max_value: 10.0
+      description: "Debt-to-income ratio as decimal (0.43 = 43%)"
+    "borrower.credit_score":
+      type: "integer"
+      min_value: 300
+      max_value: 850
+      description: "FICO credit score"
+    "loan.principal":
+      type: "number"
+      min_value: 1000
+      max_value: 1000000
+      currency: "USD"
+      description: "Loan principal amount in USD"
+
+  performance_hints:
+    cache_results: true
+    cache_ttl_seconds: 3600
+    parallel_evaluation: true
+    short_circuit_logic: true
+    max_evaluation_time_ms: 5000
+
+  compliance_reporting:
+    generate_audit_trail: true
+    include_evaluation_steps: true
+    store_intermediate_results: false
+    privacy_mode: "compliant"

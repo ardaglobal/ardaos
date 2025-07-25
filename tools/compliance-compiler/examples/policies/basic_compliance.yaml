@@ -1,0 +1,50 @@
+# Basic Compliance Policy Example
+# This example demonstrates a simple compliance policy for transaction validation
+
+policy_id: "basic_compliance"
+version: "1.0.0"
+jurisdiction: "US"
+asset_class: "credit-card"
+
+rules:
+  - rule_id: "amount_validation"
+    name: "Transaction Amount Validation"
+    description: "Ensure transaction amounts are within acceptable limits"
+    predicate:
+      and:
+        - field: "amount"
+          op: "gt"
+          value: 0
+        - field: "amount"
+          op: "lte"
+          value: 50000
+    required: true
+    priority: 1
+
+  - rule_id: "identity_verification"
+    name: "Identity Verification"
+    description: "Verify sender and recipient identities"
+    predicate:
+      and:
+        - field: "sender_verified"
+          op: "eq"
+          value: true
+        - field: "recipient_verified"
+          op: "eq"
+          value: true
+    required: true
+    priority: 2
+
+  - rule_id: "suspicious_activity"
+    name: "Suspicious Activity Detection"
+    description: "Flag potentially suspicious transactions"
+    predicate:
+      or:
+        - field: "amount"
+          op: "gt"
+          value: 10000
+        - field: "velocity_score"
+          op: "gt"
+          value: 0.8
+    required: false
+    priority: 3

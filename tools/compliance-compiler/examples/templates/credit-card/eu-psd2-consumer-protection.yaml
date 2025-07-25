@@ -1,0 +1,307 @@
+# Template metadata
+template:
+  name: "EU Credit Card - PSD2 & Consumer Protection"
+  version: "1.0.0"
+  jurisdiction: "EU"
+  asset_class: "CreditCard"
+  description: "EU credit card compliance per PSD2 and consumer protection directives"
+  author: "Arda Compliance Team"
+  regulatory_framework: ["PSD2", "Consumer Credit Directive", "GDPR", "MiFID II"]
+  last_updated: "2024-01-15"
+
+# Configurable parameters
+parameters:
+  max_debt_to_income_ratio:
+    type: "float"
+    default: 0.40
+    min: 0.0
+    max: 0.60
+    description: "Maximum debt-to-income ratio (stricter than US)"
+
+  min_credit_assessment_score:
+    type: "int"
+    default: 650
+    min: 300
+    max: 900
+    description: "Minimum credit assessment score (SCHUFA or equivalent)"
+
+  max_credit_limit_eur:
+    type: "float"
+    default: 25000.00
+    min: 200.00
+    max: 75000.00
+    description: "Maximum credit limit in EUR"
+
+  max_apr_percentage:
+    type: "float"
+    default: 24.99
+    min: 0.0
+    max: 35.0
+    description: "Maximum annual percentage rate"
+
+  cooling_off_period_days:
+    type: "int"
+    default: 14
+    min: 14
+    max: 30
+    description: "Consumer cooling-off period in days"
+
+  max_default_interest:
+    type: "float"
+    default: 8.0
+    min: 0.0
+    max: 15.0
+    description: "Maximum default interest rate above ECB rate"
+
+# Policy implementation
+policy:
+  metadata:
+    version: "1.0.0"
+    name: "EU-CreditCard-PSD2-Consumer-Protection"
+    description: "EU credit card compliance with PSD2 and consumer protection"
+    tags: ["credit-card", "psd2", "consumer-protection", "eu", "gdpr"]
+
+  rules:
+    # PSD2 Strong Customer Authentication
+    - id: "sca_authentication"
+      name: "PSD2 Strong Customer Authentication"
+      description: "Implement SCA for electronic payments and account access"
+      type: "regulatory"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "payment_amount > 30.00 EUR OR cumulative_amount > 150.00 EUR"
+        - "authentication_factors >= 2"
+        - "factors_include_knowledge AND factors_include_possession"
+        - "biometric_factor_acceptable == true IF biometric_used"
+      actions:
+        - "require_two_factor_auth"
+        - "validate_authentication_factors"
+        - "log_authentication_attempt"
+        - "apply_sca_exemptions_if_applicable"
+
+    # Consumer Credit Directive Compliance
+    - id: "creditworthiness_assessment"
+      name: "EU Creditworthiness Assessment"
+      description: "Thorough creditworthiness assessment per Consumer Credit Directive"
+      type: "regulatory"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "income_verification_completed == true"
+        - "expenses_assessment_completed == true"
+        - "credit_history_checked == true"
+        - "debt_to_income_ratio <= ${max_debt_to_income_ratio}"
+        - "credit_score >= ${min_credit_assessment_score}"
+      actions:
+        - "perform_comprehensive_assessment"
+        - "document_creditworthiness_decision"
+        - "provide_pre_contractual_info"
+
+    # GDPR Data Protection
+    - id: "gdpr_data_protection"
+      name: "GDPR Data Protection Compliance"
+      description: "Ensure GDPR compliance for personal data processing"
+      type: "regulatory"
+      priority: "critical"
+      enabled: true
+      conditions:
+        - "explicit_consent_obtained == true"
+        - "data_processing_purpose_specified == true"
+        - "data_retention_period_defined == true"
+        - "data_subject_rights_implemented == true"
+        - "privacy_notice_provided == true"
+      actions:
+        - "obtain_explicit_consent"
+        - "implement_data_subject_rights"
+        - "maintain_processing_records"
+        - "conduct_dpia_if_required"
+
+    # Consumer Protection - Cooling Off Period
+    - id: "cooling_off_period"
+      name: "Consumer Cooling-Off Period"
+      description: "Implement 14-day cooling-off period for consumer protection"
+      type: "regulatory"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "contract_type == 'distance_contract' OR contract_type == 'off_premises_contract'"
+        - "cooling_off_notice_provided == true"
+        - "withdrawal_form_provided == true"
+      actions:
+        - "provide_withdrawal_rights_notice"
+        - "accept_withdrawal_during_period"
+        - "refund_within_14_days_if_withdrawn"
+
+    # Interest Rate and Fee Controls
+    - id: "interest_rate_controls"
+      name: "EU Interest Rate and Fee Controls"
+      description: "Comply with EU interest rate and fee regulations"
+      type: "regulatory"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "apr <= ${max_apr_percentage}"
+        - "default_interest <= (ecb_rate + ${max_default_interest})"
+        - "fees_proportionate == true"
+        - "penalty_charges_reasonable == true"
+      actions:
+        - "validate_interest_rates"
+        - "ensure_fee_proportionality"
+        - "cap_penalty_charges"
+
+    # Open Banking / PSD2 Third Party Access
+    - id: "third_party_access"
+      name: "PSD2 Third Party Provider Access"
+      description: "Enable secure third-party access to account information"
+      type: "regulatory"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "tpp_authorization_valid == true"
+        - "customer_consent_explicit == true"
+        - "api_security_standards_met == true"
+        - "access_logs_maintained == true"
+      actions:
+        - "validate_tpp_credentials"
+        - "provide_standardized_api_access"
+        - "maintain_audit_trail"
+        - "monitor_third_party_access"
+
+    # Responsible Lending
+    - id: "responsible_lending"
+      name: "Responsible Lending Practices"
+      description: "Implement responsible lending per EU guidelines"
+      type: "business"
+      priority: "high"
+      enabled: true
+      conditions:
+        - "affordability_assessment_completed == true"
+        - "credit_limit_appropriate_to_income == true"
+        - "vulnerable_customers_identified == true"
+        - "debt_advice_offered_if_needed == true"
+      actions:
+        - "conduct_affordability_assessment"
+        - "identify_vulnerable_customers"
+        - "offer_appropriate_products"
+        - "provide_debt_counseling_referrals"
+
+  # Required attestations
+  attestations:
+    - id: "psd2_compliance_attestation"
+      name: "PSD2 Compliance Documentation"
+      description: "Comprehensive PSD2 compliance attestation"
+      type: "regulatory"
+      required: true
+      fields:
+        - "sca_implementation_confirmed"
+        - "api_standards_compliance"
+        - "third_party_access_logs"
+        - "security_measures_documented"
+        - "compliance_officer_signature"
+        - "attestation_date"
+
+    - id: "consumer_protection_attestation"
+      name: "Consumer Protection Compliance"
+      description: "EU consumer protection compliance attestation"
+      type: "regulatory"
+      required: true
+      fields:
+        - "cooling_off_period_provided"
+        - "pre_contractual_information_delivered"
+        - "withdrawal_rights_explained"
+        - "consumer_protection_officer"
+        - "compliance_date"
+
+    - id: "gdpr_compliance_attestation"
+      name: "GDPR Data Protection Attestation"
+      description: "GDPR compliance for credit card processing"
+      type: "regulatory"
+      required: true
+      fields:
+        - "lawful_basis_documented"
+        - "consent_records_maintained"
+        - "data_subject_rights_implemented"
+        - "dpo_consulted"
+        - "privacy_impact_assessment"
+        - "gdpr_compliance_date"
+
+    - id: "creditworthiness_attestation"
+      name: "Creditworthiness Assessment Documentation"
+      description: "Consumer Credit Directive creditworthiness assessment"
+      type: "regulatory"
+      required: true
+      fields:
+        - "assessment_methodology"
+        - "income_verification_evidence"
+        - "affordability_calculation"
+        - "credit_decision_rationale"
+        - "assessment_officer"
+        - "assessment_date"
+
+  # Configuration
+  config:
+    validation:
+      strict_mode: true
+      fail_on_warnings: true
+
+    execution:
+      timeout: "90s"
+      max_retries: 3
+
+    logging:
+      level: "info"
+      audit_enabled: true
+      retention_days: 2190  # 6 years for EU regulatory compliance
+
+    reporting:
+      eba_reporting_enabled: true
+      national_regulator_reporting: true
+      quarterly_reports: true
+
+    localization:
+      supported_languages: ["en", "de", "fr", "es", "it", "nl", "pl"]
+      currency: "EUR"
+      timezone: "CET"
+
+# Regulatory requirements documentation
+regulatory_requirements:
+  - requirement: "PSD2 Article 97 - Strong Customer Authentication"
+    description: "SCA required for electronic payments and account access"
+    implementation: "sca_authentication rule"
+
+  - requirement: "Consumer Credit Directive Article 8"
+    description: "Obligation to assess creditworthiness"
+    implementation: "creditworthiness_assessment rule"
+
+  - requirement: "GDPR Article 6 - Lawfulness of Processing"
+    description: "Legal basis required for personal data processing"
+    implementation: "gdpr_data_protection rule"
+
+  - requirement: "Consumer Rights Directive Article 9"
+    description: "Right of withdrawal for distance contracts"
+    implementation: "cooling_off_period rule"
+
+  - requirement: "Mortgage Credit Directive Article 18"
+    description: "Responsible lending practices"
+    implementation: "responsible_lending rule"
+
+# Integration notes
+integration:
+  ardaos_modules:
+    - "tokenfactory: For EUR-denominated credit tokens"
+    - "compliance: For multi-jurisdictional rule enforcement"
+    - "syndication: For cross-border portfolio management"
+
+  external_systems:
+    - "SCHUFA/Credit bureaus (per member state)"
+    - "Open Banking APIs"
+    - "EBA reporting systems"
+    - "National regulatory reporting"
+    - "SEPA payment systems"
+
+  technical_standards:
+    - "PSD2 RTS on SCA and CSC"
+    - "Berlin Group NextGenPSD2 API"
+    - "ISO 20022 messaging"
+    - "GDPR technical safeguards"

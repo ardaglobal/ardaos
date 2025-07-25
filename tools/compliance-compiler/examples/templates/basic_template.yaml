@@ -1,0 +1,125 @@
+# Basic Compliance Policy Template
+# Use this template as a starting point for creating custom compliance policies
+
+metadata:
+  name: "your_policy_name_here"
+  version: "1.0.0"
+  description: "Description of your compliance policy"
+  region: "US"  # Change to your region (US, EU, APAC, CA, UK, AU, JP)
+  asset_type: "loan"  # Change to your asset type (loan, equity, bond, derivative)
+  labels:
+    environment: "production"  # or "staging", "development"
+    category: "compliance"
+    owner: "compliance-team"
+
+spec:
+  rules:
+    # Example: Transaction amount validation
+    - id: "amount_validation"
+      name: "Transaction Amount Validation"
+      description: "Ensure transaction amounts are within acceptable limits"
+      type: "validation"  # validation, limit, restriction, requirement, notification
+      condition: "amount > 0 && amount <= 100000"  # Customize your condition
+      action: "allow"  # allow, deny, require, notify, log, escalate
+      priority: 100  # Lower numbers = higher priority
+      enabled: true
+      parameters:
+        - name: "max_amount"
+          type: "float"
+          value: 100000.00
+          required: true
+          description: "Maximum allowed transaction amount"
+
+    # Example: Identity verification requirement
+    - id: "identity_verification"
+      name: "Identity Verification"
+      description: "Require identity verification for all parties"
+      type: "requirement"
+      condition: "sender_verified == true && recipient_verified == true"
+      action: "require"
+      priority: 50
+      enabled: true
+
+    # Example: Suspicious activity detection
+    - id: "suspicious_activity"
+      name: "Suspicious Activity Detection"
+      description: "Flag potentially suspicious transactions"
+      type: "notification"
+      condition: "suspicious_score > 0.7"
+      action: "notify"
+      priority: 200
+      enabled: true
+      parameters:
+        - name: "risk_threshold"
+          type: "float"
+          value: 0.7
+          required: true
+
+    # Add more rules as needed...
+
+  conditions:
+    # Define reusable conditions here
+    - id: "business_hours"
+      name: "Business Hours Check"
+      expression: "hour >= 9 && hour <= 17 && day_of_week >= 1 && day_of_week <= 5"
+      parameters:
+        timezone: "UTC"  # Change to your timezone
+
+  actions:
+    # Define custom actions here
+    - id: "compliance_notification"
+      name: "Compliance Team Notification"
+      type: "notify"
+      handler: "email"  # email, webhook, queue
+      parameters:
+        recipients: "compliance@yourcompany.com"  # Change to your email
+        subject: "Compliance Alert"
+
+  limits:
+    # Set transaction limits
+    daily_amount:
+      type: "amount"
+      value: 100000  # Customize your daily limit
+      period: "1d"
+      currency: "USD"  # Change to your currency
+
+    daily_count:
+      type: "count"
+      value: 50  # Customize your daily transaction count limit
+      period: "1d"
+
+    monthly_amount:
+      type: "amount"
+      value: 1000000  # Customize your monthly limit
+      period: "30d"
+      currency: "USD"
+
+  constraints:
+    # Add business constraints here
+    min_transaction_amount: "1.00"
+    max_transaction_amount: "100000.00"
+    allowed_currencies: "USD,EUR,GBP"  # Customize allowed currencies
+    required_documentation: "government_id,proof_of_address"
+
+  settings:
+    default_action: "deny"  # deny, allow
+    strict_mode: true  # true for strict validation
+    continue_on_error: false  # false to stop on first error
+    log_level: "info"  # debug, info, warn, error
+
+    notification_urls:
+      - "https://your-webhook-url.com/compliance"  # Change to your webhook
+
+    timeouts:
+      validation: "30s"
+      processing: "2m"
+      notification: "10s"
+
+# Instructions for customization:
+# 1. Replace placeholder values with your actual requirements
+# 2. Modify rule conditions to match your business logic
+# 3. Add or remove rules based on your compliance needs
+# 4. Update limits and constraints for your use case
+# 5. Configure notification URLs and settings
+# 6. Test your policy using: compliance-compiler validate your_policy.yaml
+# 7. Compile your policy using: compliance-compiler compile your_policy.yaml
